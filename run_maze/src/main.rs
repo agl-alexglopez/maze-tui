@@ -25,9 +25,9 @@ fn main() {
     println!("Let's check if ANSI escapes are working.");
     println!(
         "{}, {}, {}, {}",
-        maze::FROM_NORTH_MARK,
-        maze::FROM_EAST_MARK,
-        maze::FROM_SOUTH_MARK,
-        maze::FROM_WEST_MARK
+        maze::BACKTRACKING_SYMBOLS[1],
+        maze::BACKTRACKING_SYMBOLS[2],
+        maze::BACKTRACKING_SYMBOLS[3],
+        maze::BACKTRACKING_SYMBOLS[4],
     );
 }
