@@ -67,13 +67,15 @@ pub struct MazeArgs {
     pub style: MazeStyle,
 }
 
+pub const MARKER_SHIFT: u8 = 4;
+pub const DEFAULT_ROWS: i32 = 31;
+pub const DEFAULT_COLS: i32 = 111;
+pub const NUM_DIRECTIONS: usize = 4;
+
 pub const PATH_BIT: Square = 0b0010_0000_0000_0000;
 pub const CLEAR_AVAILABLE_BITS: Square = 0b0001_1111_1111_0000;
 pub const START_BIT: Square = 0b0100_0000_0000_0000;
 pub const BUILDER_BIT: Square = 0b0001_0000_0000_0000;
-pub const MARKER_SHIFT: u8 = 4;
-pub const DEFAULT_ROWS: i32 = 31;
-pub const DEFAULT_COLS: i32 = 111;
 pub const MARKERS_MASK: BacktrackMarker = 0b1111_0000;
 pub const IS_ORIGIN: BacktrackMarker = 0b0000_0000;
 pub const FROM_NORTH: BacktrackMarker = 0b0001_0000;

@@ -1,5 +1,5 @@
 use crate::maze;
-use crossterm::{cursor, terminal, QueueableCommand};
+use crossterm::{cursor, terminal, QueueableCommand, ExecutableCommand};
 use std::io::{stdout, Write};
 use std::{thread, time};
 
@@ -36,16 +36,40 @@ pub fn add_positive_slope(maze: &mut maze::Maze, p: maze::Point) {
     if p.col == on_slope && p.col < maze.col_size() - 2 && p.col > 1 {
         build_path(maze, p);
         if p.col + 1 < maze.col_size() - 2 {
-            build_path(maze, maze::Point {row: p.row, col: p.col + 1});
+            build_path(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col + 1,
+                },
+            );
         }
         if p.col - 1 > 1 {
-            build_path(maze, maze::Point {row: p.row, col: p.col - 1});
+            build_path(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col - 1,
+                },
+            );
         }
         if p.col + 2 < maze.col_size() - 2 {
-            build_path(maze, maze::Point {row: p.row, col: p.col + 2});
+            build_path(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col + 2,
+                },
+            );
         }
         if p.col - 2 > 1 {
-            build_path(maze, maze::Point {row: p.row, col: p.col - 2});
+            build_path(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col - 2,
+                },
+            );
         }
     }
 }
@@ -60,16 +84,44 @@ pub fn add_positive_slope_animated(maze: &mut maze::Maze, p: maze::Point, speed:
     if p.col == on_slope && p.col < maze.col_size() - 2 && p.col > 1 {
         build_path_animated(maze, p, speed);
         if p.col + 1 < maze.col_size() - 2 {
-            build_path_animated(maze, maze::Point {row: p.row, col: p.col + 1}, speed);
+            build_path_animated(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col + 1,
+                },
+                speed,
+            );
         }
         if p.col - 1 > 1 {
-            build_path_animated(maze, maze::Point {row: p.row, col: p.col - 1}, speed);
+            build_path_animated(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col - 1,
+                },
+                speed,
+            );
         }
         if p.col + 2 < maze.col_size() - 2 {
-            build_path_animated(maze, maze::Point {row: p.row, col: p.col + 2}, speed);
+            build_path_animated(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col + 2,
+                },
+                speed,
+            );
         }
         if p.col - 2 > 1 {
-            build_path_animated(maze, maze::Point {row: p.row, col: p.col - 2}, speed);
+            build_path_animated(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col - 2,
+                },
+                speed,
+            );
         }
     }
 }
@@ -84,16 +136,40 @@ pub fn add_negative_slope(maze: &mut maze::Maze, p: maze::Point) {
     if p.col == on_line && p.col > 1 && p.col < maze.col_size() - 2 && p.row < maze.row_size() - 2 {
         build_path(maze, p);
         if p.col + 1 < maze.col_size() - 2 {
-            build_path(maze, maze::Point {row: p.row, col: p.col + 1});
+            build_path(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col + 1,
+                },
+            );
         }
         if p.col - 1 > 1 {
-            build_path(maze, maze::Point {row: p.row, col: p.col - 1});
+            build_path(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col - 1,
+                },
+            );
         }
         if p.col + 2 < maze.col_size() - 2 {
-            build_path(maze, maze::Point {row: p.row, col: p.col + 2});
+            build_path(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col + 2,
+                },
+            );
         }
         if p.col - 2 > 1 {
-            build_path(maze, maze::Point {row: p.row, col: p.col - 2});
+            build_path(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col - 2,
+                },
+            );
         }
     }
 }
@@ -108,16 +184,44 @@ pub fn add_negative_slope_animated(maze: &mut maze::Maze, p: maze::Point, speed:
     if p.col == on_line && p.col > 1 && p.col < maze.col_size() - 2 && p.row < maze.row_size() - 2 {
         build_path_animated(maze, p, speed);
         if p.col + 1 < maze.col_size() - 2 {
-            build_path_animated(maze, maze::Point {row: p.row, col: p.col + 1}, speed);
+            build_path_animated(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col + 1,
+                },
+                speed,
+            );
         }
         if p.col - 1 > 1 {
-            build_path_animated(maze, maze::Point {row: p.row, col: p.col - 1}, speed);
+            build_path_animated(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col - 1,
+                },
+                speed,
+            );
         }
         if p.col + 2 < maze.col_size() - 2 {
-            build_path_animated(maze, maze::Point {row: p.row, col: p.col + 2}, speed);
+            build_path_animated(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col + 2,
+                },
+                speed,
+            );
         }
         if p.col - 2 > 1 {
-            build_path_animated(maze, maze::Point {row: p.row, col: p.col - 2}, speed);
+            build_path_animated(
+                maze,
+                maze::Point {
+                    row: p.row,
+                    col: p.col - 2,
+                },
+                speed,
+            );
         }
     }
 }
@@ -125,8 +229,8 @@ pub fn add_negative_slope_animated(maze: &mut maze::Maze, p: maze::Point, speed:
 pub fn add_x(maze: &mut maze::Maze) {
     for r in 1..maze.row_size() - 1 {
         for c in 1..maze.col_size() - 1 {
-            add_positive_slope(maze, maze::Point {row: r, col: c});
-            add_negative_slope(maze, maze::Point {row: r, col: c});
+            add_positive_slope(maze, maze::Point { row: r, col: c });
+            add_negative_slope(maze, maze::Point { row: r, col: c });
         }
     }
 }
@@ -135,8 +239,8 @@ pub fn add_x_animated(maze: &mut maze::Maze, speed: BuilderSpeed) {
     let animation: SpeedUnit = BUILDER_SPEEDS[speed as usize];
     for r in 1..maze.row_size() - 1 {
         for c in 1..maze.col_size() - 1 {
-            add_positive_slope_animated(maze, maze::Point {row: r, col: c}, animation);
-            add_negative_slope_animated(maze, maze::Point {row: r, col: c}, animation);
+            add_positive_slope_animated(maze, maze::Point { row: r, col: c }, animation);
+            add_negative_slope_animated(maze, maze::Point { row: r, col: c }, animation);
         }
     }
 }
@@ -146,10 +250,10 @@ pub fn build_wall_outline(maze: &mut maze::Maze) {
         for c in 0..maze.col_size() {
             if c == 0 || c == maze.col_size() - 1 || r == 0 || r == maze.row_size() - 1 {
                 maze[r as usize][c as usize] |= maze::BUILDER_BIT;
-                build_wall_carefully(maze, maze::Point {row: r, col: c});
+                build_wall_carefully(maze, maze::Point { row: r, col: c });
                 continue;
             }
-            build_path(maze, maze::Point {row: r, col: c});
+            build_path(maze, maze::Point { row: r, col: c });
         }
     }
 }
@@ -169,16 +273,22 @@ pub fn choose_arbitrary_point(maze: &maze::Maze, parity: ParityPoint) -> maze::P
 }
 
 pub fn can_build_new_square(maze: &maze::Maze, next: maze::Point) -> bool {
-    return next.row > 0 && next.row < maze.row_size() - 1 && next.col > 0 && next.col < maze.col_size() - 1
-        && (maze[next.row as usize][next.col as usize] & maze::BUILDER_BIT) == 0
+    return next.row > 0
+        && next.row < maze.row_size() - 1
+        && next.col > 0
+        && next.col < maze.col_size() - 1
+        && (maze[next.row as usize][next.col as usize] & maze::BUILDER_BIT) == 0;
 }
 
 pub fn has_builder_bit(maze: &maze::Maze, next: maze::Point) -> bool {
-    return (maze[next.row as usize][next.col as usize] & maze::BUILDER_BIT) != 0
+    return (maze[next.row as usize][next.col as usize] & maze::BUILDER_BIT) != 0;
 }
 
 pub fn is_square_within_perimeter_walls(maze: &maze::Maze, next: maze::Point) -> bool {
-    return next.row < maze.row_size() - 1 && next.row > 0 && next.col < maze.col_size() - 1 && next.col > 0;
+    return next.row < maze.row_size() - 1
+        && next.row > 0
+        && next.col < maze.col_size() - 1
+        && next.col > 0;
 }
 
 // Wall Adder Helpers
@@ -222,7 +332,7 @@ pub fn build_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, speed: Sp
                 col: p.col,
             },
         );
-        thread::sleep(time::Duration::from_millis(speed));
+        thread::sleep(time::Duration::from_micros(speed));
     }
     if p.row + 1 < maze.row_size() && (maze[u_row + 1][u_col] & maze::PATH_BIT) == 0 {
         wall |= maze::SOUTH_WALL;
@@ -234,7 +344,7 @@ pub fn build_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, speed: Sp
                 col: p.col,
             },
         );
-        thread::sleep(time::Duration::from_millis(speed));
+        thread::sleep(time::Duration::from_micros(speed));
     }
     if p.col - 1 >= 0 && (maze[u_row][u_col - 1] & maze::PATH_BIT) == 0 {
         wall |= maze::WEST_WALL;
@@ -246,7 +356,7 @@ pub fn build_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, speed: Sp
                 col: p.col - 1,
             },
         );
-        thread::sleep(time::Duration::from_millis(speed));
+        thread::sleep(time::Duration::from_micros(speed));
     }
     if p.col + 1 < maze.col_size() && (maze[u_row][u_col + 1] & maze::PATH_BIT) == 0 {
         wall |= maze::EAST_WALL;
@@ -258,7 +368,7 @@ pub fn build_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, speed: Sp
                 col: p.col + 1,
             },
         );
-        thread::sleep(time::Duration::from_millis(speed));
+        thread::sleep(time::Duration::from_micros(speed));
     }
     maze[u_row][u_col] |= wall;
     maze[u_row][u_col] |= maze::BUILDER_BIT;
@@ -270,7 +380,7 @@ pub fn build_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, speed: Sp
             col: p.col,
         },
     );
-    thread::sleep(time::Duration::from_millis(speed));
+    thread::sleep(time::Duration::from_micros(speed));
 }
 
 // Path Carving Helpers
@@ -319,10 +429,19 @@ pub fn mark_origin_animated(
         maze[u_next_row][u_next_col] |= maze::FROM_WEST;
     }
     flush_cursor_maze_coordinate(maze, next);
-    thread::sleep(time::Duration::from_millis(speed));
+    thread::sleep(time::Duration::from_micros(speed));
 }
 
 pub fn fill_maze_with_walls(maze: &mut maze::Maze) {
+    for r in 0..maze.row_size() {
+        for c in 0..maze.col_size() {
+            build_wall(maze, maze::Point { row: r, col: c });
+        }
+    }
+}
+
+pub fn fill_maze_with_walls_animated(maze: &mut maze::Maze) {
+    clear_screen();
     for r in 0..maze.row_size() {
         for c in 0..maze.col_size() {
             build_wall(maze, maze::Point { row: r, col: c });
@@ -354,7 +473,7 @@ pub fn carve_path_walls_animated(maze: &mut maze::Maze, p: maze::Point, speed: S
     let u_col = p.col as usize;
     maze[u_row][u_col] |= maze::PATH_BIT;
     flush_cursor_maze_coordinate(maze, p);
-    thread::sleep(time::Duration::from_millis(speed));
+    thread::sleep(time::Duration::from_micros(speed));
     if p.row - 1 >= 0 && (maze[u_row - 1][u_col] & maze::PATH_BIT) == 0 {
         maze[u_row - 1][u_col] &= !maze::SOUTH_WALL;
         flush_cursor_maze_coordinate(
@@ -364,7 +483,7 @@ pub fn carve_path_walls_animated(maze: &mut maze::Maze, p: maze::Point, speed: S
                 col: p.col,
             },
         );
-        thread::sleep(time::Duration::from_millis(speed));
+        thread::sleep(time::Duration::from_micros(speed));
     }
     if p.row + 1 < maze.row_size() && (maze[u_row + 1][u_col] & maze::PATH_BIT) == 0 {
         maze[u_row + 1][u_col] &= !maze::NORTH_WALL;
@@ -375,7 +494,7 @@ pub fn carve_path_walls_animated(maze: &mut maze::Maze, p: maze::Point, speed: S
                 col: p.col,
             },
         );
-        thread::sleep(time::Duration::from_millis(speed));
+        thread::sleep(time::Duration::from_micros(speed));
     }
     if p.col - 1 >= 0 && (maze[u_row][u_col - 1] & maze::PATH_BIT) == 0 {
         maze[u_row][u_col - 1] &= !maze::EAST_WALL;
@@ -386,7 +505,7 @@ pub fn carve_path_walls_animated(maze: &mut maze::Maze, p: maze::Point, speed: S
                 col: p.col - 1,
             },
         );
-        thread::sleep(time::Duration::from_millis(speed));
+        thread::sleep(time::Duration::from_micros(speed));
     }
     if p.col + 1 < maze.col_size() && (maze[u_row][u_col + 1] & maze::PATH_BIT) == 0 {
         maze[u_row][u_col + 1] &= !maze::WEST_WALL;
@@ -397,9 +516,62 @@ pub fn carve_path_walls_animated(maze: &mut maze::Maze, p: maze::Point, speed: S
                 col: p.col + 1,
             },
         );
-        thread::sleep(time::Duration::from_millis(speed));
+        thread::sleep(time::Duration::from_micros(speed));
     }
     maze[u_row][u_col] |= maze::BUILDER_BIT;
+}
+
+pub fn carve_path_markings(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point) {
+    let u_next_row = next.row as usize;
+    let u_next_col = next.col as usize;
+    let mut wall: maze::Point = cur;
+    if next.row < cur.row {
+        wall.row -= 1;
+        maze[u_next_row][u_next_col] |= maze::FROM_SOUTH;
+    } else if next.row > cur.row {
+        wall.row += 1;
+        maze[u_next_row][u_next_col] |= maze::FROM_NORTH;
+    } else if next.col < cur.col {
+        wall.col -= 1;
+        maze[u_next_row][u_next_col] |= maze::FROM_EAST;
+    } else if next.col > cur.col {
+        wall.col += 1;
+        maze[u_next_row][u_next_col] |= maze::FROM_WEST;
+    } else {
+        panic!("Wall break error, builder broke when trying step through wall.");
+    }
+    carve_path_walls(maze, cur);
+    carve_path_walls(maze, next);
+    carve_path_walls(maze, wall);
+}
+
+pub fn carve_path_markings_animated(
+    maze: &mut maze::Maze,
+    cur: maze::Point,
+    next: maze::Point,
+    speed: SpeedUnit,
+) {
+    let u_next_row = next.row as usize;
+    let u_next_col = next.col as usize;
+    let mut wall: maze::Point = cur;
+    if next.row < cur.row {
+        wall.row -= 1;
+        maze[u_next_row][u_next_col] |= maze::FROM_SOUTH;
+    } else if next.row > cur.row {
+        wall.row += 1;
+        maze[u_next_row][u_next_col] |= maze::FROM_NORTH;
+    } else if next.col < cur.col {
+        wall.col -= 1;
+        maze[u_next_row][u_next_col] |= maze::FROM_EAST;
+    } else if next.col > cur.col {
+        wall.col += 1;
+        maze[u_next_row][u_next_col] |= maze::FROM_WEST;
+    } else {
+        panic!("Wall break error, builder broke when trying step through wall.");
+    }
+    carve_path_walls_animated(maze, cur, speed);
+    carve_path_walls_animated(maze, next, speed);
+    carve_path_walls_animated(maze, wall, speed);
 }
 
 pub fn build_wall(maze: &mut maze::Maze, p: maze::Point) {
@@ -465,7 +637,7 @@ pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUn
     let u_col = p.col as usize;
     maze[u_row][u_col] |= maze::PATH_BIT;
     flush_cursor_maze_coordinate(maze, p);
-    thread::sleep(time::Duration::from_millis(speed));
+    thread::sleep(time::Duration::from_micros(speed));
     if p.row - 1 >= 0 && (maze[u_row - 1][u_col] & maze::PATH_BIT) == 0 {
         maze[u_row - 1][u_col] &= !maze::SOUTH_WALL;
         flush_cursor_maze_coordinate(
@@ -475,7 +647,7 @@ pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUn
                 col: p.col,
             },
         );
-        thread::sleep(time::Duration::from_millis(speed));
+        thread::sleep(time::Duration::from_micros(speed));
     }
     if p.row + 1 < maze.row_size() && (maze[u_row + 1][u_col] & maze::PATH_BIT) == 0 {
         maze[u_row + 1][u_col] &= !maze::NORTH_WALL;
@@ -486,7 +658,7 @@ pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUn
                 col: p.col,
             },
         );
-        thread::sleep(time::Duration::from_millis(speed));
+        thread::sleep(time::Duration::from_micros(speed));
     }
     if p.col - 1 >= 0 && (maze[u_row][u_col - 1] & maze::PATH_BIT) == 0 {
         maze[u_row][u_col - 1] &= !maze::EAST_WALL;
@@ -497,7 +669,7 @@ pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUn
                 col: p.col - 1,
             },
         );
-        thread::sleep(time::Duration::from_millis(speed));
+        thread::sleep(time::Duration::from_micros(speed));
     }
     if p.col + 1 >= 0 && (maze[u_row][u_col + 1] & maze::PATH_BIT) == 0 {
         maze[u_row][u_col + 1] &= !maze::EAST_WALL;
@@ -508,7 +680,7 @@ pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUn
                 col: p.col + 1,
             },
         );
-        thread::sleep(time::Duration::from_millis(speed));
+        thread::sleep(time::Duration::from_micros(speed));
     }
 }
 
@@ -523,7 +695,7 @@ pub fn print_maze_square(maze: &maze::Maze, p: maze::Point) {
     let square = &maze[p.row as usize][p.col as usize];
     let mut stdout = stdout();
     stdout
-        .queue(cursor::MoveTo((p.row + 1) as u16, (p.col + 1) as u16))
+        .queue(cursor::MoveTo((p.col) as u16, (p.row) as u16))
         .unwrap();
     if square & maze::PATH_BIT == 0 {
         print!("{}", maze.wall_style()[(square & maze::WALL_MASK) as usize]);
@@ -537,12 +709,12 @@ pub fn print_maze_square(maze: &maze::Maze, p: maze::Point) {
 pub fn print_square(maze: &maze::Maze, p: maze::Point) {
     let square = &maze[p.row as usize][p.col as usize];
     stdout()
-        .queue(cursor::MoveTo((p.row + 1) as u16, (p.col + 1) as u16))
+        .queue(cursor::MoveTo((p.col) as u16, (p.row) as u16))
         .unwrap();
     if square & maze::MARKERS_MASK != 0 {
         let mark = (square & maze::MARKERS_MASK) >> maze::MARKER_SHIFT;
         print!("{}", maze::BACKTRACKING_SYMBOLS[mark as usize]);
-    } else if square & maze::MARKERS_MASK == 0 {
+    } else if square & maze::PATH_BIT == 0 {
         print!("{}", maze.wall_style()[(square & maze::WALL_MASK) as usize]);
     } else if square & maze::PATH_BIT != 0 {
         print!(" ");
@@ -552,9 +724,7 @@ pub fn print_square(maze: &maze::Maze, p: maze::Point) {
 }
 
 pub fn clear_and_flush_grid(maze: &maze::Maze) {
-    stdout()
-        .queue(terminal::Clear(terminal::ClearType::All))
-        .unwrap();
+    clear_screen();
     for r in 0..maze.row_size() {
         for c in 0..maze.col_size() {
             print_square(maze, maze::Point { row: r, col: c });
@@ -571,4 +741,14 @@ pub fn print_maze(maze: &maze::Maze) {
         }
         print!("\n");
     }
+}
+
+pub fn clear_screen() {
+    stdout()
+        .execute(terminal::Clear(terminal::ClearType::All))
+        .expect("Could not clear screen, terminal may be incompatible.");
+}
+
+pub fn set_cursor_position(p: maze::Point) {
+    stdout().execute(cursor::MoveTo((p.col) as u16, (p.row) as u16)).unwrap();
 }
