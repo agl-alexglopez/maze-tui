@@ -1,6 +1,6 @@
 use crate::maze;
-use crossterm::{cursor, terminal, QueueableCommand, ExecutableCommand};
-use std::io::{stdout, Write};
+use crate::utilities::print_util;
+
 use std::{thread, time};
 
 pub type SpeedUnit = u64;
@@ -441,7 +441,7 @@ pub fn fill_maze_with_walls(maze: &mut maze::Maze) {
 }
 
 pub fn fill_maze_with_walls_animated(maze: &mut maze::Maze) {
-    clear_screen();
+    print_util::clear_screen();
     for r in 0..maze.row_size() {
         for c in 0..maze.col_size() {
             build_wall(maze, maze::Point { row: r, col: c });
@@ -688,15 +688,12 @@ pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUn
 
 pub fn flush_cursor_maze_coordinate(maze: &maze::Maze, p: maze::Point) {
     print_square(maze, p);
-    stdout().flush().unwrap();
+    print_util::flush();
 }
 
 pub fn print_maze_square(maze: &maze::Maze, p: maze::Point) {
     let square = &maze[p.row as usize][p.col as usize];
-    let mut stdout = stdout();
-    stdout
-        .queue(cursor::MoveTo((p.col) as u16, (p.row) as u16))
-        .unwrap();
+    print_util::set_cursor_position(p);
     if square & maze::PATH_BIT == 0 {
         print!("{}", maze.wall_style()[(square & maze::WALL_MASK) as usize]);
     } else if square & maze::PATH_BIT != 0 {
@@ -708,9 +705,7 @@ pub fn print_maze_square(maze: &maze::Maze, p: maze::Point) {
 
 pub fn print_square(maze: &maze::Maze, p: maze::Point) {
     let square = &maze[p.row as usize][p.col as usize];
-    stdout()
-        .queue(cursor::MoveTo((p.col) as u16, (p.row) as u16))
-        .unwrap();
+    print_util::set_cursor_position(p);
     if square & maze::MARKERS_MASK != 0 {
         let mark = (square & maze::MARKERS_MASK) >> maze::MARKER_SHIFT;
         print!("{}", maze::BACKTRACKING_SYMBOLS[mark as usize]);
@@ -724,14 +719,14 @@ pub fn print_square(maze: &maze::Maze, p: maze::Point) {
 }
 
 pub fn clear_and_flush_grid(maze: &maze::Maze) {
-    clear_screen();
+    print_util::clear_screen();
     for r in 0..maze.row_size() {
         for c in 0..maze.col_size() {
             print_square(maze, maze::Point { row: r, col: c });
         }
         print!("\n");
     }
-    stdout().flush().unwrap();
+    print_util::flush();
 }
 
 pub fn print_maze(maze: &maze::Maze) {
@@ -743,12 +738,3 @@ pub fn print_maze(maze: &maze::Maze) {
     }
 }
 
-pub fn clear_screen() {
-    stdout()
-        .execute(terminal::Clear(terminal::ClearType::All))
-        .expect("Could not clear screen, terminal may be incompatible.");
-}
-
-pub fn set_cursor_position(p: maze::Point) {
-    stdout().execute(cursor::MoveTo((p.col) as u16, (p.row) as u16)).unwrap();
-}
