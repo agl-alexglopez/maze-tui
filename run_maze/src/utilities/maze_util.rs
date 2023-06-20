@@ -4,6 +4,7 @@ use crate::utilities::print_util;
 use std::{thread, time};
 
 pub type SpeedUnit = u64;
+pub type BacktrackMarker = u16;
 
 pub enum BuilderSpeed {
     Instant = 0,
@@ -22,6 +23,41 @@ pub enum ParityPoint {
     Odd,
 }
 
+// Data that will help backtracker algorithms like recursive backtracker and Wilson's.
+pub const MARKER_SHIFT: u8 = 4;
+pub const NUM_DIRECTIONS: usize = 4;
+pub const MARKERS_MASK: BacktrackMarker = 0b1111_0000;
+pub const IS_ORIGIN: BacktrackMarker = 0b0000_0000;
+pub const FROM_NORTH: BacktrackMarker = 0b0001_0000;
+pub const FROM_EAST: BacktrackMarker = 0b0010_0000;
+pub const FROM_SOUTH: BacktrackMarker = 0b0011_0000;
+pub const FROM_WEST: BacktrackMarker = 0b0100_0000;
+pub static BACKTRACKING_SYMBOLS: [&str; 5] = [
+    " ",                                 // I came from the orgin.
+    "\x1b[38;5;15m\x1b[48;5;1m↑\x1b[0m", // I came from the north.
+    "\x1b[38;5;15m\x1b[48;5;2m→\x1b[0m", // I came from the east.
+    "\x1b[38;5;15m\x1b[48;5;3m↓\x1b[0m", // I came from the south.
+    "\x1b[38;5;15m\x1b[48;5;4m←\x1b[0m", // I came from the west.
+];
+pub const BACKTRACKING_POINTS: [maze::Point; 5] = [
+    maze::Point { row: 0, col: 0 },
+    maze::Point { row: -2, col: 0 },
+    maze::Point { row: 0, col: 2 },
+    maze::Point { row: 2, col: 0 },
+    maze::Point { row: 0, col: -2 },
+];
+
+// Most builder algorithms will need to use these so leave them in one place.
+
+// north, east, south, west
+pub const GENERATE_DIRECTIONS: [maze::Point; 4] = [
+    maze::Point { row: -2, col: 0 },
+    maze::Point { row: 0, col: 2 },
+    maze::Point { row: 2, col: 0 },
+    maze::Point { row: 0, col: -2 },
+];
+
+// Control the speed steps of animation in microseconds here.
 pub const BUILDER_SPEEDS: [SpeedUnit; 8] = [0, 5000, 2500, 1000, 500, 250, 100, 1];
 
 // Maze Modification Helpers
@@ -401,13 +437,13 @@ pub fn mark_origin(maze: &mut maze::Maze, walk: maze::Point, next: maze::Point) 
     let u_next_row = next.row as usize;
     let u_next_col = next.col as usize;
     if next.row > walk.row {
-        maze[u_next_row][u_next_col] |= maze::FROM_NORTH;
+        maze[u_next_row][u_next_col] |= FROM_NORTH;
     } else if next.row < walk.row {
-        maze[u_next_row][u_next_col] |= maze::FROM_SOUTH;
+        maze[u_next_row][u_next_col] |= FROM_SOUTH;
     } else if next.col < walk.col {
-        maze[u_next_row][u_next_col] |= maze::FROM_EAST;
+        maze[u_next_row][u_next_col] |= FROM_EAST;
     } else if next.col > walk.col {
-        maze[u_next_row][u_next_col] |= maze::FROM_WEST;
+        maze[u_next_row][u_next_col] |= FROM_WEST;
     }
 }
 
@@ -420,13 +456,13 @@ pub fn mark_origin_animated(
     let u_next_row = next.row as usize;
     let u_next_col = next.col as usize;
     if next.row > walk.row {
-        maze[u_next_row][u_next_col] |= maze::FROM_NORTH;
+        maze[u_next_row][u_next_col] |= FROM_NORTH;
     } else if next.row < walk.row {
-        maze[u_next_row][u_next_col] |= maze::FROM_SOUTH;
+        maze[u_next_row][u_next_col] |= FROM_SOUTH;
     } else if next.col < walk.col {
-        maze[u_next_row][u_next_col] |= maze::FROM_EAST;
+        maze[u_next_row][u_next_col] |= FROM_EAST;
     } else if next.col > walk.col {
-        maze[u_next_row][u_next_col] |= maze::FROM_WEST;
+        maze[u_next_row][u_next_col] |= FROM_WEST;
     }
     flush_cursor_maze_coordinate(maze, next);
     thread::sleep(time::Duration::from_micros(speed));
@@ -527,16 +563,16 @@ pub fn carve_path_markings(maze: &mut maze::Maze, cur: maze::Point, next: maze::
     let mut wall: maze::Point = cur;
     if next.row < cur.row {
         wall.row -= 1;
-        maze[u_next_row][u_next_col] |= maze::FROM_SOUTH;
+        maze[u_next_row][u_next_col] |= FROM_SOUTH;
     } else if next.row > cur.row {
         wall.row += 1;
-        maze[u_next_row][u_next_col] |= maze::FROM_NORTH;
+        maze[u_next_row][u_next_col] |= FROM_NORTH;
     } else if next.col < cur.col {
         wall.col -= 1;
-        maze[u_next_row][u_next_col] |= maze::FROM_EAST;
+        maze[u_next_row][u_next_col] |= FROM_EAST;
     } else if next.col > cur.col {
         wall.col += 1;
-        maze[u_next_row][u_next_col] |= maze::FROM_WEST;
+        maze[u_next_row][u_next_col] |= FROM_WEST;
     } else {
         panic!("Wall break error, builder broke when trying step through wall.");
     }
@@ -556,16 +592,16 @@ pub fn carve_path_markings_animated(
     let mut wall: maze::Point = cur;
     if next.row < cur.row {
         wall.row -= 1;
-        maze[u_next_row][u_next_col] |= maze::FROM_SOUTH;
+        maze[u_next_row][u_next_col] |= FROM_SOUTH;
     } else if next.row > cur.row {
         wall.row += 1;
-        maze[u_next_row][u_next_col] |= maze::FROM_NORTH;
+        maze[u_next_row][u_next_col] |= FROM_NORTH;
     } else if next.col < cur.col {
         wall.col -= 1;
-        maze[u_next_row][u_next_col] |= maze::FROM_EAST;
+        maze[u_next_row][u_next_col] |= FROM_EAST;
     } else if next.col > cur.col {
         wall.col += 1;
-        maze[u_next_row][u_next_col] |= maze::FROM_WEST;
+        maze[u_next_row][u_next_col] |= FROM_WEST;
     } else {
         panic!("Wall break error, builder broke when trying step through wall.");
     }
@@ -706,9 +742,9 @@ pub fn print_maze_square(maze: &maze::Maze, p: maze::Point) {
 pub fn print_square(maze: &maze::Maze, p: maze::Point) {
     let square = &maze[p.row as usize][p.col as usize];
     print_util::set_cursor_position(p);
-    if square & maze::MARKERS_MASK != 0 {
-        let mark = (square & maze::MARKERS_MASK) >> maze::MARKER_SHIFT;
-        print!("{}", maze::BACKTRACKING_SYMBOLS[mark as usize]);
+    if square & MARKERS_MASK != 0 {
+        let mark = (square & MARKERS_MASK) >> MARKER_SHIFT;
+        print!("{}", BACKTRACKING_SYMBOLS[mark as usize]);
     } else if square & maze::PATH_BIT == 0 {
         print!("{}", maze.wall_style()[(square & maze::WALL_MASK) as usize]);
     } else if square & maze::PATH_BIT != 0 {
@@ -737,4 +773,3 @@ pub fn print_maze(maze: &maze::Maze) {
         print!("\n");
     }
 }
-
