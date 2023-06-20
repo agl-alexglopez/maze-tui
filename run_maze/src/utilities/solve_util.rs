@@ -6,11 +6,11 @@ use std::io::{stdout, Write};
 
 pub type ThreadPaint = u16;
 pub type ThreadCache = u16;
-pub type SolveSpeedUnit = usize;
+pub type SolveSpeedUnit = u64;
 
 pub struct ThreadId {
-    index: usize,
-    paint: ThreadPaint,
+    pub index: usize,
+    pub paint: ThreadPaint,
 }
 
 pub enum MazeGame {
@@ -259,5 +259,5 @@ pub static THREAD_COLORS: [&str; 16] = [
     ANSI_GRN_BLU_PRP, // 0b1110
     ANSI_WIT,         // 0b1111
 ];
-pub const OVERLAP_KEY_AND_MESSAGE_HEIGHT: u16 = 9;
+pub const OVERLAP_KEY_AND_MESSAGE_HEIGHT: i32 = 9;
 pub const SOLVER_SPEEDS: [SolveSpeedUnit; 8] = [0, 20000, 10000, 5000, 2000, 1000, 500, 250];
