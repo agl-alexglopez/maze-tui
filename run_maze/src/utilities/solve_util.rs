@@ -164,14 +164,13 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
 }
 
 pub fn print_hunt_solution_message(winning_index: Option<usize>) {
-    if winning_index.is_none() {
-        print!("{}", THREAD_COLORS[ALL_THREADS_FAILED_INDEX]);
-        return;
+    match winning_index {
+        Some(i) => print!(
+            "{} thread won!",
+            THREAD_COLORS[(THREAD_MASKS[i] >> THREAD_TAG_OFFSET) as usize]
+        ),
+        None => print!("{}", THREAD_COLORS[ALL_THREADS_FAILED_INDEX]),
     }
-    print!(
-        "{} thread won!",
-        THREAD_COLORS[((THREAD_MASKS[winning_index.unwrap()]) >> THREAD_TAG_OFFSET) as usize]
-    );
 }
 
 pub fn print_gather_solution_message() {

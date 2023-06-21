@@ -168,7 +168,7 @@ fn main() {
     }
 
     // Ensure a smooth transition from build to solve with no flashing.
-    print_util::set_cursor_position(maze::Point {row: 0, col: 0});
+    print_util::set_cursor_position(maze::Point { row: 0, col: 0 });
 
     match run.solve_view {
         ViewingMode::StaticImage => run.solve.0(maze),
