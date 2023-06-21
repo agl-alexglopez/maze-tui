@@ -143,7 +143,7 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
 }
 
 pub fn print_hunt_solution_message(winning_index: Option<usize>) {
-    if winning_index.is_some() {
+    if winning_index.is_none() {
         print!("{}", THREAD_COLORS[ALL_THREADS_FAILED_INDEX]);
         return;
     }
@@ -200,6 +200,7 @@ fn is_valid_start_or_finish(maze: &maze::Maze, choice: maze::Point) -> bool {
 pub const START_BIT: ThreadPaint = 0b0100_0000_0000_0000;
 pub const FINISH_BIT: ThreadPaint = 0b1000_0000_0000_0000;
 pub const NUM_THREADS: usize = 4;
+pub const NUM_DIRECTIONS: usize = 4;
 pub const THREAD_TAG_OFFSET: usize = 4;
 pub const NUM_GATHER_FINISHES: usize = 4;
 pub const INITIAL_PATH_LEN: usize = 1024;
