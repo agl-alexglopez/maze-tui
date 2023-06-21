@@ -153,10 +153,17 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let mut prev_flag: &str = "";
     let mut process_current = false;
-    for i in  1..args.len() {
+    for i in 1..args.len() {
         let a = &args[i];
         if process_current {
-            set_args(&tables, &mut run, &FlagArg {flag: prev_flag, arg: &a});
+            set_args(
+                &tables,
+                &mut run,
+                &FlagArg {
+                    flag: prev_flag,
+                    arg: &a,
+                },
+            );
             process_current = false;
             continue;
         }
@@ -209,48 +216,36 @@ fn set_args(tables: &LookupTables, run: &mut MazeRunner, pairs: &FlagArg) {
         }
         "-r" => set_rows(run, &pairs),
         "-c" => set_cols(run, &pairs),
-        "-b" => {
-            match tables.build_table.get(pairs.arg) {
-                Some(build_tuple) => run.build = *build_tuple,
-                None => print_invalid_arg(pairs)
+        "-b" => match tables.build_table.get(pairs.arg) {
+            Some(build_tuple) => run.build = *build_tuple,
+            None => print_invalid_arg(pairs),
+        },
+        "-m" => match tables.mod_table.get(pairs.arg) {
+            Some(mod_tuple) => run.modify = Some(*mod_tuple),
+            None => print_invalid_arg(pairs),
+        },
+        "-s" => match tables.solve_table.get(pairs.arg) {
+            Some(solve_tuple) => run.solve = *solve_tuple,
+            None => print_invalid_arg(pairs),
+        },
+        "-d" => match tables.style_table.get(pairs.arg) {
+            Some(wall_style) => run.args.style = *wall_style,
+            None => print_invalid_arg(pairs),
+        },
+        "-ba" => match tables.build_animation_table.get(pairs.arg) {
+            Some(speed) => {
+                run.build_speed = *speed;
+                run.build_view = ViewingMode::AnimatedPlayback;
             }
-        }
-        "-m" => {
-            match tables.mod_table.get(pairs.arg) {
-                Some(mod_tuple) => run.modify = Some(*mod_tuple),
-                None => print_invalid_arg(pairs)
+            None => print_invalid_arg(pairs),
+        },
+        "-sa" => match tables.solve_animation_table.get(pairs.arg) {
+            Some(speed) => {
+                run.solve_speed = *speed;
+                run.solve_view = ViewingMode::AnimatedPlayback;
             }
-        }
-        "-s" => {
-            match tables.solve_table.get(pairs.arg) {
-                Some(solve_tuple) => run.solve = *solve_tuple,
-                None => print_invalid_arg(pairs)
-            }
-        }
-        "-d" => {
-            match tables.style_table.get(pairs.arg) {
-                Some(wall_style) => run.args.style = *wall_style,
-                None => print_invalid_arg(pairs)
-            }
-        }
-        "-ba" => {
-            match tables.build_animation_table.get(pairs.arg) {
-                Some(speed) => {
-                    run.build_speed = *speed;
-                    run.build_view = ViewingMode::AnimatedPlayback;
-                },
-                None => print_invalid_arg(pairs)
-            }
-        }
-        "-sa" => {
-            match tables.solve_animation_table.get(pairs.arg) {
-                Some(speed) => {
-                    run.solve_speed = *speed;
-                    run.solve_view = ViewingMode::AnimatedPlayback;
-                }
-                None => print_invalid_arg(pairs)
-            }
-        }
+            None => print_invalid_arg(pairs),
+        },
         _ => {
             print_invalid_arg(pairs);
             std::process::exit(1);
@@ -267,7 +262,7 @@ fn set_rows(run: &mut MazeRunner, pairs: &FlagArg) {
                 std::process::exit(1);
             }
             num
-        },
+        }
         Err(_) => {
             print_invalid_arg(&pairs);
             std::process::exit(1);
@@ -300,68 +295,68 @@ fn print_invalid_arg(pairs: &FlagArg) {
 }
 
 fn print_usage() {
-    println!(
-       "┌───┬─────────┬─────┬───┬───────────┬─────┬───────┬─────────────┬─────┐
-        │   │         │     │   │           │     │       │             │     │
-        │ ╷ ╵ ┌───┐ ╷ └─╴ ╷ │ ╷ │ ┌─╴ ┌─┬─╴ │ ╶─┐ ╵ ┌───╴ │ ╶───┬─┐ ╶─┬─┘ ╶─┐ │
-        │ │   │   │ │     │ │ │ │ │   │ │   │   │   │     │     │ │   │     │ │
-        │ └───┤ ┌─┘ ├─────┘ └─┤ ╵ │ ┌─┘ ╵ ┌─┴─┐ └───┤ ╶───┴───┐ │ └─┐ ╵ ┌─┬─┘ │
-        │     │ │   │      Thread Maze Usage Instructions     │ │   │   │ │   │
-        ├───┐ ╵ │ -Use flags, followed by arguments, in any order:╷ └─┬─┘ │ ╷ │
-        │   │   │ -r Rows flag. Set rows for the maze.    │   │ │ │   │   │ │ │
-        │ ╶─┴─┐ └─┐ Any number > 7. Zoom out for larger mazes!╵ ╵ ├─┐ │ ╶─┤ └─┤
-        │     │   -c Columns flag. Set columns for the maze.│     │ │ │   │   │
-        │ ┌─┐ └─┐ │ Any number > 7. Zoom out for larger mazes!────┤ │ │ ╷ └─┐ │
-        │ │ │   │ -b Builder flag. Set maze building algorithm.   │ │ │ │   │ │
-        │ │ └─┐ ╵ │ rdfs - Randomized Depth First Search.         │ │ └─┘ ┌─┘ │
-        │     │   │ kruskal - Randomized Kruskal's algorithm. │   │       │   │
-        ├─────┤ ╷ ╵ prim - Randomized Prim's algorithm.─┴───┐ │ ┌─┴─────┬─┴─┐ │
-        │     │ │   eller - Randomized Eller's algorithm.   │ │ │       │   │ │
-        │     │ │   wilson - Loop-Erased Random Path Carver.│ │ │       │   │ │
-        │ ┌─┐ ╵ ├─┬─wilson-walls - Loop-Erased Random Wall Adder. ┌───┐ ╵ ╷ │ │
-        │ │ │   │ │ fractal - Randomized recursive subdivision. │ │   │   │ │ │
-        │ ╵ ├───┘ ╵ grid - A random grid pattern. ├─┐ │ ┌─────┤ ╵ │ ┌─┴───┤ ╵ │
-        │   │       arena - Open floor with no walls. │ │     │   │ │     │   │
-        ├─╴ ├─────-m Modification flag. Add shortcuts to the maze.┘ │ ┌─┐ └─╴ │
-        │   │     │ cross - Add crossroads through the center.      │ │ │     │
-        │ ┌─┘ ┌─┐ │ x - Add an x of crossing paths through center.──┘ │ └─────┤
-        │ │   │ │ -s Solver flag. Choose the game and solver. │ │     │       │
-        │ ╵ ┌─┘ │ └─dfs-hunt - Depth First Search ╴ ┌───┴─┬─┘ │ │ ┌───┴─────┐ │
-        │   │   │   dfs-gather - Depth First Search │     │   │ │ │         │ │
-        ├───┘ ╶─┴─╴ dfs-corners - Depth First Search  ┌─╴ │ ╶─┼─┘ │ ╷ ┌───╴ ╵ │
-        │           floodfs-hunt - Depth First Search │   │   │   │ │ │       │
-        │ ┌───────┬─floodfs-gather - Depth First Search ┌─┴─╴ │ ╶─┴─┤ └───────┤
-        │ │       │ floodfs-corners - Depth First Search│     │     │         │
-        │ │ ╷ ┌─╴ │ rdfs-hunt - Randomized Depth First Search─┴─┬─╴ │ ┌─────╴ │
-        │ │ │ │   │ rdfs-gather - Randomized Depth First Search │   │ │       │
-        │ └─┤ └───┤ rdfs-corners - Randomized Depth First Search┤ ┌─┘ │ ╶───┐ │
-        │   │     │ bfs-hunt - Breadth First Search     │   │   │ │   │     │ │
-        ├─┐ │ ┌─┐ └─bfs-gather - Breadth First Search─┐ ╵ ╷ ├─╴ │ └─┐ ├───╴ │ │
-        │ │ │ │ │   bfs-corners - Breadth First Search│   │ │   │   │ │     │ │
-        │ │ │ ╵ └─-d Draw flag. Set the line style for the maze.┴─┐ └─┘ ┌─┬─┘ │
-        │ │ │       sharp - The default straight lines. │   │     │     │ │   │
-        │ │ └─┬───╴ round - Rounded corners.──╴ │ ╷ ╵ ╵ │ ╶─┴─┐ ╶─┴─────┘ │ ╶─┤
-        │ │   │     doubles - Sharp double lines. │     │     │           │   │
-        │ └─┐ └───┬─bold - Thicker straight lines.└─┬───┴─┬─╴ │ ┌───┬───╴ └─┐ │
-        │   │     │ contrast - Full block width and height walls.   │       │ │
-        │ ╷ ├─┬─╴ │ spikes - Connected lines with spikes. ╵ ┌─┘ ╵ ┌─┘ ┌─┐ ┌─┘ │
-        │ │ │ │   -sa Solver Animation flag. Watch the maze solution. │ │ │   │
-        │ │ ╵ │ ╶─┤ Any number 1-7. Speed increases with number.┌─┘ ┌─┤ ╵ │ ╶─┤
-        │ │   │   -ba Builder Animation flag. Watch the maze build. │ │   │   │
-        │ ├─╴ ├─┐ └─Any number 1-7. Speed increases with number.┘ ┌─┘ │ ┌─┴─┐ │
-        │ │   │ │ -h Help flag. Make this prompt appear.  │   │   │   │ │   │ │
-        │ └─┐ ╵ └─┐ No arguments.─┘ ┌───┐ └─┐ ├─╴ │ ╵ └───┤ ┌─┘ ┌─┴─╴ │ ├─╴ │ │
-        │   │     -If any flags are omitted, defaults are used. │     │ │   │ │
-        ├─╴ ├───┐ -Examples:┐ ╶─┬─┬─┘ ╷ ├─╴ │ │ ┌─┴───────┘ ├─╴ │ ╶─┐ │ ╵ ┌─┘ │
-        │   │   │ │ ./run_maze  │ │   │ │   │ │ │           │   │   │ │   │   │
-        │ ╶─┤ ╶─┘ │ ./run_maze -r 51 -c 111 -b random-dfs -s bfs -hunt┘ ┌─┘ ┌─┤
-        │   │     │ ./run_maze -c 111 -s bfs -g gather│   │   │   │ │   │   │ │
-        │ ╷ │ ╶───┤ ./run_maze -s bfs -g corners -d round -b fractal╵ ┌─┤ ╶─┤ │
-        │ │ │     │ ./run_maze -s dfs -ba 4 -sa 5 -b kruskal -m x │   │ │   │ │
-        ├─┘ ├───┬─┘ │ ╶─┼─╴ │ │ │ ╷ ├─┐ ╵ ╷ ├─┴───╴ │ │ ┌───┤ ╵ │ └─┐ ╵ └─┐ ╵ │
-        │   │   │   │   │   │ │ │ │ │ │   │ │       │ │ │   │   │   │     │   │
-        │ ╶─┘ ╷ ╵ ╶─┴───┘ ┌─┘ ╵ ╵ │ ╵ └───┤ ╵ ╶─────┘ │ ╵ ╷ └───┴─┐ └─────┴─╴ │
-        │     │           │       │       │           │   │       │           │
-        └─────┴───────────┴───────┴───────┴───────────┴───┴───────┴───────────┘"
-    );
+    println!("
+    ┌───┬─────────┬─────┬───┬───────────┬─────┬───────┬─────────────┬─────┐
+    │   │         │     │   │           │     │       │             │     │
+    │ ╷ ╵ ┌───┐ ╷ └─╴ ╷ │ ╷ │ ┌─╴ ┌─┬─╴ │ ╶─┐ ╵ ┌───╴ │ ╶───┬─┐ ╶─┬─┘ ╶─┐ │
+    │ │   │   │ │     │ │ │ │ │   │ │   │   │   │     │     │ │   │     │ │
+    │ └───┤ ┌─┘ ├─────┘ └─┤ ╵ │ ┌─┘ ╵ ┌─┴─┐ └───┤ ╶───┴───┐ │ └─┐ ╵ ┌─┬─┘ │
+    │     │ │   │      Thread Maze Usage Instructions     │ │   │   │ │   │
+    ├───┐ ╵ │ -Use flags, followed by arguments, in any order:╷ └─┬─┘ │ ╷ │
+    │   │   │ -r Rows flag. Set rows for the maze.    │   │ │ │   │   │ │ │
+    │ ╶─┴─┐ └─┐ Any number > 7. Zoom out for larger mazes!╵ ╵ ├─┐ │ ╶─┤ └─┤
+    │     │   -c Columns flag. Set columns for the maze.│     │ │ │   │   │
+    │ ┌─┐ └─┐ │ Any number > 7. Zoom out for larger mazes!────┤ │ │ ╷ └─┐ │
+    │ │ │   │ -b Builder flag. Set maze building algorithm.   │ │ │ │   │ │
+    │ │ └─┐ ╵ │ rdfs - Randomized Depth First Search.         │ │ └─┘ ┌─┘ │
+    │     │   │ kruskal - Randomized Kruskal's algorithm. │   │       │   │
+    ├─────┤ ╷ ╵ prim - Randomized Prim's algorithm.─┴───┐ │ ┌─┴─────┬─┴─┐ │
+    │     │ │   eller - Randomized Eller's algorithm.   │ │ │       │   │ │
+    │     │ │   wilson - Loop-Erased Random Path Carver.│ │ │       │   │ │
+    │ ┌─┐ ╵ ├─┬─wilson-walls - Loop-Erased Random Wall Adder. ┌───┐ ╵ ╷ │ │
+    │ │ │   │ │ fractal - Randomized recursive subdivision. │ │   │   │ │ │
+    │ ╵ ├───┘ ╵ grid - A random grid pattern. ├─┐ │ ┌─────┤ ╵ │ ┌─┴───┤ ╵ │
+    │   │       arena - Open floor with no walls. │ │     │   │ │     │   │
+    ├─╴ ├─────-m Modification flag. Add shortcuts to the maze.┘ │ ┌─┐ └─╴ │
+    │   │     │ cross - Add crossroads through the center.      │ │ │     │
+    │ ┌─┘ ┌─┐ │ x - Add an x of crossing paths through center.──┘ │ └─────┤
+    │ │   │ │ -s Solver flag. Choose the game and solver. │ │     │       │
+    │ ╵ ┌─┘ │ └─dfs-hunt - Depth First Search ╴ ┌───┴─┬─┘ │ │ ┌───┴─────┐ │
+    │   │   │   dfs-gather - Depth First Search │     │   │ │ │         │ │
+    ├───┘ ╶─┴─╴ dfs-corners - Depth First Search  ┌─╴ │ ╶─┼─┘ │ ╷ ┌───╴ ╵ │
+    │           floodfs-hunt - Depth First Search │   │   │   │ │ │       │
+    │ ┌───────┬─floodfs-gather - Depth First Search ┌─┴─╴ │ ╶─┴─┤ └───────┤
+    │ │       │ floodfs-corners - Depth First Search│     │     │         │
+    │ │ ╷ ┌─╴ │ rdfs-hunt - Randomized Depth First Search─┴─┬─╴ │ ┌─────╴ │
+    │ │ │ │   │ rdfs-gather - Randomized Depth First Search │   │ │       │
+    │ └─┤ └───┤ rdfs-corners - Randomized Depth First Search┤ ┌─┘ │ ╶───┐ │
+    │   │     │ bfs-hunt - Breadth First Search     │   │   │ │   │     │ │
+    ├─┐ │ ┌─┐ └─bfs-gather - Breadth First Search─┐ ╵ ╷ ├─╴ │ └─┐ ├───╴ │ │
+    │ │ │ │ │   bfs-corners - Breadth First Search│   │ │   │   │ │     │ │
+    │ │ │ ╵ └─-d Draw flag. Set the line style for the maze.┴─┐ └─┘ ┌─┬─┘ │
+    │ │ │       sharp - The default straight lines. │   │     │     │ │   │
+    │ │ └─┬───╴ round - Rounded corners.──╴ │ ╷ ╵ ╵ │ ╶─┴─┐ ╶─┴─────┘ │ ╶─┤
+    │ │   │     doubles - Sharp double lines. │     │     │           │   │
+    │ └─┐ └───┬─bold - Thicker straight lines.└─┬───┴─┬─╴ │ ┌───┬───╴ └─┐ │
+    │   │     │ contrast - Full block width and height walls.   │       │ │
+    │ ╷ ├─┬─╴ │ spikes - Connected lines with spikes. ╵ ┌─┘ ╵ ┌─┘ ┌─┐ ┌─┘ │
+    │ │ │ │   -sa Solver Animation flag. Watch the maze solution. │ │ │   │
+    │ │ ╵ │ ╶─┤ Any number 1-7. Speed increases with number.┌─┘ ┌─┤ ╵ │ ╶─┤
+    │ │   │   -ba Builder Animation flag. Watch the maze build. │ │   │   │
+    │ ├─╴ ├─┐ └─Any number 1-7. Speed increases with number.┘ ┌─┘ │ ┌─┴─┐ │
+    │ │   │ │ -h Help flag. Make this prompt appear.  │   │   │   │ │   │ │
+    │ └─┐ ╵ └─┐ No arguments.─┘ ┌───┐ └─┐ ├─╴ │ ╵ └───┤ ┌─┘ ┌─┴─╴ │ ├─╴ │ │
+    │   │     -If any flags are omitted, defaults are used. │     │ │   │ │
+    ├─╴ ├───┐ -Examples:┐ ╶─┬─┬─┘ ╷ ├─╴ │ │ ┌─┴───────┘ ├─╴ │ ╶─┐ │ ╵ ┌─┘ │
+    │   │   │ │ ./run_maze  │ │   │ │   │ │ │           │   │   │ │   │   │
+    │ ╶─┤ ╶─┘ │ ./run_maze -r 51 -c 111 -b random-dfs -s bfs -hunt┘ ┌─┘ ┌─┤
+    │   │     │ ./run_maze -c 111 -s bfs -g gather│   │   │   │ │   │   │ │
+    │ ╷ │ ╶───┤ ./run_maze -s bfs -g corners -d round -b fractal╵ ┌─┤ ╶─┤ │
+    │ │ │     │ ./run_maze -s dfs -ba 4 -sa 5 -b kruskal -m x │   │ │   │ │
+    ├─┘ ├───┬─┘ │ ╶─┼─╴ │ │ │ ╷ ├─┐ ╵ ╷ ├─┴───╴ │ │ ┌───┤ ╵ │ └─┐ ╵ └─┐ ╵ │
+    │   │   │   │   │   │ │ │ │ │ │   │ │       │ │ │   │   │   │     │   │
+    │ ╶─┘ ╷ ╵ ╶─┴───┘ ┌─┘ ╵ ╵ │ ╵ └───┤ ╵ ╶─────┘ │ ╵ ╷ └───┴─┐ └─────┴─╴ │
+    │     │           │       │       │           │   │       │           │
+    └─────┴───────────┴───────┴───────┴───────────┴───┴───────┴───────────┘
+    ");
 }
