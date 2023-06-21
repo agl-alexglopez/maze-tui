@@ -147,11 +147,7 @@ fn main() {
             (String::from("7"), solve_util::SolverSpeed::Speed7),
         ]),
     };
-    let mut run = MazeRunner::default();
-    run.build_view = ViewingMode::AnimatedPlayback;
-    run.build_speed = build_util::BuilderSpeed::Speed4;
-    run.solve_view = ViewingMode::AnimatedPlayback;
-    run.solve_speed = solve_util::SolverSpeed::Speed4;
+    let run = MazeRunner::default();
     let mut maze = maze::Maze::new(run.args);
 
     match run.build_view {
@@ -172,11 +168,7 @@ fn main() {
     }
 
     // Ensure a smooth transition from build to solve with no flashing.
-    // All solvers will print the thread overlap key before starting.
-    print_util::set_cursor_position(maze::Point {
-        row: maze.row_size(),
-        col: maze.col_size(),
-    });
+    print_util::set_cursor_position(maze::Point {row: 0, col: 0});
 
     match run.solve_view {
         ViewingMode::StaticImage => run.solve.0(maze),
