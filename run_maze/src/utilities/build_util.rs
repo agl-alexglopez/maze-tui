@@ -6,6 +6,7 @@ use std::{thread, time};
 pub type SpeedUnit = u64;
 pub type BacktrackMarker = u16;
 
+#[derive(Clone, Copy)]
 pub enum BuilderSpeed {
     Instant = 0,
     Speed1,
@@ -258,6 +259,37 @@ pub fn add_negative_slope_animated(maze: &mut maze::Maze, p: maze::Point, speed:
                 },
                 speed,
             );
+        }
+    }
+}
+
+pub fn add_cross(maze: &mut maze::Maze) {
+    for r in 0..maze.row_size() {
+        for c in 0..maze.col_size() {
+            if (r == maze.row_size() / 2 && c > 1 && c < maze.col_size() - 2)
+                || (c == maze.col_size() / 2 && r > 1 && r < maze.row_size() - 2)
+            {
+                build_path(maze, maze::Point { row: r, col: c });
+                if c + 1 < maze.col_size() - 2 {
+                    build_path(maze, maze::Point { row: r, col: c + 1 });
+                }
+            }
+        }
+    }
+}
+
+pub fn add_cross_animated(maze: &mut maze::Maze, speed: BuilderSpeed) {
+    let animation = BUILDER_SPEEDS[speed as usize];
+    for r in 0..maze.row_size() {
+        for c in 0..maze.col_size() {
+            if (r == maze.row_size() / 2 && c > 1 && c < maze.col_size() - 2)
+                || (c == maze.col_size() / 2 && r > 1 && r < maze.row_size() - 2)
+            {
+                build_path_animated(maze, maze::Point { row: r, col: c }, animation);
+                if c + 1 < maze.col_size() - 2 {
+                    build_path_animated(maze, maze::Point { row: r, col: c + 1 }, animation);
+                }
+            }
         }
     }
 }

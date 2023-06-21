@@ -4,8 +4,9 @@ use crate::utilities::solve_util;
 
 use std::{thread, time};
 
-
 // Public Solver Functions
+
+pub fn solve_with_dfs_thread_hunt(mut maze: maze::BoxMaze) {}
 
 pub fn animate_with_dfs_thread_hunt(mut maze: maze::BoxMaze, speed: solve_util::SolverSpeed) {
     print_util::set_cursor_position(maze::Point {
@@ -57,29 +58,21 @@ fn animate_hunt(monitor: &mut solve_util::SolverMonitor, guide: solve_util::Thre
     while !dfs.is_empty() {
         let cur: maze::Point = dfs[dfs.len() - 1];
 
-        // A closure creates a scope for the lock allowing mutex to manage
-        // its own drop. There are many cases here and explicit drop would
-        // be needed if no winner is found.
-        let mut is_winner = || -> bool {
-            let mut win_lock = monitor.lock().unwrap();
-            if win_lock.win.is_some() {
-                return true;
-            }
-            if (win_lock.maze[cur.row as usize][cur.col as usize] & solve_util::FINISH_BIT) != 0 {
-                if win_lock.win.is_none() {
-                    let _ = win_lock.win.insert(guide.index);
-                }
-                let _ = dfs.pop();
-                return true;
-            }
-            win_lock.maze[cur.row as usize][cur.col as usize] |= seen;
-            win_lock.maze[cur.row as usize][cur.col as usize] |= guide.paint;
-            solve_util::flush_cursor_path_coordinate(&win_lock.maze, cur);
-            return false;
-        };
-        if is_winner() {
+        let mut win_lock = monitor.lock().unwrap();
+        if win_lock.win.is_some() {
             return;
         }
+        if (win_lock.maze[cur.row as usize][cur.col as usize] & solve_util::FINISH_BIT) != 0 {
+            if win_lock.win.is_none() {
+                let _ = win_lock.win.insert(guide.index);
+            }
+            let _ = dfs.pop();
+            return;
+        }
+        win_lock.maze[cur.row as usize][cur.col as usize] |= seen;
+        win_lock.maze[cur.row as usize][cur.col as usize] |= guide.paint;
+        solve_util::flush_cursor_path_coordinate(&win_lock.maze, cur);
+        drop(win_lock);
 
         thread::sleep(time::Duration::from_micros(guide.speed));
 
