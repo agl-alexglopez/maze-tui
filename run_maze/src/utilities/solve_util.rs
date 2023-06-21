@@ -5,6 +5,8 @@ use rand::prelude::*;
 use std::io::{stdout, Write};
 use std::sync::{Arc, Mutex};
 
+// Types available to all solvers.
+
 pub type ThreadPaint = u16;
 pub type ThreadCache = u16;
 pub type SolveSpeedUnit = u64;

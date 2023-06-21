@@ -53,6 +53,7 @@ pub struct Point {
     pub col: i32,
 }
 
+#[derive(Clone, Copy)]
 pub enum MazeStyle {
     Sharp = 0,
     Round,
@@ -62,6 +63,7 @@ pub enum MazeStyle {
     Spikes,
 }
 
+#[derive(Clone, Copy)]
 pub struct MazeArgs {
     pub odd_rows: i32,
     pub odd_cols: i32,
