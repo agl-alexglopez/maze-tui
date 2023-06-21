@@ -84,6 +84,7 @@ pub struct Maze {
 // A maze only provides building blocks and some convenience read-only data.
 // Builders and solvers use the visitor pattern to operate on and extend
 // what they wish on the maze. A BoxMaze allows borrows during its scope.
+// This is necessary for the multithreading in the solver functions.
 
 pub type BoxMaze = Box<Maze>;
 
