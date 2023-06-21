@@ -186,10 +186,11 @@ fn main() {
             None => {
                 println!("Invalid argument flag: {}", a);
                 print_usage();
-                return;
+                std::process::exit(1);
             }
         }
     }
+
     let mut maze = maze::Maze::new(run.args);
 
     match run.build_view {
