@@ -348,12 +348,12 @@ fn print_usage() {
     │ └─┐ ╵ └─┐ No arguments.─┘ ┌───┐ └─┐ ├─╴ │ ╵ └───┤ ┌─┘ ┌─┴─╴ │ ├─╴ │ │
     │   │     -If any flags are omitted, defaults are used. │     │ │   │ │
     ├─╴ ├───┐ -Examples:┐ ╶─┬─┬─┘ ╷ ├─╴ │ │ ┌─┴───────┘ ├─╴ │ ╶─┐ │ ╵ ┌─┘ │
-    │   │   │ │ ./run_maze  │ │   │ │   │ │ │           │   │   │ │   │   │
-    │ ╶─┤ ╶─┘ │ ./run_maze -r 51 -c 111 -b random-dfs -s bfs -hunt┘ ┌─┘ ┌─┤
-    │   │     │ ./run_maze -c 111 -s bfs -g gather│   │   │   │ │   │   │ │
-    │ ╷ │ ╶───┤ ./run_maze -s bfs -g corners -d round -b fractal╵ ┌─┤ ╶─┤ │
-    │ │ │     │ ./run_maze -s dfs -ba 4 -sa 5 -b kruskal -m x │   │ │   │ │
-    ├─┘ ├───┬─┘ │ ╶─┼─╴ │ │ │ ╷ ├─┐ ╵ ╷ ├─┴───╴ │ │ ┌───┤ ╵ │ └─┐ ╵ └─┐ ╵ │
+    │   │   │ │ cargo run   │ │   │ │   │ │ │           │   │   │ │   │   │
+    │ ╶─┤ ╶─┘ │ cargo run -- -r 51 -c 111 -b rdfs -s bfs-hunt   │ │ ┌─┘ ┌─┤
+    │   │     │ cargo run -- -c 111 -s bfs-gather       │   │   │ │ │   │ │
+    │ ╷ │ ╶───┤ cargo run -- -s bfs-corners -d round -b fractal └─├─┤ ┌─┤ │
+    │ │ │     │ cargo run -- -s dfs-hunt -ba 4 -b kruskal -m x    │ │ │ │ │
+    ├─┘ ├───┬─┘ │ ╶─┼─╴ │ │ │ ╷ ├─┐ ╵ ╷ ├─┴───╴ │ │ ┌───┤   │ └─┐ ╵ └─┐ ╵ │
     │   │   │   │   │   │ │ │ │ │ │   │ │       │ │ │   │   │   │     │   │
     │ ╶─┘ ╷ ╵ ╶─┴───┘ ┌─┘ ╵ ╵ │ ╵ └───┤ ╵ ╶─────┘ │ ╵ ╷ └───┴─┐ └─────┴─╴ │
     │     │           │       │       │           │   │       │           │
