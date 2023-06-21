@@ -78,16 +78,23 @@ pub struct Maze {
 
 // Core Maze Object Implementation
 
+// A maze in this program is intended to be shared both mutably and immutably.
+// A maze only provides building blocks and some convenience read-only data.
+// Builders and solvers use the visitor pattern to operate on and extend
+// what they wish on the maze. A BoxMaze allows borrows during its scope.
+
+pub type BoxMaze = Box<Maze>;
+
 impl Maze {
-    pub fn new(args: MazeArgs) -> Self {
+    pub fn new(args: MazeArgs) -> Box<Self> {
         let rows = args.odd_rows + 1 - (args.odd_rows % 2);
         let cols = args.odd_cols + 1 - (args.odd_cols % 2);
-        Self {
+        Box::new(Self {
             maze: (vec![vec![0; cols as usize]; rows as usize]),
             maze_row_size: (rows),
             maze_col_size: (cols),
             wall_style_index: (args.style as usize),
-        }
+        })
     }
 
     pub fn row_size(&self) -> i32 {

@@ -3,15 +3,11 @@ use crate::print_util;
 
 use rand::prelude::*;
 use std::io::{stdout, Write};
+use std::sync::{Arc, Mutex};
 
 pub type ThreadPaint = u16;
 pub type ThreadCache = u16;
 pub type SolveSpeedUnit = u64;
-
-pub struct ThreadId {
-    pub index: usize,
-    pub paint: ThreadPaint,
-}
 
 pub enum MazeGame {
     Hunt = 0,
@@ -29,6 +25,30 @@ pub enum SolverSpeed {
     Speed6,
     Speed7,
 }
+
+pub struct ThreadGuide {
+    pub index: usize,
+    pub paint: ThreadPaint,
+    pub start: maze::Point,
+    pub speed: SolveSpeedUnit,
+}
+
+
+pub struct Solver {
+    pub maze: maze::BoxMaze,
+    pub win: Option<usize>,
+}
+
+impl Solver {
+    pub fn new(boxed_maze: maze::BoxMaze) -> Arc<Mutex<Self>> {
+        Arc::new(Mutex::new(Self {
+            maze: boxed_maze,
+            win: None,
+        }))
+    }
+}
+
+pub type SolverMonitor = Arc<Mutex<Solver>>;
 
 // Public Module Functions
 
