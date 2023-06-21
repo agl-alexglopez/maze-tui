@@ -112,13 +112,23 @@ fn main() {
                 ),
             ),
         ]),
-        solve_table: HashMap::from([(
-            String::from("dfs-hunt"),
+        solve_table: HashMap::from([
             (
-                dfs::solve_with_dfs_thread_hunt as fn(maze::BoxMaze),
-                dfs::animate_with_dfs_thread_hunt as fn(maze::BoxMaze, solve_util::SolverSpeed),
+                String::from("dfs-hunt"),
+                (
+                    dfs::solve_with_dfs_thread_hunt as fn(maze::BoxMaze),
+                    dfs::animate_with_dfs_thread_hunt as fn(maze::BoxMaze, solve_util::SolverSpeed),
+                ),
             ),
-        )]),
+            (
+                String::from("dfs-gather"),
+                (
+                    dfs::solve_with_dfs_thread_gather as fn(maze::BoxMaze),
+                    dfs::animate_with_dfs_thread_gather
+                        as fn(maze::BoxMaze, solve_util::SolverSpeed),
+                ),
+            ),
+        ]),
         style_table: HashMap::from([
             (String::from("sharp"), maze::MazeStyle::Sharp),
             (String::from("round"), maze::MazeStyle::Round),
@@ -295,7 +305,8 @@ fn print_invalid_arg(pairs: &FlagArg) {
 }
 
 fn print_usage() {
-    println!("
+    println!(
+        "
     ┌───┬─────────┬─────┬───┬───────────┬─────┬───────┬─────────────┬─────┐
     │   │         │     │   │           │     │       │             │     │
     │ ╷ ╵ ┌───┐ ╷ └─╴ ╷ │ ╷ │ ┌─╴ ┌─┬─╴ │ ╶─┐ ╵ ┌───╴ │ ╶───┬─┐ ╶─┬─┘ ╶─┐ │
@@ -358,5 +369,6 @@ fn print_usage() {
     │ ╶─┘ ╷ ╵ ╶─┴───┘ ┌─┘ ╵ ╵ │ ╵ └───┤ ╵ ╶─────┘ │ ╵ ╷ └───┴─┐ └─────┴─╴ │
     │     │           │       │       │           │   │       │           │
     └─────┴───────────┴───────┴───────┴───────────┴───┴───────┴───────────┘
-    ");
+    "
+    );
 }
