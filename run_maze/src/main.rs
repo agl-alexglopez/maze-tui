@@ -177,8 +177,7 @@ fn main() {
             process_current = false;
             continue;
         }
-        let found_arg = tables.arg_flags.get(a);
-        match found_arg {
+        match tables.arg_flags.get(a) {
             Some(_) => {
                 process_current = true;
                 prev_flag = &a;
