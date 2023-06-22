@@ -4,6 +4,7 @@ mod utilities;
 
 pub use crate::builders::recursive_backtracker;
 pub use crate::solvers::dfs;
+pub use crate::solvers::bfs;
 pub use crate::utilities::build_util;
 pub use crate::utilities::maze;
 pub use crate::utilities::print_util;
@@ -133,6 +134,14 @@ fn main() {
                 (
                     dfs::solve_with_dfs_thread_corners as fn(maze::BoxMaze),
                     dfs::animate_with_dfs_thread_corners
+                        as fn(maze::BoxMaze, solve_util::SolverSpeed),
+                ),
+            ),
+            (
+                String::from("bfs-hunt"),
+                (
+                    bfs::solve_with_bfs_thread_hunt as fn(maze::BoxMaze),
+                    bfs::animate_with_bfs_thread_hunt
                         as fn(maze::BoxMaze, solve_util::SolverSpeed),
                 ),
             ),
