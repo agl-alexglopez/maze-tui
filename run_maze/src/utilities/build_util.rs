@@ -34,7 +34,7 @@ pub const FROM_EAST: BacktrackMarker = 0b0010_0000;
 pub const FROM_SOUTH: BacktrackMarker = 0b0011_0000;
 pub const FROM_WEST: BacktrackMarker = 0b0100_0000;
 pub static BACKTRACKING_SYMBOLS: [&str; 5] = [
-    " ",                                   // I came from the orgin.
+    " ",                                 // I came from the orgin.
     "\x1b[38;5;15m\x1b[48;5;1m↑\x1b[0m", // I came from the north.
     "\x1b[38;5;15m\x1b[48;5;2m→\x1b[0m", // I came from the east.
     "\x1b[38;5;15m\x1b[48;5;3m↓\x1b[0m", // I came from the south.

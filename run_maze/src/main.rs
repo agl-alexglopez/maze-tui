@@ -3,8 +3,8 @@ mod solvers;
 mod utilities;
 
 pub use crate::builders::recursive_backtracker;
-pub use crate::solvers::dfs;
 pub use crate::solvers::bfs;
+pub use crate::solvers::dfs;
 pub use crate::utilities::build_util;
 pub use crate::utilities::maze;
 pub use crate::utilities::print_util;
@@ -141,7 +141,22 @@ fn main() {
                 String::from("bfs-hunt"),
                 (
                     bfs::solve_with_bfs_thread_hunt as fn(maze::BoxMaze),
-                    bfs::animate_with_bfs_thread_hunt
+                    bfs::animate_with_bfs_thread_hunt as fn(maze::BoxMaze, solve_util::SolverSpeed),
+                ),
+            ),
+            (
+                String::from("bfs-gather"),
+                (
+                    bfs::solve_with_bfs_thread_gather as fn(maze::BoxMaze),
+                    bfs::animate_with_bfs_thread_gather
+                        as fn(maze::BoxMaze, solve_util::SolverSpeed),
+                ),
+            ),
+            (
+                String::from("bfs-corners"),
+                (
+                    bfs::solve_with_bfs_thread_corners as fn(maze::BoxMaze),
+                    bfs::animate_with_bfs_thread_corners
                         as fn(maze::BoxMaze, solve_util::SolverSpeed),
                 ),
             ),
@@ -195,9 +210,9 @@ fn main() {
             continue;
         }
         match tables.arg_flags.get(a) {
-            Some(_) => {
+            Some(flag) => {
                 process_current = true;
-                prev_flag = &a;
+                prev_flag = flag;
             }
             None => {
                 println!("Invalid argument flag: {}", a);
@@ -264,7 +279,10 @@ fn set_args(tables: &LookupTables, run: &mut MazeRunner, pairs: &FlagArg) {
                 run.build_speed = *speed;
                 run.build_view = ViewingMode::AnimatedPlayback;
             }
-            None => print_invalid_arg(pairs),
+            None => {
+                print_invalid_arg(pairs);
+                std::process::exit(1);
+            }
         },
         "-sa" => match tables.solve_animation_table.get(pairs.arg) {
             Some(speed) => {
@@ -318,6 +336,7 @@ fn print_invalid_arg(pairs: &FlagArg) {
     println!("Flag was: {}", pairs.flag);
     println!("Argument was: {}", pairs.arg);
     print_usage();
+    std::process::exit(1);
 }
 
 fn print_usage() {
