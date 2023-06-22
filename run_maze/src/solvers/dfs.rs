@@ -275,14 +275,18 @@ fn complete_hunt(monitor: &mut solve_util::SolverMonitor, guide: solve_util::Thr
 
         let mut win_lock = monitor.lock().unwrap();
         if win_lock.win.is_some() {
-            break;
+            for p in dfs {
+                win_lock.maze[p.row as usize][p.col as usize] |= guide.paint;
+            }
+            return;
         }
         if (win_lock.maze[cur.row as usize][cur.col as usize] & solve_util::FINISH_BIT) != 0 {
-            if win_lock.win.is_none() {
-                let _ = win_lock.win.insert(guide.index);
-            }
+            let _ = win_lock.win.get_or_insert(guide.index);
             let _ = dfs.pop();
-            break;
+            for p in dfs {
+                win_lock.maze[p.row as usize][p.col as usize] |= guide.paint;
+            }
+            return;
         }
         win_lock.maze[cur.row as usize][cur.col as usize] |= seen;
         drop(win_lock);
@@ -317,10 +321,6 @@ fn complete_hunt(monitor: &mut solve_util::SolverMonitor, guide: solve_util::Thr
             dfs.pop();
         }
     }
-    let mut paint_lock = monitor.lock().unwrap();
-    for p in dfs {
-        paint_lock.maze[p.row as usize][p.col as usize] |= guide.paint;
-    }
 }
 
 fn animate_hunt(monitor: &mut solve_util::SolverMonitor, guide: solve_util::ThreadGuide) {
@@ -335,9 +335,7 @@ fn animate_hunt(monitor: &mut solve_util::SolverMonitor, guide: solve_util::Thre
             return;
         }
         if (win_lock.maze[cur.row as usize][cur.col as usize] & solve_util::FINISH_BIT) != 0 {
-            if win_lock.win.is_none() {
-                let _ = win_lock.win.insert(guide.index);
-            }
+            let _ = win_lock.win.get_or_insert(guide.index);
             let _ = dfs.pop();
             return;
         }
