@@ -2,6 +2,7 @@ use crate::maze;
 use crate::utilities::print_util;
 use crate::utilities::solve_util;
 
+use rand::prelude::*;
 use std::{thread, time};
 
 // Public Solver Functions-------------------------------------------------------------------------
@@ -13,10 +14,10 @@ pub fn solve_with_dfs_thread_hunt(mut maze: maze::BoxMaze) {
     maze[finish.row as usize][finish.col as usize] |= solve_util::FINISH_BIT;
 
     let monitor = solve_util::Solver::new(maze);
-    let mut handles = vec![];
+    let mut handles = Vec::with_capacity(solve_util::NUM_THREADS);
     for i_thread in 0..solve_util::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
-        let handle = thread::spawn(move || {
+        handles.push(thread::spawn(move || {
             complete_hunt(
                 &mut monitor_clone,
                 solve_util::ThreadGuide {
@@ -26,8 +27,7 @@ pub fn solve_with_dfs_thread_hunt(mut maze: maze::BoxMaze) {
                     speed: 0,
                 },
             );
-        });
-        handles.push(handle);
+        }));
     }
     for handle in handles {
         handle.join().unwrap();
@@ -48,10 +48,10 @@ pub fn solve_with_dfs_thread_gather(mut maze: maze::BoxMaze) {
     }
 
     let monitor = solve_util::Solver::new(maze);
-    let mut handles = vec![];
+    let mut handles = Vec::with_capacity(solve_util::NUM_THREADS);
     for i_thread in 0..solve_util::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
-        let handle = thread::spawn(move || {
+        handles.push(thread::spawn(move || {
             complete_gather(
                 &mut monitor_clone,
                 solve_util::ThreadGuide {
@@ -61,8 +61,7 @@ pub fn solve_with_dfs_thread_gather(mut maze: maze::BoxMaze) {
                     speed: 0,
                 },
             );
-        });
-        handles.push(handle);
+        }));
     }
     for handle in handles {
         handle.join().unwrap();
@@ -70,6 +69,52 @@ pub fn solve_with_dfs_thread_gather(mut maze: maze::BoxMaze) {
     solve_util::print_paths(&monitor.lock().unwrap().maze);
     solve_util::print_overlap_key();
     solve_util::print_gather_solution_message();
+    println!();
+}
+
+pub fn solve_with_dfs_thread_corners(mut maze: maze::BoxMaze) {
+    let mut corner_starts: [maze::Point; 4] = solve_util::set_corner_starts(&maze);
+    for p in corner_starts {
+        maze[p.row as usize][p.col as usize] |= solve_util::START_BIT;
+    }
+
+    let finish = maze::Point {
+        row: maze.row_size() / 2,
+        col: maze.col_size() / 2,
+    };
+    for d in maze::ALL_DIRECTIONS {
+        let next = maze::Point {
+            row: finish.row + d.row,
+            col: finish.col + d.col,
+        };
+        maze[next.row as usize][next.col as usize] |= maze::PATH_BIT;
+    }
+    maze[finish.row as usize][finish.col as usize] |= maze::PATH_BIT;
+    maze[finish.row as usize][finish.col as usize] |= solve_util::FINISH_BIT;
+
+    corner_starts.shuffle(&mut thread_rng());
+    let monitor = solve_util::Solver::new(maze);
+    let mut handles = Vec::with_capacity(solve_util::NUM_THREADS);
+    for i_thread in 0..solve_util::NUM_THREADS {
+        let mut monitor_clone = monitor.clone();
+        handles.push(thread::spawn(move || {
+            complete_hunt(
+                &mut monitor_clone,
+                solve_util::ThreadGuide {
+                    index: i_thread,
+                    paint: solve_util::THREAD_MASKS[i_thread],
+                    start: corner_starts[i_thread],
+                    speed: 0,
+                },
+            );
+        }));
+    }
+    for handle in handles {
+        handle.join().unwrap();
+    }
+    solve_util::print_paths(&monitor.lock().unwrap().maze);
+    solve_util::print_overlap_key();
+    solve_util::print_hunt_solution_message(monitor.lock().unwrap().win);
     println!();
 }
 
@@ -88,10 +133,10 @@ pub fn animate_with_dfs_thread_hunt(mut maze: maze::BoxMaze, speed: solve_util::
     thread::sleep(time::Duration::from_micros(animation));
 
     let monitor = solve_util::Solver::new(maze);
-    let mut handles = vec![];
+    let mut handles = Vec::with_capacity(solve_util::NUM_THREADS);
     for i_thread in 0..solve_util::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
-        let handle = thread::spawn(move || {
+        handles.push(thread::spawn(move || {
             animate_hunt(
                 &mut monitor_clone,
                 solve_util::ThreadGuide {
@@ -101,8 +146,7 @@ pub fn animate_with_dfs_thread_hunt(mut maze: maze::BoxMaze, speed: solve_util::
                     speed: animation,
                 },
             );
-        });
-        handles.push(handle);
+        }));
     }
     for handle in handles {
         handle.join().unwrap();
@@ -134,10 +178,10 @@ pub fn animate_with_dfs_thread_gather(mut maze: maze::BoxMaze, speed: solve_util
     }
 
     let monitor = solve_util::Solver::new(maze);
-    let mut handles = vec![];
+    let mut handles = Vec::with_capacity(solve_util::NUM_THREADS);
     for i_thread in 0..solve_util::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
-        let handle = thread::spawn(move || {
+        handles.push(thread::spawn(move || {
             animate_gather(
                 &mut monitor_clone,
                 solve_util::ThreadGuide {
@@ -147,8 +191,7 @@ pub fn animate_with_dfs_thread_gather(mut maze: maze::BoxMaze, speed: solve_util
                     speed: animation,
                 },
             );
-        });
-        handles.push(handle);
+        }));
     }
     for handle in handles {
         handle.join().unwrap();
@@ -158,6 +201,66 @@ pub fn animate_with_dfs_thread_gather(mut maze: maze::BoxMaze, speed: solve_util
         col: 0,
     });
     solve_util::print_gather_solution_message();
+    println!();
+}
+
+pub fn animate_with_dfs_thread_corners(mut maze: maze::BoxMaze, speed: solve_util::SolverSpeed) {
+    print_util::set_cursor_position(maze::Point {
+        row: maze.row_size(),
+        col: 0,
+    });
+    solve_util::print_overlap_key();
+    let animation = solve_util::SOLVER_SPEEDS[speed as usize];
+    let mut corner_starts: [maze::Point; 4] = solve_util::set_corner_starts(&maze);
+    for p in corner_starts {
+        maze[p.row as usize][p.col as usize] |= solve_util::START_BIT;
+        solve_util::flush_cursor_path_coordinate(&maze, p);
+        thread::sleep(time::Duration::from_micros(animation));
+    }
+
+    let finish = maze::Point {
+        row: maze.row_size() / 2,
+        col: maze.col_size() / 2,
+    };
+    for d in maze::ALL_DIRECTIONS {
+        let next = maze::Point {
+            row: finish.row + d.row,
+            col: finish.col + d.col,
+        };
+        maze[next.row as usize][next.col as usize] |= maze::PATH_BIT;
+        solve_util::flush_cursor_path_coordinate(&maze, next);
+        thread::sleep(time::Duration::from_micros(animation));
+    }
+    maze[finish.row as usize][finish.col as usize] |= maze::PATH_BIT;
+    maze[finish.row as usize][finish.col as usize] |= solve_util::FINISH_BIT;
+    solve_util::flush_cursor_path_coordinate(&maze, finish);
+    thread::sleep(time::Duration::from_micros(animation));
+
+    corner_starts.shuffle(&mut thread_rng());
+    let monitor = solve_util::Solver::new(maze);
+    let mut handles = Vec::with_capacity(solve_util::NUM_THREADS);
+    for i_thread in 0..solve_util::NUM_THREADS {
+        let mut monitor_clone = monitor.clone();
+        handles.push(thread::spawn(move || {
+            animate_hunt(
+                &mut monitor_clone,
+                solve_util::ThreadGuide {
+                    index: i_thread,
+                    paint: solve_util::THREAD_MASKS[i_thread],
+                    start: corner_starts[i_thread],
+                    speed: animation,
+                },
+            );
+        }));
+    }
+    for handle in handles {
+        handle.join().unwrap();
+    }
+    print_util::set_cursor_position(maze::Point {
+        row: monitor.lock().unwrap().maze.row_size() + solve_util::OVERLAP_KEY_AND_MESSAGE_HEIGHT,
+        col: 0,
+    });
+    solve_util::print_hunt_solution_message(monitor.lock().unwrap().win);
     println!();
 }
 

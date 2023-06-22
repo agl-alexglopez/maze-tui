@@ -168,8 +168,9 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
 pub fn print_hunt_solution_message(winning_index: Option<usize>) {
     match winning_index {
         Some(i) => print!(
-            "{} thread won!",
-            THREAD_COLORS[(THREAD_MASKS[i] >> THREAD_TAG_OFFSET) as usize]
+            "{} THREAD {} WINS!",
+            THREAD_COLORS[(THREAD_MASKS[i] >> THREAD_TAG_OFFSET) as usize],
+            i
         ),
         None => print!("{}", THREAD_COLORS[ALL_THREADS_FAILED_INDEX]),
     }

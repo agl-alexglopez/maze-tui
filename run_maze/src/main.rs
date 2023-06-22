@@ -128,6 +128,14 @@ fn main() {
                         as fn(maze::BoxMaze, solve_util::SolverSpeed),
                 ),
             ),
+            (
+                String::from("dfs-corners"),
+                (
+                    dfs::solve_with_dfs_thread_corners as fn(maze::BoxMaze),
+                    dfs::animate_with_dfs_thread_corners
+                        as fn(maze::BoxMaze, solve_util::SolverSpeed),
+                ),
+            ),
         ]),
         style_table: HashMap::from([
             (String::from("sharp"), maze::MazeStyle::Sharp),
