@@ -12,13 +12,6 @@ pub type ThreadCache = u16;
 pub type SolveSpeedUnit = u64;
 
 #[derive(Clone, Copy)]
-pub enum MazeGame {
-    Hunt = 0,
-    Gather,
-    Corners,
-}
-
-#[derive(Clone, Copy)]
 pub enum SolverSpeed {
     Instant = 0,
     Speed1,
