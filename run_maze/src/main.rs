@@ -302,7 +302,6 @@ fn print_invalid_arg(pairs: &FlagArg) {
     println!("Flag was: {}", pairs.flag);
     println!("Argument was: {}", pairs.arg);
     print_usage();
-    std::process::exit(0);
 }
 
 fn print_usage() {
