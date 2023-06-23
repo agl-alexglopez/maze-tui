@@ -5,22 +5,23 @@ mod utilities;
 pub use crate::builders::recursive_backtracker;
 pub use crate::solvers::bfs;
 pub use crate::solvers::dfs;
-pub use crate::utilities::build_util;
+pub use crate::solvers::floodfs;
+pub use crate::utilities::build;
 pub use crate::utilities::maze;
-pub use crate::utilities::print_util;
-pub use crate::utilities::solve_util;
+pub use crate::utilities::print;
+pub use crate::utilities::solve;
 
 use std::collections::{HashMap, HashSet};
 use std::env;
 
 type BuildFunction = (
     fn(&mut maze::Maze),
-    fn(&mut maze::Maze, build_util::BuilderSpeed),
+    fn(&mut maze::Maze, build::BuilderSpeed),
 );
 
 type SolveFunction = (
     fn(maze::BoxMaze),
-    fn(maze::BoxMaze, solve_util::SolverSpeed),
+    fn(maze::BoxMaze, solve::SolverSpeed),
 );
 
 struct FlagArg<'a, 'b> {
@@ -36,11 +37,11 @@ enum ViewingMode {
 struct MazeRunner {
     args: maze::MazeArgs,
     build_view: ViewingMode,
-    build_speed: build_util::BuilderSpeed,
+    build_speed: build::BuilderSpeed,
     build: BuildFunction,
     modify: Option<BuildFunction>,
     solve_view: ViewingMode,
-    solve_speed: solve_util::SolverSpeed,
+    solve_speed: solve::SolverSpeed,
     solve: SolveFunction,
 }
 
@@ -49,14 +50,14 @@ impl MazeRunner {
         Self {
             args: maze::MazeArgs::default(),
             build_view: ViewingMode::StaticImage,
-            build_speed: build_util::BuilderSpeed::Speed4,
+            build_speed: build::BuilderSpeed::Speed4,
             build: (
                 recursive_backtracker::generate_recursive_backtracker_maze,
                 recursive_backtracker::animate_recursive_backtracker_maze,
             ),
             modify: None,
             solve_view: ViewingMode::StaticImage,
-            solve_speed: solve_util::SolverSpeed::Speed4,
+            solve_speed: solve::SolverSpeed::Speed4,
             solve: (
                 dfs::solve_with_dfs_thread_hunt,
                 dfs::animate_with_dfs_thread_hunt,
@@ -71,8 +72,8 @@ struct LookupTables {
     mod_table: HashMap<String, BuildFunction>,
     solve_table: HashMap<String, SolveFunction>,
     style_table: HashMap<String, maze::MazeStyle>,
-    build_animation_table: HashMap<String, build_util::BuilderSpeed>,
-    solve_animation_table: HashMap<String, solve_util::SolverSpeed>,
+    build_animation_table: HashMap<String, build::BuilderSpeed>,
+    solve_animation_table: HashMap<String, solve::SolverSpeed>,
 }
 
 fn main() {
@@ -94,22 +95,22 @@ fn main() {
             (
                 recursive_backtracker::generate_recursive_backtracker_maze as fn(&mut maze::Maze),
                 recursive_backtracker::animate_recursive_backtracker_maze
-                    as fn(&mut maze::Maze, build_util::BuilderSpeed),
+                    as fn(&mut maze::Maze, build::BuilderSpeed),
             ),
         )]),
         mod_table: HashMap::from([
             (
                 String::from("cross"),
                 (
-                    build_util::add_cross as fn(&mut maze::Maze),
-                    build_util::add_cross_animated as fn(&mut maze::Maze, build_util::BuilderSpeed),
+                    build::add_cross as fn(&mut maze::Maze),
+                    build::add_cross_animated as fn(&mut maze::Maze, build::BuilderSpeed),
                 ),
             ),
             (
                 String::from("x"),
                 (
-                    build_util::add_x as fn(&mut maze::Maze),
-                    build_util::add_x_animated as fn(&mut maze::Maze, build_util::BuilderSpeed),
+                    build::add_x as fn(&mut maze::Maze),
+                    build::add_x_animated as fn(&mut maze::Maze, build::BuilderSpeed),
                 ),
             ),
         ]),
@@ -118,7 +119,7 @@ fn main() {
                 String::from("dfs-hunt"),
                 (
                     dfs::solve_with_dfs_thread_hunt as fn(maze::BoxMaze),
-                    dfs::animate_with_dfs_thread_hunt as fn(maze::BoxMaze, solve_util::SolverSpeed),
+                    dfs::animate_with_dfs_thread_hunt as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
@@ -126,7 +127,7 @@ fn main() {
                 (
                     dfs::solve_with_dfs_thread_gather as fn(maze::BoxMaze),
                     dfs::animate_with_dfs_thread_gather
-                        as fn(maze::BoxMaze, solve_util::SolverSpeed),
+                        as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
@@ -134,14 +135,14 @@ fn main() {
                 (
                     dfs::solve_with_dfs_thread_corners as fn(maze::BoxMaze),
                     dfs::animate_with_dfs_thread_corners
-                        as fn(maze::BoxMaze, solve_util::SolverSpeed),
+                        as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
                 String::from("bfs-hunt"),
                 (
                     bfs::solve_with_bfs_thread_hunt as fn(maze::BoxMaze),
-                    bfs::animate_with_bfs_thread_hunt as fn(maze::BoxMaze, solve_util::SolverSpeed),
+                    bfs::animate_with_bfs_thread_hunt as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
@@ -149,7 +150,7 @@ fn main() {
                 (
                     bfs::solve_with_bfs_thread_gather as fn(maze::BoxMaze),
                     bfs::animate_with_bfs_thread_gather
-                        as fn(maze::BoxMaze, solve_util::SolverSpeed),
+                        as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
@@ -157,7 +158,30 @@ fn main() {
                 (
                     bfs::solve_with_bfs_thread_corners as fn(maze::BoxMaze),
                     bfs::animate_with_bfs_thread_corners
-                        as fn(maze::BoxMaze, solve_util::SolverSpeed),
+                        as fn(maze::BoxMaze, solve::SolverSpeed),
+                ),
+            ),
+            (
+                String::from("floodfs-hunt"),
+                (
+                    floodfs::solve_with_floodfs_thread_hunt as fn(maze::BoxMaze),
+                    floodfs::animate_with_floodfs_thread_hunt as fn(maze::BoxMaze, solve::SolverSpeed),
+                ),
+            ),
+            (
+                String::from("floodfs-gather"),
+                (
+                    floodfs::solve_with_floodfs_thread_gather as fn(maze::BoxMaze),
+                    floodfs::animate_with_floodfs_thread_gather
+                        as fn(maze::BoxMaze, solve::SolverSpeed),
+                ),
+            ),
+            (
+                String::from("floodfs-corners"),
+                (
+                    floodfs::solve_with_floodfs_thread_corners as fn(maze::BoxMaze),
+                    floodfs::animate_with_floodfs_thread_corners
+                        as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
         ]),
@@ -170,24 +194,24 @@ fn main() {
             (String::from("spikes"), maze::MazeStyle::Spikes),
         ]),
         build_animation_table: HashMap::from([
-            (String::from("0"), build_util::BuilderSpeed::Instant),
-            (String::from("1"), build_util::BuilderSpeed::Speed1),
-            (String::from("2"), build_util::BuilderSpeed::Speed2),
-            (String::from("3"), build_util::BuilderSpeed::Speed3),
-            (String::from("4"), build_util::BuilderSpeed::Speed4),
-            (String::from("5"), build_util::BuilderSpeed::Speed5),
-            (String::from("6"), build_util::BuilderSpeed::Speed6),
-            (String::from("7"), build_util::BuilderSpeed::Speed7),
+            (String::from("0"), build::BuilderSpeed::Instant),
+            (String::from("1"), build::BuilderSpeed::Speed1),
+            (String::from("2"), build::BuilderSpeed::Speed2),
+            (String::from("3"), build::BuilderSpeed::Speed3),
+            (String::from("4"), build::BuilderSpeed::Speed4),
+            (String::from("5"), build::BuilderSpeed::Speed5),
+            (String::from("6"), build::BuilderSpeed::Speed6),
+            (String::from("7"), build::BuilderSpeed::Speed7),
         ]),
         solve_animation_table: HashMap::from([
-            (String::from("0"), solve_util::SolverSpeed::Instant),
-            (String::from("1"), solve_util::SolverSpeed::Speed1),
-            (String::from("2"), solve_util::SolverSpeed::Speed2),
-            (String::from("3"), solve_util::SolverSpeed::Speed3),
-            (String::from("4"), solve_util::SolverSpeed::Speed4),
-            (String::from("5"), solve_util::SolverSpeed::Speed5),
-            (String::from("6"), solve_util::SolverSpeed::Speed6),
-            (String::from("7"), solve_util::SolverSpeed::Speed7),
+            (String::from("0"), solve::SolverSpeed::Instant),
+            (String::from("1"), solve::SolverSpeed::Speed1),
+            (String::from("2"), solve::SolverSpeed::Speed2),
+            (String::from("3"), solve::SolverSpeed::Speed3),
+            (String::from("4"), solve::SolverSpeed::Speed4),
+            (String::from("5"), solve::SolverSpeed::Speed5),
+            (String::from("6"), solve::SolverSpeed::Speed6),
+            (String::from("7"), solve::SolverSpeed::Speed7),
         ]),
     };
     let mut run = MazeRunner::default();
@@ -242,7 +266,7 @@ fn main() {
     }
 
     // Ensure a smooth transition from build to solve with no flashing.
-    print_util::set_cursor_position(maze::Point { row: 0, col: 0 });
+    print::set_cursor_position(maze::Point { row: 0, col: 0 });
 
     match run.solve_view {
         ViewingMode::StaticImage => run.solve.0(maze),

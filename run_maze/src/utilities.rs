@@ -1,4 +1,4 @@
-pub mod build_util;
+pub mod build;
 pub mod maze;
-pub mod print_util;
-pub mod solve_util;
+pub mod print;
+pub mod solve;

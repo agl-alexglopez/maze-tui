@@ -1,5 +1,5 @@
 use crate::maze;
-use crate::print_util;
+use crate::print;
 
 use rand::prelude::*;
 use std::io::{stdout, Write};
@@ -112,7 +112,7 @@ pub fn find_nearest_square(maze: &maze::Maze, choice: maze::Point) -> maze::Poin
 }
 
 pub fn clear_and_flush_paths(maze: &maze::Maze) {
-    print_util::clear_screen();
+    print::clear_screen();
     print_paths(maze);
 }
 
@@ -127,7 +127,7 @@ pub fn print_paths(maze: &maze::Maze) {
 }
 
 pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
-    print_util::set_cursor_position(point);
+    print::set_cursor_position(point);
     print_point(maze, point);
     stdout().flush().unwrap();
 }
