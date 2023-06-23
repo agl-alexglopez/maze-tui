@@ -208,7 +208,9 @@ fn is_valid_start_or_finish(maze: &maze::Maze, choice: maze::Point) -> bool {
         && choice.row < maze.row_size() - 1
         && choice.col > 0
         && choice.col < maze.col_size() - 1
-        && (maze[choice.row as usize][choice.col as usize] & maze::BUILDER_BIT) != 0;
+        && (maze[choice.row as usize][choice.col as usize] & maze::PATH_BIT) != 0
+        && (maze[choice.row as usize][choice.col as usize] & FINISH_BIT) == 0
+        && (maze[choice.row as usize][choice.col as usize] & START_BIT) == 0
 }
 
 // Read Only Data Available to All Solvers
