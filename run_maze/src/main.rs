@@ -245,11 +245,9 @@ fn main() {
     };
     let mut run = MazeRunner::default();
 
-    let args: Vec<String> = env::args().collect();
     let mut prev_flag: &str = "";
     let mut process_current = false;
-    for i in 1..args.len() {
-        let a = &args[i];
+    for a in env::args().skip(1) {
         if process_current {
             set_args(
                 &tables,
@@ -262,7 +260,7 @@ fn main() {
             process_current = false;
             continue;
         }
-        match tables.arg_flags.get(a) {
+        match tables.arg_flags.get(&a) {
             Some(flag) => {
                 process_current = true;
                 prev_flag = flag;
