@@ -492,7 +492,8 @@ fn gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
         match monitor.lock() {
             Ok(mut lk) => {
                 if (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT) != 0
-                    && (lk.maze[cur.row as usize][cur.col as usize] & solve::CACHE_MASK) == 0 {
+                    && (lk.maze[cur.row as usize][cur.col as usize] & solve::CACHE_MASK) == 0
+                {
                     lk.maze[cur.row as usize][cur.col as usize] |= seen_bit;
                     lk.win_path.push((*seen.get(&cur).unwrap(), guide.paint));
                     return;
@@ -540,7 +541,8 @@ fn animated_gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
         match monitor.lock() {
             Ok(mut lk) => {
                 if (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT) != 0
-                    && (lk.maze[cur.row as usize][cur.col as usize] & solve::CACHE_MASK) == 0 {
+                    && (lk.maze[cur.row as usize][cur.col as usize] & solve::CACHE_MASK) == 0
+                {
                     lk.maze[cur.row as usize][cur.col as usize] |= seen_bit;
                     lk.win_path.push((*seen.get(&cur).unwrap(), guide.paint));
                     return;

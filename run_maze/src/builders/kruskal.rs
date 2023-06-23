@@ -1,5 +1,5 @@
-use crate::maze;
 use crate::build;
+use crate::maze;
 use crate::utilities::disjoint;
 
 use rand::prelude::*;
@@ -15,8 +15,14 @@ pub fn generate_maze(maze: &mut maze::Maze) {
 
     for w in &walls {
         if w.row % 2 == 0 {
-            let above = maze::Point{row: w.row - 1, col: w.col};
-            let below = maze::Point{row: w.row + 1, col: w.col};
+            let above = maze::Point {
+                row: w.row - 1,
+                col: w.col,
+            };
+            let below = maze::Point {
+                row: w.row + 1,
+                col: w.col,
+            };
             if let (Some(a_id), Some(b_id)) = (ids.get(&above), ids.get(&below)) {
                 if sets.made_union(*a_id, *b_id) {
                     build::join_squares(maze, above, below);
@@ -26,8 +32,14 @@ pub fn generate_maze(maze: &mut maze::Maze) {
             }
             continue;
         }
-        let left = maze::Point{row: w.row, col: w.col - 1};
-        let right = maze::Point{row: w.row, col: w.col + 1};
+        let left = maze::Point {
+            row: w.row,
+            col: w.col - 1,
+        };
+        let right = maze::Point {
+            row: w.row,
+            col: w.col + 1,
+        };
         if let (Some(l_id), Some(r_id)) = (ids.get(&left), ids.get(&right)) {
             if sets.made_union(*l_id, *r_id) {
                 build::join_squares(maze, right, left);
@@ -49,8 +61,14 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
 
     for w in &walls {
         if w.row % 2 == 0 {
-            let above = maze::Point{row: w.row - 1, col: w.col};
-            let below = maze::Point{row: w.row + 1, col: w.col};
+            let above = maze::Point {
+                row: w.row - 1,
+                col: w.col,
+            };
+            let below = maze::Point {
+                row: w.row + 1,
+                col: w.col,
+            };
             if let (Some(a_id), Some(b_id)) = (ids.get(&above), ids.get(&below)) {
                 if sets.made_union(*a_id, *b_id) {
                     build::join_squares_animated(maze, above, below, animation);
@@ -59,9 +77,15 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
             }
             panic!("Kruskal couldn't find a cell id. Build broke.");
         }
-        let left = maze::Point{row: w.row, col: w.col - 1};
-        let right = maze::Point{row: w.row, col: w.col + 1};
-        if let (Some(l_id), Some(r_id)) = (ids.get(&left), ids.get(&right))  {
+        let left = maze::Point {
+            row: w.row,
+            col: w.col - 1,
+        };
+        let right = maze::Point {
+            row: w.row,
+            col: w.col + 1,
+        };
+        if let (Some(l_id), Some(r_id)) = (ids.get(&left), ids.get(&right)) {
             if sets.made_union(*l_id, *r_id) {
                 build::join_squares_animated(maze, left, right, animation);
             }
@@ -72,17 +96,17 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
 }
 
 // Private Helper Functions-----------------------------------------------------------------------
-//
+
 fn load_shuffled_walls(maze: &maze::Maze) -> Vec<maze::Point> {
     let mut walls = Vec::new();
     for r in (1..maze.row_size() - 1).step_by(2) {
         for c in (2..maze.col_size() - 1).step_by(2) {
-            walls.push(maze::Point {row: r, col: c});
+            walls.push(maze::Point { row: r, col: c });
         }
     }
     for r in (2..maze.row_size() - 1).step_by(2) {
         for c in (1..maze.col_size() - 1).step_by(2) {
-            walls.push(maze::Point {row: r, col: c});
+            walls.push(maze::Point { row: r, col: c });
         }
     }
     walls.shuffle(&mut thread_rng());
@@ -94,7 +118,7 @@ fn tag_cells(maze: &maze::Maze) -> HashMap<maze::Point, usize> {
     let mut id = 0;
     for r in (1..maze.row_size() - 1).step_by(2) {
         for c in (1..maze.col_size() - 1).step_by(2) {
-            set_ids.insert(maze::Point {row: r, col: c}, id);
+            set_ids.insert(maze::Point { row: r, col: c }, id);
             id += 1;
         }
     }

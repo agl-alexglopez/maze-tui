@@ -2,14 +2,14 @@ mod builders;
 mod solvers;
 mod utilities;
 
+pub use crate::utilities::build;
 pub use crate::utilities::maze;
 pub use crate::utilities::print;
-pub use crate::utilities::build;
 pub use crate::utilities::solve;
 
-pub use crate::builders::recursive_backtracker;
-pub use crate::builders::kruskal;
 pub use crate::builders::arena;
+pub use crate::builders::kruskal;
+pub use crate::builders::recursive_backtracker;
 
 pub use crate::solvers::bfs;
 pub use crate::solvers::dfs;
@@ -24,10 +24,7 @@ type BuildFunction = (
     fn(&mut maze::Maze, build::BuilderSpeed),
 );
 
-type SolveFunction = (
-    fn(maze::BoxMaze),
-    fn(maze::BoxMaze, solve::SolverSpeed),
-);
+type SolveFunction = (fn(maze::BoxMaze), fn(maze::BoxMaze, solve::SolverSpeed));
 
 struct FlagArg<'a, 'b> {
     flag: &'a str,
@@ -63,10 +60,7 @@ impl MazeRunner {
             modify: None,
             solve_view: ViewingMode::StaticImage,
             solve_speed: solve::SolverSpeed::Speed4,
-            solve: (
-                dfs::hunt,
-                dfs::animate_hunt,
-            ),
+            solve: (dfs::hunt, dfs::animate_hunt),
         }
     }
 }
@@ -116,7 +110,7 @@ fn main() {
                     arena::generate_maze as fn(&mut maze::Maze),
                     arena::animate_maze as fn(&mut maze::Maze, build::BuilderSpeed),
                 ),
-            )
+            ),
         ]),
         mod_table: HashMap::from([
             (

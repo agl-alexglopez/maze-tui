@@ -661,10 +661,14 @@ pub fn join_squares(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point) 
     maze[wall.row as usize][wall.col as usize] |= maze::BUILDER_BIT;
     build_path(maze, next);
     maze[next.row as usize][next.col as usize] |= maze::BUILDER_BIT;
-
 }
 
-pub fn join_squares_animated(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point, speed: SpeedUnit) {
+pub fn join_squares_animated(
+    maze: &mut maze::Maze,
+    cur: maze::Point,
+    next: maze::Point,
+    speed: SpeedUnit,
+) {
     let mut wall = cur;
     if next.row < cur.row {
         wall.row -= 1;

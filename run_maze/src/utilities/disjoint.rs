@@ -1,13 +1,14 @@
-
 pub struct DisjointSet {
     parent_set: Vec<usize>,
     set_rank: Vec<usize>,
 }
 
 impl DisjointSet {
-
     pub fn new(num_sets: usize) -> Self {
-        Self {parent_set: (0..num_sets).collect(),set_rank: vec![0;num_sets]}
+        Self {
+            parent_set: (0..num_sets).collect(),
+            set_rank: vec![0; num_sets],
+        }
     }
 
     pub fn find(&mut self, mut id: usize) -> usize {
