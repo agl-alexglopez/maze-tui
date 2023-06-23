@@ -4,7 +4,7 @@ pub use crate::utilities::maze;
 use rand::prelude::*;
 use std::{thread, time};
 
-pub fn generate_recursive_backtracker_maze(maze: &mut maze::Maze) {
+pub fn generate_maze(maze: &mut maze::Maze) {
     build::fill_maze_with_walls(maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
@@ -45,7 +45,7 @@ pub fn generate_recursive_backtracker_maze(maze: &mut maze::Maze) {
     build::clear_and_flush_grid(maze);
 }
 
-pub fn animate_recursive_backtracker_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
+pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls_animated(maze);
     build::clear_and_flush_grid(maze);

@@ -27,7 +27,7 @@ type BfsMonitor = Arc<Mutex<BfsSolver>>;
 
 // Public Solver Functions-------------------------------------------------------------------------
 
-pub fn solve_with_bfs_thread_hunt(mut maze: maze::BoxMaze) {
+pub fn hunt(mut maze: maze::BoxMaze) {
     let all_start: maze::Point = solve::pick_random_point(&maze);
     maze[all_start.row as usize][all_start.col as usize] |= solve::START_BIT;
     let finish: maze::Point = solve::pick_random_point(&maze);
@@ -38,7 +38,7 @@ pub fn solve_with_bfs_thread_hunt(mut maze: maze::BoxMaze) {
     for i_thread in 0..solve::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
-            complete_hunt(
+            hunter(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
@@ -71,7 +71,7 @@ pub fn solve_with_bfs_thread_hunt(mut maze: maze::BoxMaze) {
     };
 }
 
-pub fn animate_with_bfs_thread_hunt(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
+pub fn animate_hunt(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
     print::set_cursor_position(maze::Point {
         row: maze.row_size(),
         col: 0,
@@ -91,7 +91,7 @@ pub fn animate_with_bfs_thread_hunt(mut maze: maze::BoxMaze, speed: solve::Solve
     for i_thread in 0..solve::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
-            animate_hunt(
+            animated_hunter(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
@@ -128,7 +128,7 @@ pub fn animate_with_bfs_thread_hunt(mut maze: maze::BoxMaze, speed: solve::Solve
     };
 }
 
-pub fn solve_with_bfs_thread_gather(mut maze: maze::BoxMaze) {
+pub fn gather(mut maze: maze::BoxMaze) {
     let all_start: maze::Point = solve::pick_random_point(&maze);
     maze[all_start.row as usize][all_start.col as usize] |= solve::START_BIT;
 
@@ -142,7 +142,7 @@ pub fn solve_with_bfs_thread_gather(mut maze: maze::BoxMaze) {
     for i_thread in 0..solve::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
-            complete_gather(
+            gatherer(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
@@ -176,7 +176,7 @@ pub fn solve_with_bfs_thread_gather(mut maze: maze::BoxMaze) {
     };
 }
 
-pub fn animate_with_bfs_thread_gather(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
+pub fn animate_gather(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
     print::set_cursor_position(maze::Point {
         row: maze.row_size(),
         col: 0,
@@ -198,7 +198,7 @@ pub fn animate_with_bfs_thread_gather(mut maze: maze::BoxMaze, speed: solve::Sol
     for i_thread in 0..solve::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
-            animate_gather(
+            animated_gatherer(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
@@ -235,7 +235,7 @@ pub fn animate_with_bfs_thread_gather(mut maze: maze::BoxMaze, speed: solve::Sol
     };
 }
 
-pub fn solve_with_bfs_thread_corners(mut maze: maze::BoxMaze) {
+pub fn corner(mut maze: maze::BoxMaze) {
     let mut all_starts: [maze::Point; 4] = solve::set_corner_starts(&maze);
     for s in all_starts {
         maze[s.row as usize][s.col as usize] |= solve::START_BIT;
@@ -260,7 +260,7 @@ pub fn solve_with_bfs_thread_corners(mut maze: maze::BoxMaze) {
     for i_thread in 0..solve::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
-            complete_hunt(
+            hunter(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
@@ -294,7 +294,7 @@ pub fn solve_with_bfs_thread_corners(mut maze: maze::BoxMaze) {
     };
 }
 
-pub fn animate_with_bfs_thread_corners(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
+pub fn animate_corner(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
     print::set_cursor_position(maze::Point {
         row: maze.row_size(),
         col: 0,
@@ -332,7 +332,7 @@ pub fn animate_with_bfs_thread_corners(mut maze: maze::BoxMaze, speed: solve::So
     for i_thread in 0..solve::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
-            animate_hunt(
+            animated_hunter(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
@@ -371,7 +371,7 @@ pub fn animate_with_bfs_thread_corners(mut maze: maze::BoxMaze, speed: solve::So
 
 // Dispatch Functions for each Thread--------------------------------------------------------------
 
-fn complete_hunt(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
+fn hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
     let mut seen: HashMap<maze::Point, maze::Point> = HashMap::new();
     seen.insert(guide.start, maze::Point { row: -1, col: -1 });
     let mut bfs: VecDeque<maze::Point> = VecDeque::new();
@@ -425,7 +425,7 @@ fn complete_hunt(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
     }
 }
 
-fn animate_hunt(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
+fn animated_hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
     let mut seen: HashMap<maze::Point, maze::Point> = HashMap::new();
     seen.insert(guide.start, maze::Point { row: -1, col: -1 });
     let mut bfs: VecDeque<maze::Point> = VecDeque::new();
@@ -481,7 +481,7 @@ fn animate_hunt(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
     }
 }
 
-fn complete_gather(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
+fn gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
     let mut seen: HashMap<maze::Point, maze::Point> = HashMap::new();
     let seen_bit: solve::ThreadCache = guide.paint << 4;
     seen.insert(guide.start, maze::Point { row: -1, col: -1 });
@@ -529,7 +529,7 @@ fn complete_gather(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
     }
 }
 
-fn animate_gather(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
+fn animated_gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
     let mut seen: HashMap<maze::Point, maze::Point> = HashMap::new();
     let seen_bit: solve::ThreadCache = guide.paint << 4;
     seen.insert(guide.start, maze::Point { row: -1, col: -1 });

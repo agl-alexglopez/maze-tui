@@ -7,7 +7,7 @@ use std::{thread, time};
 
 // Public Solver Functions-------------------------------------------------------------------------
 
-pub fn solve_with_rdfs_thread_hunt(mut maze: maze::BoxMaze) {
+pub fn hunt(mut maze: maze::BoxMaze) {
     let all_start: maze::Point = solve::pick_random_point(&maze);
     maze[all_start.row as usize][all_start.col as usize] |= solve::START_BIT;
     let finish: maze::Point = solve::pick_random_point(&maze);
@@ -18,7 +18,7 @@ pub fn solve_with_rdfs_thread_hunt(mut maze: maze::BoxMaze) {
     for i_thread in 0..solve::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
-            complete_hunt(
+            hunter(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
@@ -43,7 +43,7 @@ pub fn solve_with_rdfs_thread_hunt(mut maze: maze::BoxMaze) {
     };
 }
 
-pub fn solve_with_rdfs_thread_gather(mut maze: maze::BoxMaze) {
+pub fn gather(mut maze: maze::BoxMaze) {
     let all_start: maze::Point = solve::pick_random_point(&maze);
     maze[all_start.row as usize][all_start.col as usize] |= solve::START_BIT;
 
@@ -57,7 +57,7 @@ pub fn solve_with_rdfs_thread_gather(mut maze: maze::BoxMaze) {
     for i_thread in 0..solve::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
-            complete_gather(
+            gatherer(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
@@ -82,7 +82,7 @@ pub fn solve_with_rdfs_thread_gather(mut maze: maze::BoxMaze) {
     };
 }
 
-pub fn solve_with_rdfs_thread_corners(mut maze: maze::BoxMaze) {
+pub fn corner(mut maze: maze::BoxMaze) {
     let mut corner_starts: [maze::Point; 4] = solve::set_corner_starts(&maze);
     for p in corner_starts {
         maze[p.row as usize][p.col as usize] |= solve::START_BIT;
@@ -108,7 +108,7 @@ pub fn solve_with_rdfs_thread_corners(mut maze: maze::BoxMaze) {
     for i_thread in 0..solve::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
-            complete_hunt(
+            hunter(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
@@ -133,7 +133,7 @@ pub fn solve_with_rdfs_thread_corners(mut maze: maze::BoxMaze) {
     };
 }
 
-pub fn animate_with_rdfs_thread_hunt(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
+pub fn animate_hunt(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
     print::set_cursor_position(maze::Point {
         row: maze.row_size(),
         col: 0,
@@ -152,7 +152,7 @@ pub fn animate_with_rdfs_thread_hunt(mut maze: maze::BoxMaze, speed: solve::Solv
     for i_thread in 0..solve::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
-            animate_hunt(
+            animated_hunter(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
@@ -179,7 +179,7 @@ pub fn animate_with_rdfs_thread_hunt(mut maze: maze::BoxMaze, speed: solve::Solv
     };
 }
 
-pub fn animate_with_rdfs_thread_gather(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
+pub fn animate_gather(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
     print::set_cursor_position(maze::Point {
         row: maze.row_size(),
         col: 0,
@@ -202,7 +202,7 @@ pub fn animate_with_rdfs_thread_gather(mut maze: maze::BoxMaze, speed: solve::So
     for i_thread in 0..solve::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
-            animate_gather(
+            animated_gatherer(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
@@ -229,7 +229,7 @@ pub fn animate_with_rdfs_thread_gather(mut maze: maze::BoxMaze, speed: solve::So
     };
 }
 
-pub fn animate_with_rdfs_thread_corners(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
+pub fn animate_corner(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
     print::set_cursor_position(maze::Point {
         row: maze.row_size(),
         col: 0,
@@ -267,7 +267,7 @@ pub fn animate_with_rdfs_thread_corners(mut maze: maze::BoxMaze, speed: solve::S
     for i_thread in 0..solve::NUM_THREADS {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
-            animate_hunt(
+            animated_hunter(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
@@ -296,7 +296,7 @@ pub fn animate_with_rdfs_thread_corners(mut maze: maze::BoxMaze, speed: solve::S
 
 // Dispatch Functions for each Thread--------------------------------------------------------------
 
-fn complete_hunt(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
+fn hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
@@ -359,7 +359,7 @@ fn complete_hunt(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) 
     }
 }
 
-fn animate_hunt(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
+fn animated_hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
@@ -425,7 +425,7 @@ fn animate_hunt(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
     }
 }
 
-fn complete_gather(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
+fn gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
@@ -484,7 +484,7 @@ fn complete_gather(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide
     }
 }
 
-fn animate_gather(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
+fn animated_gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);

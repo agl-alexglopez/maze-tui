@@ -1,7 +1,7 @@
 use crate::maze;
 use crate::build;
 
-pub fn generate_arena(maze: &mut maze::Maze) {
+pub fn generate_maze(maze: &mut maze::Maze) {
     build::fill_maze_with_walls(maze);
     for r in 1..maze.row_size() - 1 {
         for c in 1..maze.col_size() - 1 {
@@ -11,7 +11,7 @@ pub fn generate_arena(maze: &mut maze::Maze) {
     build::clear_and_flush_grid(maze);
 }
 
-pub fn animate_arena(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
+pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(maze);
     build::clear_and_flush_grid(maze);

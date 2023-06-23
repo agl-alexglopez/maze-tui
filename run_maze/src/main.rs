@@ -8,6 +8,7 @@ pub use crate::utilities::build;
 pub use crate::utilities::solve;
 
 pub use crate::builders::recursive_backtracker;
+pub use crate::builders::kruskal;
 pub use crate::builders::arena;
 
 pub use crate::solvers::bfs;
@@ -56,15 +57,15 @@ impl MazeRunner {
             build_view: ViewingMode::StaticImage,
             build_speed: build::BuilderSpeed::Speed4,
             build: (
-                recursive_backtracker::generate_recursive_backtracker_maze,
-                recursive_backtracker::animate_recursive_backtracker_maze,
+                recursive_backtracker::generate_maze,
+                recursive_backtracker::animate_maze,
             ),
             modify: None,
             solve_view: ViewingMode::StaticImage,
             solve_speed: solve::SolverSpeed::Speed4,
             solve: (
-                dfs::solve_with_dfs_thread_hunt,
-                dfs::animate_with_dfs_thread_hunt,
+                dfs::hunt,
+                dfs::animate_hunt,
             ),
         }
     }
@@ -98,16 +99,22 @@ fn main() {
             (
                 String::from("rdfs"),
                 (
-                    recursive_backtracker::generate_recursive_backtracker_maze as fn(&mut maze::Maze),
-                    recursive_backtracker::animate_recursive_backtracker_maze
-                        as fn(&mut maze::Maze, build::BuilderSpeed),
+                    recursive_backtracker::generate_maze as fn(&mut maze::Maze),
+                    recursive_backtracker::animate_maze as fn(&mut maze::Maze, build::BuilderSpeed),
+                ),
+            ),
+            (
+                String::from("kruskal"),
+                (
+                    kruskal::generate_maze as fn(&mut maze::Maze),
+                    kruskal::animate_maze as fn(&mut maze::Maze, build::BuilderSpeed),
                 ),
             ),
             (
                 String::from("arena"),
                 (
-                    arena::generate_arena as fn(&mut maze::Maze),
-                    arena::animate_arena as fn(&mut maze::Maze, build::BuilderSpeed),
+                    arena::generate_maze as fn(&mut maze::Maze),
+                    arena::animate_maze as fn(&mut maze::Maze, build::BuilderSpeed),
                 ),
             )
         ]),
@@ -131,93 +138,85 @@ fn main() {
             (
                 String::from("dfs-hunt"),
                 (
-                    dfs::solve_with_dfs_thread_hunt as fn(maze::BoxMaze),
-                    dfs::animate_with_dfs_thread_hunt as fn(maze::BoxMaze, solve::SolverSpeed),
+                    dfs::hunt as fn(maze::BoxMaze),
+                    dfs::animate_hunt as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
                 String::from("dfs-gather"),
                 (
-                    dfs::solve_with_dfs_thread_gather as fn(maze::BoxMaze),
-                    dfs::animate_with_dfs_thread_gather
-                        as fn(maze::BoxMaze, solve::SolverSpeed),
+                    dfs::gather as fn(maze::BoxMaze),
+                    dfs::animate_gather as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
                 String::from("dfs-corners"),
                 (
-                    dfs::solve_with_dfs_thread_corners as fn(maze::BoxMaze),
-                    dfs::animate_with_dfs_thread_corners
-                        as fn(maze::BoxMaze, solve::SolverSpeed),
+                    dfs::corner as fn(maze::BoxMaze),
+                    dfs::animate_corner as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
                 String::from("bfs-hunt"),
                 (
-                    bfs::solve_with_bfs_thread_hunt as fn(maze::BoxMaze),
-                    bfs::animate_with_bfs_thread_hunt as fn(maze::BoxMaze, solve::SolverSpeed),
+                    bfs::hunt as fn(maze::BoxMaze),
+                    bfs::animate_hunt as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
                 String::from("bfs-gather"),
                 (
-                    bfs::solve_with_bfs_thread_gather as fn(maze::BoxMaze),
-                    bfs::animate_with_bfs_thread_gather
-                        as fn(maze::BoxMaze, solve::SolverSpeed),
+                    bfs::gather as fn(maze::BoxMaze),
+                    bfs::animate_gather as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
                 String::from("bfs-corners"),
                 (
-                    bfs::solve_with_bfs_thread_corners as fn(maze::BoxMaze),
-                    bfs::animate_with_bfs_thread_corners
-                        as fn(maze::BoxMaze, solve::SolverSpeed),
+                    bfs::corner as fn(maze::BoxMaze),
+                    bfs::animate_corner as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
                 String::from("floodfs-hunt"),
                 (
-                    floodfs::solve_with_floodfs_thread_hunt as fn(maze::BoxMaze),
-                    floodfs::animate_with_floodfs_thread_hunt as fn(maze::BoxMaze, solve::SolverSpeed),
+                    floodfs::hunt as fn(maze::BoxMaze),
+                    floodfs::animate_hunt as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
                 String::from("floodfs-gather"),
                 (
-                    floodfs::solve_with_floodfs_thread_gather as fn(maze::BoxMaze),
-                    floodfs::animate_with_floodfs_thread_gather
-                        as fn(maze::BoxMaze, solve::SolverSpeed),
+                    floodfs::gather as fn(maze::BoxMaze),
+                    floodfs::animate_gather as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
                 String::from("floodfs-corners"),
                 (
-                    floodfs::solve_with_floodfs_thread_corners as fn(maze::BoxMaze),
-                    floodfs::animate_with_floodfs_thread_corners
-                        as fn(maze::BoxMaze, solve::SolverSpeed),
+                    floodfs::corner as fn(maze::BoxMaze),
+                    floodfs::animate_corner as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
                 String::from("rdfs-hunt"),
                 (
-                    rdfs::solve_with_rdfs_thread_hunt as fn(maze::BoxMaze),
-                    rdfs::animate_with_rdfs_thread_hunt as fn(maze::BoxMaze, solve::SolverSpeed),
+                    rdfs::hunt as fn(maze::BoxMaze),
+                    rdfs::animate_hunt as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
                 String::from("rdfs-gather"),
                 (
-                    rdfs::solve_with_rdfs_thread_gather as fn(maze::BoxMaze),
-                    rdfs::animate_with_rdfs_thread_gather
-                        as fn(maze::BoxMaze, solve::SolverSpeed),
+                    rdfs::gather as fn(maze::BoxMaze),
+                    rdfs::animate_gather as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
             (
                 String::from("rdfs-corners"),
                 (
-                    rdfs::solve_with_rdfs_thread_corners as fn(maze::BoxMaze),
-                    rdfs::animate_with_rdfs_thread_corners
-                        as fn(maze::BoxMaze, solve::SolverSpeed),
+                    rdfs::corner as fn(maze::BoxMaze),
+                    rdfs::animate_corner as fn(maze::BoxMaze, solve::SolverSpeed),
                 ),
             ),
         ]),

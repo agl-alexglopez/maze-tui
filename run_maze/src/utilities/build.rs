@@ -642,6 +642,46 @@ pub fn carve_path_markings_animated(
     carve_path_walls_animated(maze, wall, speed);
 }
 
+pub fn join_squares(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point) {
+    build_path(maze, cur);
+    maze[cur.row as usize][cur.col as usize] |= maze::BUILDER_BIT;
+    let mut wall = cur;
+    if next.row < cur.row {
+        wall.row -= 1;
+    } else if next.row > cur.row {
+        wall.row += 1;
+    } else if next.col < cur.col {
+        wall.col -= 1;
+    } else if next.col > cur.col {
+        wall.col += 1;
+    } else {
+        panic!("Cell join error. Maze won't build");
+    }
+    build_path(maze, wall);
+    maze[wall.row as usize][wall.col as usize] |= maze::BUILDER_BIT;
+    build_path(maze, next);
+    maze[next.row as usize][next.col as usize] |= maze::BUILDER_BIT;
+
+}
+
+pub fn join_squares_animated(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point, speed: SpeedUnit) {
+    let mut wall = cur;
+    if next.row < cur.row {
+        wall.row -= 1;
+    } else if next.row > cur.row {
+        wall.row += 1;
+    } else if next.col < cur.col {
+        wall.col -= 1;
+    } else if next.col > cur.col {
+        wall.col += 1;
+    } else {
+        panic!("Cell join error. Maze won't build");
+    }
+    carve_path_walls_animated(maze, cur, speed);
+    carve_path_walls_animated(maze, wall, speed);
+    carve_path_walls_animated(maze, next, speed);
+}
+
 pub fn build_wall(maze: &mut maze::Maze, p: maze::Point) {
     let mut wall: maze::WallLine = 0b0;
     if p.row - 1 >= 0 {
