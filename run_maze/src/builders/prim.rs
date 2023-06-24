@@ -35,7 +35,11 @@ pub fn generate_maze(maze: &mut maze::Maze) {
     let mut rng = thread_rng();
     let start = PriorityPoint {
         priority: rng.gen_range(1..=100),
-        p: pick_rand_odd_point(maze),
+        // This point must be random and odd.
+        p: maze::Point {
+            row: 2 * rng.gen_range(1..((maze.row_size() - 2) / 2)) + 1,
+            col: 2 * rng.gen_range(1..((maze.col_size() - 2) / 2)) + 1,
+        },
     };
     let mut lookup_weights: HashMap<maze::Point, u8> = HashMap::from([(start.p, start.priority)]);
     let mut pq = BinaryHeap::from([start]);
@@ -82,7 +86,10 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
     let mut rng = thread_rng();
     let start = PriorityPoint {
         priority: rng.gen_range(1..=100),
-        p: pick_rand_odd_point(maze),
+        p: maze::Point {
+            row: 2 * rng.gen_range(1..((maze.row_size() - 2) / 2)) + 1,
+            col: 2 * rng.gen_range(1..((maze.col_size() - 2) / 2)) + 1,
+        },
     };
     let mut lookup_weights: HashMap<maze::Point, u8> = HashMap::from([(start.p, start.priority)]);
     let mut pq = BinaryHeap::from([start]);
@@ -115,15 +122,5 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
                 pq.pop();
             }
         };
-    }
-}
-
-// Private Helper Function------------------------------------------------------------------------
-
-fn pick_rand_odd_point(maze: &maze::Maze) -> maze::Point {
-    let mut rand = thread_rng();
-    maze::Point {
-        row: 2 * rand.gen_range(1..((maze.row_size() - 2) / 2)) + 1,
-        col: 2 * rand.gen_range(1..((maze.col_size() - 2) / 2)) + 1,
     }
 }
