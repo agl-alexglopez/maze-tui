@@ -65,10 +65,10 @@ pub fn generate_maze(maze: &mut maze::Maze) {
         match max_neighbor {
             Some(neighbor) => {
                 build::join_squares(maze, cur.p, neighbor.p);
-                let _ = pq.push(neighbor);
+                pq.push(neighbor);
             }
             None => {
-                let _ = pq.pop();
+                pq.pop();
             }
         };
     }
@@ -109,10 +109,10 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
         match max_neighbor {
             Some(neighbor) => {
                 build::join_squares_animated(maze, cur.p, neighbor.p, animation);
-                let _ = pq.push(neighbor);
+                pq.push(neighbor);
             }
             None => {
-                let _ = pq.pop();
+                pq.pop();
             }
         };
     }
