@@ -9,6 +9,7 @@ pub use crate::utilities::solve;
 
 pub use crate::builders::arena;
 pub use crate::builders::kruskal;
+pub use crate::builders::prim;
 pub use crate::builders::recursive_backtracker;
 
 pub use crate::solvers::bfs;
@@ -95,6 +96,13 @@ fn main() {
                 (
                     recursive_backtracker::generate_maze as fn(&mut maze::Maze),
                     recursive_backtracker::animate_maze as fn(&mut maze::Maze, build::BuilderSpeed),
+                ),
+            ),
+            (
+                String::from("prim"),
+                (
+                    prim::generate_maze as fn(&mut maze::Maze),
+                    prim::animate_maze as fn(&mut maze::Maze, build::BuilderSpeed),
                 ),
             ),
             (
