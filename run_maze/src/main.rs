@@ -7,10 +7,10 @@ pub use crate::utilities::maze;
 pub use crate::utilities::print;
 pub use crate::utilities::solve;
 
-pub use crate::builders::prim;
 pub use crate::builders::arena;
 pub use crate::builders::eller;
 pub use crate::builders::kruskal;
+pub use crate::builders::prim;
 pub use crate::builders::recursive_backtracker;
 pub use crate::builders::recursive_subdivision;
 

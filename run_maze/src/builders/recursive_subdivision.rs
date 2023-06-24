@@ -41,7 +41,6 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                     },
                 );
             }
-            // Push the two divided chambers back onto the stack as our branches.
             chamber_stack.push(Chamber {
                 offset: chamber.offset,
                 h: divide + 1,
@@ -115,7 +114,6 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
                     animation,
                 );
             }
-            // Push the two divided chambers back onto the stack as our branches.
             chamber_stack.push(Chamber {
                 offset: chamber.offset,
                 h: divide + 1,

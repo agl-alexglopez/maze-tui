@@ -328,16 +328,16 @@ pub fn build_wall_outline(maze: &mut maze::Maze) {
 
 // Maze Bound Checking
 
-pub fn choose_arbitrary_point(maze: &maze::Maze, parity: ParityPoint) -> maze::Point {
+pub fn choose_arbitrary_point(maze: &maze::Maze, parity: ParityPoint) -> Option<maze::Point> {
     let init = if parity == ParityPoint::Even { 2 } else { 1 };
     for r in (init..maze.row_size() - 1).step_by(2) {
         for c in (init..maze.row_size() - 1).step_by(2) {
             if (maze[r as usize][c as usize] & maze::BUILDER_BIT) == 0 {
-                return maze::Point { row: r, col: c };
+                return Some(maze::Point { row: r, col: c });
             }
         }
     }
-    maze::Point { row: 0, col: 0 }
+    None
 }
 
 pub fn can_build_new_square(maze: &maze::Maze, next: maze::Point) -> bool {
