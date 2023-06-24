@@ -1,7 +1,7 @@
 pub use crate::utilities::build;
 pub use crate::utilities::maze;
 
-use rand::prelude::*;
+use rand::{seq::SliceRandom, thread_rng, Rng};
 use std::{thread, time};
 
 pub fn generate_maze(maze: &mut maze::Maze) {

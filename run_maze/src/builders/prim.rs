@@ -1,7 +1,10 @@
 use crate::build;
 use crate::maze;
 
-use rand::prelude::*;
+use rand::{
+    distributions::{Distribution, Uniform},
+    thread_rng, Rng,
+};
 use std::collections::{BinaryHeap, HashMap};
 
 #[derive(Clone, Copy, Eq)]
@@ -33,8 +36,9 @@ impl Ord for PriorityPoint {
 pub fn generate_maze(maze: &mut maze::Maze) {
     build::fill_maze_with_walls(maze);
     let mut rng = thread_rng();
+    let weight_range = Uniform::from(1..=100);
     let start = PriorityPoint {
-        priority: rng.gen_range(1..=100),
+        priority: weight_range.sample(&mut rng),
         // This point must be random and odd.
         p: maze::Point {
             row: 2 * rng.gen_range(1..((maze.row_size() - 2) / 2)) + 1,
@@ -57,7 +61,9 @@ pub fn generate_maze(maze: &mut maze::Maze) {
             // Weights would have been randomly pre-generated anyway. Generate as we go
             // instead. However, once we choose a weight it must always be the same so
             // we cache that weight and will find it if we choose to join that square later.
-            let weight = *lookup_weights.entry(next).or_insert(rng.gen_range(1..=100));
+            let weight = *lookup_weights
+                .entry(next)
+                .or_insert(weight_range.sample(&mut rng));
             if weight > max_weight {
                 max_weight = weight;
                 max_neighbor.replace(PriorityPoint {
@@ -84,8 +90,9 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
     build::fill_maze_with_walls_animated(maze);
     build::clear_and_flush_grid(maze);
     let mut rng = thread_rng();
+    let weight_range = Uniform::from(1..=100);
     let start = PriorityPoint {
-        priority: rng.gen_range(1..=100),
+        priority: weight_range.sample(&mut rng),
         p: maze::Point {
             row: 2 * rng.gen_range(1..((maze.row_size() - 2) / 2)) + 1,
             col: 2 * rng.gen_range(1..((maze.col_size() - 2) / 2)) + 1,
@@ -104,7 +111,9 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
             if !build::can_build_new_square(maze, next) {
                 continue;
             }
-            let weight = *lookup_weights.entry(next).or_insert(rng.gen_range(1..=100));
+            let weight = *lookup_weights
+                .entry(next)
+                .or_insert(weight_range.sample(&mut rng));
             if weight > max_weight {
                 max_weight = weight;
                 max_neighbor.replace(PriorityPoint {

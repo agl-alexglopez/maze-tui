@@ -7,10 +7,12 @@ pub use crate::utilities::maze;
 pub use crate::utilities::print;
 pub use crate::utilities::solve;
 
-pub use crate::builders::arena;
-pub use crate::builders::kruskal;
 pub use crate::builders::prim;
+pub use crate::builders::arena;
+pub use crate::builders::eller;
+pub use crate::builders::kruskal;
 pub use crate::builders::recursive_backtracker;
+pub use crate::builders::recursive_subdivision;
 
 pub use crate::solvers::bfs;
 pub use crate::solvers::dfs;
@@ -99,6 +101,13 @@ fn main() {
                 ),
             ),
             (
+                String::from("fractal"),
+                (
+                    recursive_subdivision::generate_maze as fn(&mut maze::Maze),
+                    recursive_subdivision::animate_maze as fn(&mut maze::Maze, build::BuilderSpeed),
+                ),
+            ),
+            (
                 String::from("prim"),
                 (
                     prim::generate_maze as fn(&mut maze::Maze),
@@ -110,6 +119,13 @@ fn main() {
                 (
                     kruskal::generate_maze as fn(&mut maze::Maze),
                     kruskal::animate_maze as fn(&mut maze::Maze, build::BuilderSpeed),
+                ),
+            ),
+            (
+                String::from("eller"),
+                (
+                    eller::generate_maze as fn(&mut maze::Maze),
+                    eller::animate_maze as fn(&mut maze::Maze, build::BuilderSpeed),
                 ),
             ),
             (
