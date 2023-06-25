@@ -118,9 +118,11 @@ fn complete_walk(maze: &mut maze::Maze, mut walk: RandomWalk) -> Option<RandomWa
                 walk.walk = point;
                 maze[walk.walk.row as usize][walk.walk.col as usize] &= !build::MARKERS_MASK;
                 walk.prev = maze::Point { row: 0, col: 0 };
-                Some(walk)
+                return Some(walk);
             }
-            None => None,
+            None => {
+                return None;
+            }
         };
     }
     if (maze[walk.next.row as usize][walk.next.col as usize] & WALK_BIT) != 0 {
@@ -154,9 +156,11 @@ fn complete_walk_animated(maze: &mut maze::Maze, mut walk: RandomWalk, speed: bu
                 walk.walk = point;
                 maze[walk.walk.row as usize][walk.walk.col as usize] &= !build::MARKERS_MASK;
                 walk.prev = maze::Point { row: 0, col: 0 };
-                Some(walk)
+                return Some(walk);
             }
-            None => None,
+            None => {
+                return None;
+            }
         };
     }
     if (maze[walk.next.row as usize][walk.next.col as usize] & WALK_BIT) != 0 {
@@ -262,8 +266,8 @@ fn build_with_marks(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point) 
     maze[cur.row as usize][cur.col as usize] &= !WALK_BIT;
     maze[next.row as usize][next.col as usize] &= !WALK_BIT;
     build::carve_path_walls(maze, cur);
-    build::carve_path_walls(maze, next);
     build::carve_path_walls(maze, wall);
+    build::carve_path_walls(maze, next);
 }
 
 fn build_with_marks_animated(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point, speed: build::SpeedUnit) {
@@ -282,8 +286,8 @@ fn build_with_marks_animated(maze: &mut maze::Maze, cur: maze::Point, next: maze
     maze[cur.row as usize][cur.col as usize] &= !WALK_BIT;
     maze[next.row as usize][next.col as usize] &= !WALK_BIT;
     build::carve_path_walls_animated(maze, cur, speed);
-    build::carve_path_walls_animated(maze, next, speed);
     build::carve_path_walls_animated(maze, wall, speed);
+    build::carve_path_walls_animated(maze, next, speed);
 }
 
 fn is_valid_step(maze: &maze::Maze, next: maze::Point, prev: maze::Point) -> bool {
