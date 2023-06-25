@@ -331,7 +331,7 @@ pub fn build_wall_outline(maze: &mut maze::Maze) {
 pub fn choose_arbitrary_point(maze: &maze::Maze, parity: ParityPoint) -> Option<maze::Point> {
     let init = if parity == ParityPoint::Even { 2 } else { 1 };
     for r in (init..maze.row_size() - 1).step_by(2) {
-        for c in (init..maze.row_size() - 1).step_by(2) {
+        for c in (init..maze.col_size() - 1).step_by(2) {
             if (maze[r as usize][c as usize] & maze::BUILDER_BIT) == 0 {
                 return Some(maze::Point { row: r, col: c });
             }
@@ -520,7 +520,7 @@ pub fn fill_maze_with_walls_animated(maze: &mut maze::Maze) {
 pub fn carve_path_walls(maze: &mut maze::Maze, p: maze::Point) {
     let u_row = p.row as usize;
     let u_col = p.col as usize;
-    maze[u_row][u_col] |= maze::PATH_BIT;
+    maze[u_row][u_col] |= maze::PATH_BIT | maze::BUILDER_BIT;
     if p.row - 1 >= 0 {
         maze[u_row - 1][u_col] &= !maze::SOUTH_WALL;
     }
@@ -533,13 +533,12 @@ pub fn carve_path_walls(maze: &mut maze::Maze, p: maze::Point) {
     if p.col + 1 < maze.col_size() {
         maze[u_row][u_col + 1] &= !maze::WEST_WALL;
     }
-    maze[u_row][u_col] |= maze::BUILDER_BIT;
 }
 
 pub fn carve_path_walls_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUnit) {
     let u_row = p.row as usize;
     let u_col = p.col as usize;
-    maze[u_row][u_col] |= maze::PATH_BIT;
+    maze[u_row][u_col] |= maze::PATH_BIT | maze::BUILDER_BIT;
     flush_cursor_maze_coordinate(maze, p);
     thread::sleep(time::Duration::from_micros(speed));
     if p.row - 1 >= 0 && (maze[u_row - 1][u_col] & maze::PATH_BIT) == 0 {
@@ -586,7 +585,6 @@ pub fn carve_path_walls_animated(maze: &mut maze::Maze, p: maze::Point, speed: S
         );
         thread::sleep(time::Duration::from_micros(speed));
     }
-    maze[u_row][u_col] |= maze::BUILDER_BIT;
 }
 
 pub fn carve_path_markings(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point) {
@@ -784,7 +782,7 @@ pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUn
         thread::sleep(time::Duration::from_micros(speed));
     }
     if p.col + 1 >= 0 && (maze[u_row][u_col + 1] & maze::PATH_BIT) == 0 {
-        maze[u_row][u_col + 1] &= !maze::EAST_WALL;
+        maze[u_row][u_col + 1] &= !maze::WEST_WALL;
         flush_cursor_maze_coordinate(
             maze,
             maze::Point {
