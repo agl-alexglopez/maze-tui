@@ -139,7 +139,11 @@ fn complete_walk(maze: &mut maze::Maze, mut walk: RandomWalk) -> Option<RandomWa
     Some(walk)
 }
 
-fn complete_walk_animated(maze: &mut maze::Maze, mut walk: RandomWalk, speed: build::SpeedUnit) -> Option<RandomWalk> {
+fn complete_walk_animated(
+    maze: &mut maze::Maze,
+    mut walk: RandomWalk,
+    speed: build::SpeedUnit,
+) -> Option<RandomWalk> {
     if build::has_builder_bit(maze, walk.next) {
         build_with_marks_animated(maze, walk.walk, walk.next, speed);
         connect_walk_animated(maze, walk.walk, speed);
@@ -262,7 +266,12 @@ fn build_with_marks(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point) 
     build::build_wall_line(maze, next);
 }
 
-fn build_with_marks_animated(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point, speed: build::SpeedUnit) {
+fn build_with_marks_animated(
+    maze: &mut maze::Maze,
+    cur: maze::Point,
+    next: maze::Point,
+    speed: build::SpeedUnit,
+) {
     let mut wall = cur;
     if next.row < cur.row {
         wall.row -= 1;
@@ -273,7 +282,10 @@ fn build_with_marks_animated(maze: &mut maze::Maze, cur: maze::Point, next: maze
     } else if next.col > cur.col {
         wall.col += 1;
     } else {
-        panic!("Wall break error. Step through wall didn't work: cur {:?}, next {:?}", cur, next);
+        panic!(
+            "Wall break error. Step through wall didn't work: cur {:?}, next {:?}",
+            cur, next
+        );
     }
     maze[cur.row as usize][cur.col as usize] &= !WALK_BIT;
     maze[next.row as usize][next.col as usize] &= !WALK_BIT;

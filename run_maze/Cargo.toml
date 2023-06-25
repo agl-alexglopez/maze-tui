@@ -17,3 +17,11 @@ debug = false
 [dependencies]
 crossterm = "0.26.1"
 rand = "0.8.5"
+
+[[bin]]
+name = "run_maze"
+path = "src/main.rs"
+
+[[bin]]
+name = "demo"
+path = "src/demo.rs"

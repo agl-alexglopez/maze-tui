@@ -1,5 +1,5 @@
-use crate::maze;
 use crate::build;
+use crate::maze;
 
 use rand::{seq::SliceRandom, thread_rng, Rng};
 use std::{thread, time};
@@ -10,7 +10,6 @@ struct RunStart {
     cur: maze::Point,
     dir: maze::Point,
 }
-
 
 // Public Functions-------------------------------------------------------------------------------
 
@@ -27,9 +26,12 @@ pub fn generate_maze(maze: &mut maze::Maze) {
         let mut branches = false;
         for &i in random_direction_indices.iter() {
             let p = build::GENERATE_DIRECTIONS[i];
-            let next = maze::Point {row: run.row + p.row, col: run.col + p.col};
+            let next = maze::Point {
+                row: run.row + p.row,
+                col: run.col + p.col,
+            };
             if build::can_build_new_square(maze, next) {
-                complete_run(maze, &mut dfs, RunStart { cur: run, dir: p});
+                complete_run(maze, &mut dfs, RunStart { cur: run, dir: p });
                 branches = true;
                 break;
             }
@@ -56,9 +58,12 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
         let mut branches = false;
         for &i in random_direction_indices.iter() {
             let p = build::GENERATE_DIRECTIONS[i];
-            let next = maze::Point {row: run.row + p.row, col: run.col + p.col};
+            let next = maze::Point {
+                row: run.row + p.row,
+                col: run.col + p.col,
+            };
             if build::can_build_new_square(maze, next) {
-                animate_run(maze, &mut dfs, RunStart { cur: run, dir: p}, animation);
+                animate_run(maze, &mut dfs, RunStart { cur: run, dir: p }, animation);
                 branches = true;
                 break;
             }
@@ -71,11 +76,13 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
     }
 }
 
-
 // Private Helper Functions-----------------------------------------------------------------------
 
 fn complete_run(maze: &mut maze::Maze, dfs: &mut Vec<maze::Point>, mut run: RunStart) {
-    let mut next = maze::Point {row: run.cur.row + run.dir.row, col: run.cur.col + run.dir.col};
+    let mut next = maze::Point {
+        row: run.cur.row + run.dir.row,
+        col: run.cur.col + run.dir.col,
+    };
     let mut cur_run = 0;
     while build::is_square_within_perimeter_walls(maze, next) && cur_run < RUN_LIMIT {
         build::join_squares(maze, run.cur, next);
@@ -87,8 +94,16 @@ fn complete_run(maze: &mut maze::Maze, dfs: &mut Vec<maze::Point>, mut run: RunS
     }
 }
 
-fn animate_run(maze: &mut maze::Maze, dfs: &mut Vec<maze::Point>, mut run: RunStart, animation: build::SpeedUnit) {
-    let mut next = maze::Point {row: run.cur.row + run.dir.row, col: run.cur.col + run.dir.col};
+fn animate_run(
+    maze: &mut maze::Maze,
+    dfs: &mut Vec<maze::Point>,
+    mut run: RunStart,
+    animation: build::SpeedUnit,
+) {
+    let mut next = maze::Point {
+        row: run.cur.row + run.dir.row,
+        col: run.cur.col + run.dir.col,
+    };
     let mut cur_run = 0;
     while build::is_square_within_perimeter_walls(maze, next) && cur_run < RUN_LIMIT {
         build::join_squares_animated(maze, run.cur, next, animation);
