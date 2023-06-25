@@ -50,8 +50,8 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                 continue;
             }
             match complete_walk(maze, cur) {
-                Some(walk) => {
-                    cur = walk;
+                Some(new_walk) => {
+                    cur = new_walk;
                     break;
                 }
                 None => {
@@ -95,8 +95,8 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
                 continue;
             }
             match complete_walk_animated(maze, cur, animation) {
-                Some(walk) => {
-                    cur = walk;
+                Some(new_walk) => {
+                    cur = new_walk;
                     break;
                 }
                 None => {
