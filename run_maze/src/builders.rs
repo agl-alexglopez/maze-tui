@@ -4,4 +4,5 @@ pub mod kruskal;
 pub mod prim;
 pub mod recursive_backtracker;
 pub mod recursive_subdivision;
+pub mod wilson_adder;
 pub mod wilson_carver;

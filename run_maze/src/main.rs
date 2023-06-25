@@ -13,6 +13,7 @@ pub use crate::builders::kruskal;
 pub use crate::builders::prim;
 pub use crate::builders::recursive_backtracker;
 pub use crate::builders::recursive_subdivision;
+pub use crate::builders::wilson_adder;
 pub use crate::builders::wilson_carver;
 
 pub use crate::solvers::bfs;
@@ -134,6 +135,13 @@ fn main() {
                 (
                     wilson_carver::generate_maze as fn(&mut maze::Maze),
                     wilson_carver::animate_maze as fn(&mut maze::Maze, build::BuilderSpeed),
+                ),
+            ),
+            (
+                String::from("wilson-walls"),
+                (
+                    wilson_adder::generate_maze as fn(&mut maze::Maze),
+                    wilson_adder::animate_maze as fn(&mut maze::Maze, build::BuilderSpeed),
                 ),
             ),
             (

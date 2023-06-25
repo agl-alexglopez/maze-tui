@@ -22,20 +22,16 @@ struct RandomWalk {
 // Public Functions-------------------------------------------------------------------------------
 
 pub fn generate_maze(maze: &mut maze::Maze) {
-    build::fill_maze_with_walls(maze);
+    build::build_wall_outline(maze);
     let mut rng = thread_rng();
-    let start = maze::Point {
-        row: 2 * (rng.gen_range(2..maze.row_size() - 1) / 2) + 1,
-        col: 2 * (rng.gen_range(2..maze.col_size() - 1) / 2) + 1,
-    };
-    build::build_path(maze, start);
-    maze[start.row as usize][start.col as usize] |= maze::BUILDER_BIT;
     let mut cur = RandomWalk {
         prev: maze::Point { row: 0, col: 0 },
-        walk: maze::Point { row: 1, col: 1 },
+        walk: maze::Point {
+            row: 2 * (rng.gen_range(2..maze.row_size() - 1) / 2),
+            col: 2 * (rng.gen_range(2..maze.col_size() - 1) / 2),
+        },
         next: maze::Point { row: 0, col: 0 },
     };
-    maze[cur.walk.row as usize][cur.walk.col as usize] &= !build::MARKERS_MASK;
     let mut indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     loop {
         maze[cur.walk.row as usize][cur.walk.col as usize] |= WALK_BIT;
@@ -65,22 +61,17 @@ pub fn generate_maze(maze: &mut maze::Maze) {
 
 pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
-    build::fill_maze_with_walls_animated(maze);
+    build::build_wall_outline(maze);
     build::clear_and_flush_grid(maze);
     let mut rng = thread_rng();
-    let start = maze::Point {
-        row: 2 * (rng.gen_range(2..maze.row_size() - 1) / 2) + 1,
-        col: 2 * (rng.gen_range(2..maze.col_size() - 1) / 2) + 1,
-    };
-    build::build_path_animated(maze, start, animation);
-    build::flush_cursor_maze_coordinate(maze, start);
-    maze[start.row as usize][start.col as usize] |= maze::BUILDER_BIT;
     let mut cur = RandomWalk {
         prev: maze::Point { row: 0, col: 0 },
-        walk: maze::Point { row: 1, col: 1 },
+        walk: maze::Point {
+            row: 2 * (rng.gen_range(2..maze.row_size() - 1) / 2),
+            col: 2 * (rng.gen_range(2..maze.col_size() - 1) / 2),
+        },
         next: maze::Point { row: 0, col: 0 },
     };
-    maze[cur.walk.row as usize][cur.walk.col as usize] &= !build::MARKERS_MASK;
     let mut indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     loop {
         maze[cur.walk.row as usize][cur.walk.col as usize] |= WALK_BIT;
@@ -114,7 +105,7 @@ fn complete_walk(maze: &mut maze::Maze, mut walk: RandomWalk) -> Option<RandomWa
     if build::has_builder_bit(maze, walk.next) {
         build_with_marks(maze, walk.walk, walk.next);
         connect_walk(maze, walk.walk);
-        match build::choose_arbitrary_point(maze, build::ParityPoint::Odd) {
+        match build::choose_arbitrary_point(maze, build::ParityPoint::Even) {
             Some(point) => {
                 walk.walk = point;
                 maze[walk.walk.row as usize][walk.walk.col as usize] &= !build::MARKERS_MASK;
@@ -152,7 +143,7 @@ fn complete_walk_animated(maze: &mut maze::Maze, mut walk: RandomWalk, speed: bu
     if build::has_builder_bit(maze, walk.next) {
         build_with_marks_animated(maze, walk.walk, walk.next, speed);
         connect_walk_animated(maze, walk.walk, speed);
-        match build::choose_arbitrary_point(maze, build::ParityPoint::Odd) {
+        match build::choose_arbitrary_point(maze, build::ParityPoint::Even) {
             Some(point) => {
                 walk.walk = point;
                 maze[walk.walk.row as usize][walk.walk.col as usize] &= !build::MARKERS_MASK;
@@ -228,7 +219,7 @@ fn connect_walk(maze: &mut maze::Maze, mut walk: maze::Point) {
     }
     maze[walk.row as usize][walk.col as usize] &= !build::MARKERS_MASK;
     maze[walk.row as usize][walk.col as usize] &= !WALK_BIT;
-    build::carve_path_walls(maze, walk);
+    build::build_wall_line(maze, walk);
 }
 
 fn connect_walk_animated(maze: &mut maze::Maze, mut walk: maze::Point, speed: build::SpeedUnit) {
@@ -248,7 +239,7 @@ fn connect_walk_animated(maze: &mut maze::Maze, mut walk: maze::Point, speed: bu
     maze[walk.row as usize][walk.col as usize] &= !WALK_BIT;
     build::flush_cursor_maze_coordinate(maze, walk);
     thread::sleep(time::Duration::from_micros(speed));
-    build::carve_path_walls_animated(maze, walk, speed);
+    build::build_wall_line_animated(maze, walk, speed);
 }
 
 fn build_with_marks(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point) {
@@ -266,9 +257,9 @@ fn build_with_marks(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point) 
     }
     maze[cur.row as usize][cur.col as usize] &= !WALK_BIT;
     maze[next.row as usize][next.col as usize] &= !WALK_BIT;
-    build::carve_path_walls(maze, cur);
-    build::carve_path_walls(maze, wall);
-    build::carve_path_walls(maze, next);
+    build::build_wall_line(maze, cur);
+    build::build_wall_line(maze, wall);
+    build::build_wall_line(maze, next);
 }
 
 fn build_with_marks_animated(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point, speed: build::SpeedUnit) {
@@ -286,16 +277,16 @@ fn build_with_marks_animated(maze: &mut maze::Maze, cur: maze::Point, next: maze
     }
     maze[cur.row as usize][cur.col as usize] &= !WALK_BIT;
     maze[next.row as usize][next.col as usize] &= !WALK_BIT;
-    build::carve_path_walls_animated(maze, cur, speed);
-    build::carve_path_walls_animated(maze, wall, speed);
-    build::carve_path_walls_animated(maze, next, speed);
+    build::build_wall_line_animated(maze, cur, speed);
+    build::build_wall_line_animated(maze, wall, speed);
+    build::build_wall_line_animated(maze, next, speed);
 }
 
 fn is_valid_step(maze: &maze::Maze, next: maze::Point, prev: maze::Point) -> bool {
-    next.row > 0
-        && next.row < maze.row_size() - 1
-        && next.col > 0
-        && next.col < maze.col_size() - 1
+    next.row >= 0
+        && next.row < maze.row_size()
+        && next.col >= 0
+        && next.col < maze.col_size()
         && next != prev
 }
 
