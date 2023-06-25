@@ -1,5 +1,6 @@
 pub mod arena;
 pub mod eller;
+pub mod grid;
 pub mod kruskal;
 pub mod prim;
 pub mod recursive_backtracker;
