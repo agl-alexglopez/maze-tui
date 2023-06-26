@@ -1,6 +1,6 @@
 # Multithreading with Mazes in Rust
 
-> **Note: This is a companion project to my original maze repository written in C++ ([multithreading-with-mazes](https://github.com/agl-alexglopez/multithreading-with-mazes/tree/main)). There are a number of benefits I have found in the rust version. First, it seems that this project can build on Linux, Mac, and Windows. The Windows version has slow performance and I'm working on that, but the project should run just fine everywhere else. This project is built and run with cargo.**
+> **Note: This is a companion project to my original maze repository written in C++ ([multithreading-with-mazes](https://github.com/agl-alexglopez/multithreading-with-mazes/tree/main)). I used this project to learn much about Rust. There are a wide range of data structures, algorithms, and design patterns utilized in the project so its a good one for learning new languages. There are a number of benefits I have found in the rust version. First, it seems that this project can build on Linux, Mac, and Windows, while the C++ version was not compatible with Windows. The Windows version has slow performance and I'm working on that, but the project should run just fine everywhere else. This project is built and run with cargo.**
 
 ![wilson-demo](/images/wilson-demo.png)
 
@@ -20,7 +20,6 @@ If you would rather just see some cool mazes right away, run the demo I have inc
 $ cd run_maze/
 $ cargo build --release
 $ cargo run --release --bin demo
-
 # Or set the rows and columns to your liking for bigger or smaller demo mazes.
 $ cargo run --release --bin demo -- -r 50 -c 50
 ```
