@@ -493,7 +493,7 @@ fn print_usage() {
     │   │   │ │ --release --bin run_maze│ │ │           │   │   │ │   │   │
     │ ╶─┤ ╶─┘ │ --release --bin run_maze -- -r 51 -c 111 -s bfs-hunt┌─┘ ┌─┤
     │   │     │ --release --bin run_maze -- -c 111 -s bfs-gather│ │ │   │ │
-    │ ╷ │ ╶───┤ --release --bin run_maze -- -b prim -d round    └─├─┤ ┌─┤ │
+    │ ╷ │ ╶───┤ --release --bin run_maze -- -b prim -sa 1       └─┼─┤ ┌─┤ │
     │ │ │     │ --release --bin run_maze -- -ba 4 -b kruskal -m x │ │ │ │ │
     ├─┘ ├───┬─┘ │ ╶─┼─╴ │ │ │ ╷ ├─┐ ╵ ╷ ├─┴───╴ │ │ ┌───┤   │ └─┐ ╵ └─┐ ╵ │
     │   │   │   │   │   │ │ │ │ │ │   │ │       │ │ │   │   │   │     │   │
