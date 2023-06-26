@@ -123,13 +123,13 @@ pub fn print_paths(maze: &maze::Maze) {
         }
         print!("\n");
     }
-    stdout().flush().unwrap();
+    stdout().flush().expect("Could not flush screen, terminal issue.");
 }
 
 pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     print::set_cursor_position(point);
     print_point(maze, point);
-    stdout().flush().unwrap();
+    stdout().flush().expect("Could not flush screen, terminal issue.");
 }
 
 pub fn print_point(maze: &maze::Maze, point: maze::Point) {
