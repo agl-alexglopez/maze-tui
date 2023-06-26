@@ -14,9 +14,11 @@ pub fn clear_screen() {
 pub fn set_cursor_position(p: maze::Point) {
     stdout()
         .queue(cursor::MoveTo((p.col) as u16, (p.row) as u16))
-        .unwrap();
+        .expect("Could not move cursor, terminal may be incompatible.");
 }
 
 pub fn flush() {
-    stdout().flush().unwrap();
+    stdout()
+        .flush()
+        .expect("Could not clear screen,terminal may be incompatible.");
 }

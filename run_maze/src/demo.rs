@@ -22,11 +22,15 @@ pub use crate::solvers::dfs;
 pub use crate::solvers::floodfs;
 pub use crate::solvers::rdfs;
 
-use std::{thread, time};
-use std::io::{stdout, Write};
 use std::env;
+use std::io::{stdout, Write};
+use std::{thread, time};
 
-use rand::{thread_rng, distributions::{Bernoulli, Distribution}, seq::SliceRandom};
+use rand::{
+    distributions::{Bernoulli, Distribution},
+    seq::SliceRandom,
+    thread_rng,
+};
 
 type BuildDemo = fn(&mut maze::Maze, build::BuilderSpeed);
 
@@ -111,7 +115,7 @@ fn main() {
             match prev_flag {
                 "-r" => set_rows(&mut run, &a),
                 "-c" => set_cols(&mut run, &a),
-                _ => panic!("Bad flag snuck past first check?")
+                _ => panic!("Bad flag snuck past first check?"),
             }
             process_current = false;
             continue;
@@ -150,13 +154,16 @@ fn main() {
 
         build_algo(&mut maze, build_speed);
 
-        if modification_probability.expect("Bernoulli innefective").sample(&mut rng) {
-           match run.modifications.choose(&mut rng) {
-               Some(modder) => {
-                   modder(&mut maze, build_speed);
-               }
-               None => panic!("Empty modification table.")
-           }
+        if modification_probability
+            .expect("Bernoulli innefective")
+            .sample(&mut rng)
+        {
+            match run.modifications.choose(&mut rng) {
+                Some(modder) => {
+                    modder(&mut maze, build_speed);
+                }
+                None => panic!("Empty modification table."),
+            }
         }
 
         print::set_cursor_position(maze::Point { row: 0, col: 0 });

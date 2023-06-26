@@ -606,7 +606,7 @@ pub fn carve_path_markings(maze: &mut maze::Maze, cur: maze::Point, next: maze::
         wall.col += 1;
         maze[u_next_row][u_next_col] |= FROM_WEST;
     } else {
-        panic!("Wall break error, builder broke when trying step through wall.");
+        panic!("Wall break error. Cur: {:?} Next: {:?}", cur, next);
     }
     carve_path_walls(maze, cur);
     carve_path_walls(maze, next);
@@ -635,7 +635,7 @@ pub fn carve_path_markings_animated(
         wall.col += 1;
         maze[u_next_row][u_next_col] |= FROM_WEST;
     } else {
-        panic!("Wall break error, builder broke when trying step through wall.");
+        panic!("Wall break error. Cur: {:?} Next: {:?}", cur, next);
     }
     carve_path_walls_animated(maze, cur, speed);
     carve_path_walls_animated(maze, next, speed);
@@ -655,7 +655,7 @@ pub fn join_squares(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point) 
     } else if next.col > cur.col {
         wall.col += 1;
     } else {
-        panic!("Cell join error. Maze won't build");
+        panic!("Cell join error. Cur: {:?} Next: {:?}", cur, next);
     }
     build_path(maze, wall);
     maze[wall.row as usize][wall.col as usize] |= BUILDER_BIT;
