@@ -492,12 +492,12 @@ fn print_usage() {
     │ │   │ │ -h Help flag. Make this prompt appear.  │   │   │   │ │   │ │
     │ └─┐ ╵ └─┐ No arguments.─┘ ┌───┐ └─┐ ├─╴ │ ╵ └───┤ ┌─┘ ┌─┴─╴ │ ├─╴ │ │
     │   │     -If any flags are omitted, defaults are used. │     │ │   │ │
-    ├─╴ ├───┐ -Examples:┐ ╶─┬─┬─┘ ╷ ├─╴ │ │ ┌─┴───────┘ ├─╴ │ ╶─┐ │ ╵ ┌─┘ │
-    │   │   │ │ cargo run --bin run_maze│ │ │           │   │   │ │   │   │
-    │ ╶─┤ ╶─┘ │ cargo run --bin run_maze -- -r 51 -c 111 -s bfs-hunt┌─┘ ┌─┤
-    │   │     │ cargo run --bin run_maze -- -c 111 -s bfs-gather│ │ │   │ │
-    │ ╷ │ ╶───┤ cargo run --bin run_maze -- -b prim -d round    └─├─┤ ┌─┤ │
-    │ │ │     │ cargo run --bin run_maze -- -ba 4 -b kruskal -m x │ │ │ │ │
+    ├─╴ ├───┐ -Flags Following [cargo run]: ┌─┴───────┘ ├─╴ │ ╶─┐ │ ╵ ┌─┘ │
+    │   │   │ │ --release --bin run_maze│ │ │           │   │   │ │   │   │
+    │ ╶─┤ ╶─┘ │ --release --bin run_maze -- -r 51 -c 111 -s bfs-hunt┌─┘ ┌─┤
+    │   │     │ --release --bin run_maze -- -c 111 -s bfs-gather│ │ │   │ │
+    │ ╷ │ ╶───┤ --release --bin run_maze -- -b prim -d round    └─├─┤ ┌─┤ │
+    │ │ │     │ --release --bin run_maze -- -ba 4 -b kruskal -m x │ │ │ │ │
     ├─┘ ├───┬─┘ │ ╶─┼─╴ │ │ │ ╷ ├─┐ ╵ ╷ ├─┴───╴ │ │ ┌───┤   │ └─┐ ╵ └─┐ ╵ │
     │   │   │   │   │   │ │ │ │ │ │   │ │       │ │ │   │   │   │     │   │
     │ ╶─┘ ╷ ╵ ╶─┴───┘ ┌─┘ ╵ ╵ │ ╵ └───┤ ╵ ╶─────┘ │ ╵ ╷ └───┴─┐ └─────┴─╴ │

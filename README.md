@@ -11,7 +11,7 @@ This project is a command line application that can be run with various combinat
 ```zsh
 $ cd run_maze/
 $ cargo build --release
-$ cargo run --bin run_maze
+$ cargo run --release --bin run_maze
 ```
 
 If you would rather just see some cool mazes right away, run the demo I have included. It runs infinite random permutations of maze builder and solver animations so you can see a wide range of what the project has to offer. Stop the loop at any time with `CTRL<C>`.
@@ -19,10 +19,10 @@ If you would rather just see some cool mazes right away, run the demo I have inc
 ```zsh
 $ cd run_maze/
 $ cargo build --release
-$ cargo run --bin demo
+$ cargo run --release --bin demo
 
 # Or set the rows and columns to your liking for bigger or smaller demo mazes.
-$ cargo run --bin demo -- -r 50 -c 50
+$ cargo run --release --bin demo -- -r 50 -c 50
 ```
 If you wish to dive into the more specific `run_maze` program, here is the help message that comes with the `-h` flag to get started.
 
@@ -76,12 +76,12 @@ If any flags are omitted, defaults are used.
 Examples:
 
 ```zsh
-cargo run --bin run_maze
-cargo run --bin run_maze -- -r 51 -c 111 -b rdfs -s bfs-hunt
-cargo run --bin run_maze -- -c 111 -s bfs-gather
-cargo run --bin run_maze -- -s bfs-corners -d round -b fractal
-cargo run --bin run_maze -- -s dfs-hunt -ba 4 -sa 5 -b wilson-walls -m x
-cargo run --bin run_maze -- -h
+cargo run --release --bin run_maze
+cargo run --release --bin run_maze -- -r 51 -c 111 -b rdfs -s bfs-hunt
+cargo run --release --bin run_maze -- -c 111 -s bfs-gather
+cargo run --release --bin run_maze -- -s bfs-corners -d round -b fractal
+cargo run --release --bin run_maze -- -s dfs-hunt -ba 4 -sa 5 -b wilson-walls -m x
+cargo run --release --bin run_maze -- -h
 ```
 
 ## Settings Detailed
