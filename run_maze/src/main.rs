@@ -493,11 +493,11 @@ fn print_usage() {
     │ └─┐ ╵ └─┐ No arguments.─┘ ┌───┐ └─┐ ├─╴ │ ╵ └───┤ ┌─┘ ┌─┴─╴ │ ├─╴ │ │
     │   │     -If any flags are omitted, defaults are used. │     │ │   │ │
     ├─╴ ├───┐ -Examples:┐ ╶─┬─┬─┘ ╷ ├─╴ │ │ ┌─┴───────┘ ├─╴ │ ╶─┐ │ ╵ ┌─┘ │
-    │   │   │ │ cargo run   │ │   │ │   │ │ │           │   │   │ │   │   │
-    │ ╶─┤ ╶─┘ │ cargo run -- -r 51 -c 111 -b rdfs -s bfs-hunt   │ │ ┌─┘ ┌─┤
-    │   │     │ cargo run -- -c 111 -s bfs-gather       │   │   │ │ │   │ │
-    │ ╷ │ ╶───┤ cargo run -- -s bfs-corners -d round -b fractal └─├─┤ ┌─┤ │
-    │ │ │     │ cargo run -- -s dfs-hunt -ba 4 -b kruskal -m x    │ │ │ │ │
+    │   │   │ │ cargo run --bin run_maze│ │ │           │   │   │ │   │   │
+    │ ╶─┤ ╶─┘ │ cargo run --bin run_maze -- -r 51 -c 111 -s bfs-hunt┌─┘ ┌─┤
+    │   │     │ cargo run --bin run_maze -- -c 111 -s bfs-gather│ │ │   │ │
+    │ ╷ │ ╶───┤ cargo run --bin run_maze -- -b prim -d round    └─├─┤ ┌─┤ │
+    │ │ │     │ cargo run --bin run_maze -- -ba 4 -b kruskal -m x │ │ │ │ │
     ├─┘ ├───┬─┘ │ ╶─┼─╴ │ │ │ ╷ ├─┐ ╵ ╷ ├─┴───╴ │ │ ┌───┤   │ └─┐ ╵ └─┐ ╵ │
     │   │   │   │   │   │ │ │ │ │ │   │ │       │ │ │   │   │   │     │   │
     │ ╶─┘ ╷ ╵ ╶─┴───┘ ┌─┘ ╵ ╵ │ ╵ └───┤ ╵ ╶─────┘ │ ╵ ╷ └───┴─┐ └─────┴─╴ │
