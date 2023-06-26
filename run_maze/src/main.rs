@@ -321,7 +321,7 @@ fn main() {
         }
     }
     if process_current {
-        print_invalid_arg(&FlagArg { flag: &prev_flag, arg: "[NONE]" });
+        quit(&FlagArg { flag: &prev_flag, arg: "[NONE]" });
     }
 
     let mut maze = maze::Maze::new(run.args);
@@ -362,35 +362,35 @@ fn set_args(tables: &LookupTables, run: &mut MazeRunner, pairs: &FlagArg) {
         "-c" => set_cols(run, &pairs),
         "-b" => match tables.build_table.get(pairs.arg) {
             Some(build_tuple) => run.build = *build_tuple,
-            None => print_invalid_arg(pairs),
+            None => quit(pairs),
         },
         "-m" => match tables.mod_table.get(pairs.arg) {
             Some(mod_tuple) => run.modify = Some(*mod_tuple),
-            None => print_invalid_arg(pairs),
+            None => quit(pairs),
         },
         "-s" => match tables.solve_table.get(pairs.arg) {
             Some(solve_tuple) => run.solve = *solve_tuple,
-            None => print_invalid_arg(pairs),
+            None => quit(pairs),
         },
         "-d" => match tables.style_table.get(pairs.arg) {
             Some(wall_style) => run.args.style = *wall_style,
-            None => print_invalid_arg(pairs),
+            None => quit(pairs),
         },
         "-ba" => match tables.build_animation_table.get(pairs.arg) {
             Some(speed) => {
                 run.build_speed = *speed;
                 run.build_view = ViewingMode::AnimatedPlayback;
             }
-            None => print_invalid_arg(pairs),
+            None => quit(pairs),
         },
         "-sa" => match tables.solve_animation_table.get(pairs.arg) {
             Some(speed) => {
                 run.solve_speed = *speed;
                 run.solve_view = ViewingMode::AnimatedPlayback;
             }
-            None => print_invalid_arg(pairs),
+            None => quit(pairs),
         },
-        _ => print_invalid_arg(pairs),
+        _ => quit(pairs),
     }
 }
 
@@ -399,13 +399,13 @@ fn set_rows(run: &mut MazeRunner, pairs: &FlagArg) {
     run.args.odd_rows = match rows_result {
         Ok(num) => {
             if num < 7 {
-                print_invalid_arg(&pairs);
+                quit(&pairs);
                 std::process::exit(1);
             }
             num
         }
         Err(_) => {
-            print_invalid_arg(&pairs);
+            quit(&pairs);
             std::process::exit(1);
         }
     };
@@ -416,19 +416,19 @@ fn set_cols(run: &mut MazeRunner, pairs: &FlagArg) {
     run.args.odd_cols = match cols_result {
         Ok(num) => {
             if num < 7 {
-                print_invalid_arg(&pairs);
+                quit(&pairs);
                 std::process::exit(1);
             }
             num
         }
         Err(_) => {
-            print_invalid_arg(&pairs);
+            quit(&pairs);
             std::process::exit(1);
         }
     };
 }
 
-fn print_invalid_arg(pairs: &FlagArg) {
+fn quit(pairs: &FlagArg) {
     println!("Flag was: {}", pairs.flag);
     println!("Argument was: {}", pairs.arg);
     print_usage();
