@@ -320,6 +320,9 @@ fn main() {
             }
         }
     }
+    if process_current {
+        print_invalid_arg(&FlagArg { flag: &prev_flag, arg: "[NONE]" });
+    }
 
     let mut maze = maze::Maze::new(run.args);
 
@@ -378,10 +381,7 @@ fn set_args(tables: &LookupTables, run: &mut MazeRunner, pairs: &FlagArg) {
                 run.build_speed = *speed;
                 run.build_view = ViewingMode::AnimatedPlayback;
             }
-            None => {
-                print_invalid_arg(pairs);
-                std::process::exit(1);
-            }
+            None => print_invalid_arg(pairs),
         },
         "-sa" => match tables.solve_animation_table.get(pairs.arg) {
             Some(speed) => {
@@ -390,10 +390,7 @@ fn set_args(tables: &LookupTables, run: &mut MazeRunner, pairs: &FlagArg) {
             }
             None => print_invalid_arg(pairs),
         },
-        _ => {
-            print_invalid_arg(pairs);
-            std::process::exit(1);
-        }
+        _ => print_invalid_arg(pairs),
     }
 }
 
