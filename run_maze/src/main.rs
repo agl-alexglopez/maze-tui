@@ -395,8 +395,7 @@ fn set_args(tables: &LookupTables, run: &mut MazeRunner, pairs: &FlagArg) {
 }
 
 fn set_rows(run: &mut MazeRunner, pairs: &FlagArg) {
-    let rows_result = pairs.arg.parse::<i32>();
-    run.args.odd_rows = match rows_result {
+    run.args.odd_rows = match pairs.arg.parse::<i32>() {
         Ok(num) => {
             if num < 7 {
                 quit(&pairs);
@@ -412,8 +411,7 @@ fn set_rows(run: &mut MazeRunner, pairs: &FlagArg) {
 }
 
 fn set_cols(run: &mut MazeRunner, pairs: &FlagArg) {
-    let cols_result = pairs.arg.parse::<i32>();
-    run.args.odd_cols = match cols_result {
+    run.args.odd_cols = match pairs.arg.parse::<i32>() {
         Ok(num) => {
             if num < 7 {
                 quit(&pairs);
