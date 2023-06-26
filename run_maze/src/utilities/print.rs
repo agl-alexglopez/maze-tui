@@ -3,6 +3,16 @@ use crate::maze;
 use crossterm::{cursor, terminal, ExecutableCommand, QueueableCommand};
 use std::io::{stdout, Write};
 
+pub fn hide_cursor() {
+    stdout().execute(cursor::Hide).expect("Failed to hide cursor.");
+}
+
+pub fn show_cursor() {
+    stdout().execute(cursor::Show).expect(
+        "Failed to unhide your cursor. Sorry! Restart your terminal."
+    );
+}
+
 // Execute the command so clearing the screen forcefully flushes for the caller.
 pub fn clear_screen() {
     stdout()

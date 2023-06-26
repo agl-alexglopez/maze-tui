@@ -1,5 +1,6 @@
 use crate::build;
 use crate::maze;
+use crate::maze_panic;
 
 use rand::{
     distributions::{Bernoulli, Distribution},
@@ -50,7 +51,7 @@ impl SlidingSetWindow {
 
     fn generate_sets(&mut self, row: usize) {
         if row > WINDOW_SIZE {
-            panic!(
+            maze_panic!(
                 "Cannot generate sets for a row that does not exist, row: {}",
                 row
             );

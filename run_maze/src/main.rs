@@ -5,6 +5,7 @@ mod utilities;
 pub use crate::utilities::build;
 pub use crate::utilities::maze;
 pub use crate::utilities::print;
+pub use crate::utilities::panics;
 pub use crate::utilities::solve;
 
 pub use crate::builders::arena;
@@ -24,6 +25,7 @@ pub use crate::solvers::rdfs;
 
 use std::collections::{HashMap, HashSet};
 use std::env;
+
 
 type BuildFunction = (
     fn(&mut maze::Maze),
@@ -82,6 +84,9 @@ struct LookupTables {
 }
 
 fn main() {
+    print::hide_cursor();
+    // The user would be quite grumpy if their cursor stayed hidden on unexpected crash.
+    panics::set_default_panic();
     let tables = LookupTables {
         arg_flags: HashSet::from([
             String::from("-r"),
@@ -350,6 +355,8 @@ fn main() {
         ViewingMode::StaticImage => run.solve.0(maze),
         ViewingMode::AnimatedPlayback => run.solve.1(maze, run.solve_speed),
     }
+    // Don't forget! User might get confused if their cursor stayed hidden.
+    print::show_cursor();
 }
 
 fn set_args(tables: &LookupTables, run: &mut MazeRunner, pairs: &FlagArg) {
@@ -430,7 +437,7 @@ fn quit(pairs: &FlagArg) {
     println!("Flag was: {}", pairs.flag);
     println!("Argument was: {}", pairs.arg);
     print_usage();
-    std::process::exit(1);
+    maze_panic!("");
 }
 
 fn print_usage() {

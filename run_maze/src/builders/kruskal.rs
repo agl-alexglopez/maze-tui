@@ -1,5 +1,6 @@
 use crate::build;
 use crate::maze;
+use crate::maze_panic;
 use crate::utilities::disjoint;
 
 use rand::prelude::*;
@@ -28,7 +29,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                     build::join_squares(maze, above, below);
                 }
             } else {
-                panic!("Kruskal couldn't find a cell id. Build broke.");
+                maze_panic!("Kruskal couldn't find a cell id. Build broke.");
             }
             continue;
         }
@@ -45,7 +46,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                 build::join_squares(maze, right, left);
             }
         } else {
-            panic!("Kruskal couldn't find a cell id. Build broke.");
+            maze_panic!("Kruskal couldn't find a cell id. Build broke.");
         }
     }
     build::clear_and_flush_grid(maze);
@@ -75,7 +76,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
                 }
                 continue;
             }
-            panic!("Kruskal couldn't find a cell id. Build broke.");
+            maze_panic!("Kruskal couldn't find a cell id. Build broke.");
         }
         let left = maze::Point {
             row: w.row,
@@ -91,7 +92,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
             }
             continue;
         }
-        panic!("Kruskal couldn't find a cell id. Build broke.");
+        maze_panic!("Kruskal couldn't find a cell id. Build broke.");
     }
 }
 

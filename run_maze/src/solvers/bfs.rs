@@ -1,6 +1,7 @@
 use crate::maze;
 use crate::utilities::print;
 use crate::utilities::solve;
+use crate::maze_panic;
 
 use rand::prelude::*;
 use std::collections::{HashMap, VecDeque};
@@ -66,7 +67,7 @@ pub fn hunt(mut maze: maze::BoxMaze) {
             println!();
         }
         Err(poison) => {
-            println!("Thread panicked with the lock: {:?}", poison);
+            maze_panic!("Thread panicked with the lock: {}", poison);
         }
     };
 }
@@ -123,7 +124,7 @@ pub fn animate_hunt(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
             println!();
         }
         Err(poison) => {
-            println!("Thread panicked with the lock: {:?}", poison);
+            maze_panic!("Thread panicked with the lock: {}", poison);
         }
     };
 }
@@ -171,7 +172,7 @@ pub fn gather(mut maze: maze::BoxMaze) {
             println!();
         }
         Err(poison) => {
-            println!("Thread panicked with the lock: {:?}", poison);
+            maze_panic!("Thread panicked with the lock: {}", poison);
         }
     };
 }
@@ -230,7 +231,7 @@ pub fn animate_gather(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
             println!();
         }
         Err(poison) => {
-            println!("Thread panicked with the lock: {:?}", poison);
+            maze_panic!("Thread panicked with the lock: {}", poison);
         }
     };
 }
@@ -289,7 +290,7 @@ pub fn corner(mut maze: maze::BoxMaze) {
             println!();
         }
         Err(poison) => {
-            println!("Thread panicked with the lock: {:?}", poison);
+            maze_panic!("Thread panicked with the lock: {}", poison);
         }
     };
 }
@@ -364,7 +365,7 @@ pub fn animate_corner(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
             println!();
         }
         Err(poison) => {
-            println!("Thread panicked with the lock: {:?}", poison);
+            maze_panic!("Thread panicked with the lock: {}", poison);
         }
     };
 }
@@ -395,7 +396,9 @@ fn hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
                     lk.maze[cur.row as usize][cur.col as usize] |= guide.paint;
                 }
             },
-            Err(poison) => println!("Thread panicked: {:?}", poison),
+            Err(poison) => {
+                maze_panic!("Thread panicked: {}", poison);
+            }
         };
 
         let mut i = guide.index;
@@ -412,7 +415,9 @@ fn hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
                     push_next = !seen_next
                         && (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0;
                 }
-                Err(poison) => println!("Thread panicked: {:?}", poison),
+                Err(poison) => {
+                    maze_panic!("Thread panicked: {}", poison);
+                }
             };
 
             if push_next {
@@ -449,7 +454,9 @@ fn animated_hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
                     solve::flush_cursor_path_coordinate(&lk.maze, cur);
                 }
             },
-            Err(poison) => println!("Thread panicked: {:?}", poison),
+            Err(poison) => {
+                maze_panic!("Thread panicked: {}", poison);
+            }
         }
 
         thread::sleep(time::Duration::from_micros(guide.speed));
@@ -468,7 +475,9 @@ fn animated_hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
                     push_next = !seen_next
                         && (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0;
                 }
-                Err(poison) => println!("Thread panicked: {:?}", poison),
+                Err(poison) => {
+                    maze_panic!("Thread panicked: {}", poison);
+                }
             }
 
             if push_next {
@@ -500,7 +509,9 @@ fn gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
                 }
                 lk.maze[cur.row as usize][cur.col as usize] |= guide.paint;
             }
-            Err(poison) => println!("Thread panicked: {:?}", poison),
+            Err(poison) => {
+                maze_panic!("Thread panicked: {}", poison);
+            }
         }
 
         let mut i = guide.index;
@@ -517,7 +528,9 @@ fn gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
                     push_next = !seen_next
                         && (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0;
                 }
-                Err(poison) => println!("Thread panicked: {:?}", poison),
+                Err(poison) => {
+                    maze_panic!("Thread panicked: {}", poison);
+                }
             }
 
             if push_next {
@@ -550,7 +563,9 @@ fn animated_gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
                 lk.maze[cur.row as usize][cur.col as usize] |= guide.paint;
                 solve::flush_cursor_path_coordinate(&lk.maze, cur);
             }
-            Err(poison) => println!("Thread panicked: {:?}", poison),
+            Err(poison) => {
+                maze_panic!("Thread panicked: {}", poison);
+            }
         }
 
         thread::sleep(time::Duration::from_micros(guide.speed));
@@ -569,7 +584,9 @@ fn animated_gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
                     push_next = !seen_next
                         && (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0;
                 }
-                Err(poison) => println!("Thread panicked: {:?}", poison),
+                Err(poison) => {
+                    maze_panic!("Thread panicked: {}", poison);
+                }
             }
 
             if push_next {
