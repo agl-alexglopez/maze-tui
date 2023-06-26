@@ -144,7 +144,6 @@ pub const CLEAR_AVAILABLE_BITS: Square = 0b0001_1111_1111_0000;
 pub const DEFAULT_ROWS: i32 = 31;
 pub const DEFAULT_COLS: i32 = 111;
 pub const PATH_BIT: Square = 0b0010_0000_0000_0000;
-pub const BUILDER_BIT: Square = 0b0001_0000_0000_0000;
 pub const WALL_MASK: WallLine = 0b1111;
 pub const FLOATING_WALL: WallLine = 0b0000;
 pub const NORTH_WALL: WallLine = 0b0001;

@@ -102,7 +102,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
         for set in sets_in_this_row.iter() {
             for _drop in 0..rng.gen_range(1..=set.1.len()) {
                 let chose: &maze::Point = &set.1[rng.gen_range(0..set.1.len())];
-                if (maze[(chose.row + DROP) as usize][chose.col as usize] & maze::BUILDER_BIT) != 0
+                if (maze[(chose.row + DROP) as usize][chose.col as usize] & build::BUILDER_BIT) != 0
                 {
                     continue;
                 }
@@ -166,7 +166,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
         for set in sets_in_this_row.iter() {
             for _drop in 0..rng.gen_range(1..=set.1.len()) {
                 let chose: &maze::Point = &set.1[rng.gen_range(0..set.1.len())];
-                if (maze[(chose.row + DROP) as usize][chose.col as usize] & maze::BUILDER_BIT) != 0
+                if (maze[(chose.row + DROP) as usize][chose.col as usize] & build::BUILDER_BIT) != 0
                 {
                     continue;
                 }

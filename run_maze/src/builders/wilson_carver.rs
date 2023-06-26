@@ -29,7 +29,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
         col: 2 * (rng.gen_range(2..maze.col_size() - 1) / 2) + 1,
     };
     build::build_path(maze, start);
-    maze[start.row as usize][start.col as usize] |= maze::BUILDER_BIT;
+    maze[start.row as usize][start.col as usize] |= build::BUILDER_BIT;
     let mut cur = RandomWalk {
         prev: maze::Point { row: 0, col: 0 },
         walk: maze::Point { row: 1, col: 1 },
@@ -74,7 +74,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
     };
     build::build_path_animated(maze, start, animation);
     build::flush_cursor_maze_coordinate(maze, start);
-    maze[start.row as usize][start.col as usize] |= maze::BUILDER_BIT;
+    maze[start.row as usize][start.col as usize] |= build::BUILDER_BIT;
     let mut cur = RandomWalk {
         prev: maze::Point { row: 0, col: 0 },
         walk: maze::Point { row: 1, col: 1 },
