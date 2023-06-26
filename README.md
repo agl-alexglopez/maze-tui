@@ -1,4 +1,4 @@
-# Multithreading with Mazes
+# Multithreading with Mazes in Rust
 
 > **Note: This is a companion project to my original maze repository written in C++ ([multithreading-with-mazes](https://github.com/agl-alexglopez/multithreading-with-mazes/tree/main)). There are a number of benefits I have found in the rust version. First, it seems that this project can build on Linux, Mac, and Windows. The Windows version has slow performance and I'm working on that, but the project should run just fine everywhere else. This project is built and run with cargo.**
 
