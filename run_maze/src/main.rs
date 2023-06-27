@@ -85,8 +85,6 @@ struct LookupTables {
 
 fn main() {
     print::hide_cursor();
-    // The user would be quite grumpy if their cursor stayed hidden on unexpected crash.
-    panics::set_default_panic();
     let tables = LookupTables {
         arg_flags: HashSet::from([
             String::from("-r"),
