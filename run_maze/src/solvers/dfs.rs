@@ -40,9 +40,7 @@ pub fn hunt(mut maze: maze::BoxMaze) {
             solve::print_hunt_solution_message(print_lock.win);
             println!();
         }
-        Err(poison) => {
-            maze_panic!("Solve thread maze_panic! somehow: {}", poison);
-        }
+        Err(p) => maze_panic!("Solve thread maze_panic! somehow: {}", p),
     };
 }
 
@@ -81,9 +79,7 @@ pub fn gather(mut maze: maze::BoxMaze) {
             solve::print_gather_solution_message();
             println!();
         }
-        Err(poison) => {
-            maze_panic!("Solve thread maze_panic! somehow: {}", poison);
-        }
+        Err(p) => maze_panic!("Solve thread maze_panic! somehow: {}", p),
     };
 }
 
@@ -134,9 +130,7 @@ pub fn corner(mut maze: maze::BoxMaze) {
             solve::print_hunt_solution_message(print_lock.win);
             println!();
         }
-        Err(poison) => {
-            maze_panic!("Solve thread maze_panic!: {}", poison);
-        }
+        Err(p) => maze_panic!("Solve thread maze_panic!: {}", p),
     };
 }
 
@@ -182,9 +176,7 @@ pub fn animate_hunt(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
             solve::print_hunt_solution_message(print_lock.win);
             println!();
         }
-        Err(poison) => {
-            maze_panic!("Solve thread maze_panic!: {}", poison);
-        }
+        Err(p) => maze_panic!("Solve thread maze_panic!: {}", p),
     };
 }
 
@@ -234,9 +226,7 @@ pub fn animate_gather(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
             solve::print_gather_solution_message();
             println!();
         }
-        Err(poison) => {
-            maze_panic!("Solve thread maze_panic!: {}", poison);
-        }
+        Err(p) => maze_panic!("Solve thread maze_panic!: {}", p),
     };
 }
 
@@ -301,9 +291,7 @@ pub fn animate_corner(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
             solve::print_hunt_solution_message(print_lock.win);
             println!();
         }
-        Err(poison) => {
-            maze_panic!("Solve thread maze_panic!: {}", poison);
-        }
+        Err(p) => maze_panic!("Solve thread maze_panic!: {}", p),
     };
 }
 
@@ -335,9 +323,7 @@ fn hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
                     lk.maze[cur.row as usize][cur.col as usize] |= seen;
                 }
             },
-            Err(poison) => {
-                println!("Solve thread panic!: {}", poison);
-            }
+            Err(p) => maze_panic!("Solve thread panic!: {}", p),
         };
 
         // Bias threads towards their original dispatch direction with do-while loop.
@@ -357,9 +343,7 @@ fn hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
                     push_next = (lk.maze[next.row as usize][next.col as usize] & seen) == 0
                         && (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0;
                 }
-                Err(poison) => {
-                    println!("Solve thread panic!: {}", poison);
-                }
+                Err(p) => maze_panic!("Solve thread panic: {} push_next {}", p, push_next),
             };
 
             if push_next {
@@ -395,9 +379,7 @@ fn animated_hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide
                     solve::flush_cursor_path_coordinate(&lk.maze, cur);
                 }
             },
-            Err(poison) => {
-                println!("Solve thread panic!: {}", poison);
-            }
+            Err(p) => maze_panic!("Solve thread panic!: {}", p),
         };
 
         thread::sleep(time::Duration::from_micros(guide.speed));
@@ -419,9 +401,7 @@ fn animated_hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide
                     push_next = (lk.maze[next.row as usize][next.col as usize] & seen) == 0
                         && (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0;
                 }
-                Err(poison) => {
-                    println!("Solve thread panic!: {}", poison);
-                }
+                Err(p) => maze_panic!("Solve thread panic: {} push_next {}", p, push_next),
             }
 
             if push_next {
@@ -439,9 +419,7 @@ fn animated_hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide
                     lk.maze[cur.row as usize][cur.col as usize] &= !guide.paint;
                     solve::flush_cursor_path_coordinate(&lk.maze, cur);
                 }
-                Err(poison) => {
-                    println!("Solve thread panic!: {}", poison);
-                }
+                Err(p) => maze_panic!("Solve thread panic!: {}", p),
             }
             thread::sleep(time::Duration::from_micros(guide.speed));
             dfs.pop();
@@ -468,9 +446,7 @@ fn gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
                 }
                 lk.maze[cur.row as usize][cur.col as usize] |= seen;
             }
-            Err(poison) => {
-                println!("Solve thread panic!: {}", poison);
-            }
+            Err(p) => maze_panic!("Solve thread panic!: {}", p),
         };
 
         // Bias threads towards their original dispatch direction with do-while loop.
@@ -490,9 +466,7 @@ fn gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
                     push_next = (lk.maze[next.row as usize][next.col as usize] & seen) == 0
                         && (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0;
                 }
-                Err(poison) => {
-                    println!("Solve thread panic!: {}", poison);
-                }
+                Err(p) => maze_panic!("Solve thread panic: {} push_next {}", p, push_next),
             };
 
             if push_next {
@@ -527,9 +501,7 @@ fn animated_gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGui
                 lk.maze[cur.row as usize][cur.col as usize] |= seen | guide.paint;
                 solve::flush_cursor_path_coordinate(&lk.maze, cur);
             }
-            Err(poison) => {
-                println!("Solve thread panic!: {}", poison);
-            }
+            Err(p) => maze_panic!("Solve thread panic!: {}", p),
         }
 
         thread::sleep(time::Duration::from_micros(guide.speed));
@@ -551,9 +523,7 @@ fn animated_gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGui
                     push_next = (lk.maze[next.row as usize][next.col as usize] & seen) == 0
                         && (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0;
                 }
-                Err(poison) => {
-                    println!("Solve thread panic!: {}", poison);
-                }
+                Err(p) => maze_panic!("Solve thread panic: {} push_next {}", p, push_next),
             };
             if push_next {
                 found_branch = true;
@@ -570,9 +540,7 @@ fn animated_gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGui
                     lk.maze[cur.row as usize][cur.col as usize] &= !guide.paint;
                     solve::flush_cursor_path_coordinate(&lk.maze, cur);
                 }
-                Err(poison) => {
-                    println!("Solve thread panic!: {}", poison);
-                }
+                Err(p) => maze_panic!("Solve thread panic!: {}", p),
             }
             thread::sleep(time::Duration::from_micros(guide.speed));
             dfs.pop();

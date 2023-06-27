@@ -1,5 +1,6 @@
 use crate::maze;
 use crate::utilities::print;
+use crate::maze_panic;
 
 use std::{thread, time};
 
@@ -606,7 +607,7 @@ pub fn carve_path_markings(maze: &mut maze::Maze, cur: maze::Point, next: maze::
         wall.col += 1;
         maze[u_next_row][u_next_col] |= FROM_WEST;
     } else {
-        panic!("Wall break error. Cur: {:?} Next: {:?}", cur, next);
+        maze_panic!("Wall break error. Cur: {:?} Next: {:?}", cur, next);
     }
     carve_path_walls(maze, cur);
     carve_path_walls(maze, next);
@@ -635,7 +636,7 @@ pub fn carve_path_markings_animated(
         wall.col += 1;
         maze[u_next_row][u_next_col] |= FROM_WEST;
     } else {
-        panic!("Wall break error. Cur: {:?} Next: {:?}", cur, next);
+        maze_panic!("Wall break error. Cur: {:?} Next: {:?}", cur, next);
     }
     carve_path_walls_animated(maze, cur, speed);
     carve_path_walls_animated(maze, next, speed);
@@ -655,7 +656,7 @@ pub fn join_squares(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point) 
     } else if next.col > cur.col {
         wall.col += 1;
     } else {
-        panic!("Cell join error. Cur: {:?} Next: {:?}", cur, next);
+        maze_panic!("Cell join error. Cur: {:?} Next: {:?}", cur, next);
     }
     build_path(maze, wall);
     maze[wall.row as usize][wall.col as usize] |= BUILDER_BIT;
@@ -679,7 +680,7 @@ pub fn join_squares_animated(
     } else if next.col > cur.col {
         wall.col += 1;
     } else {
-        panic!("Cell join error. Maze won't build");
+        maze_panic!("Cell join error. Maze won't build");
     }
     carve_path_walls_animated(maze, cur, speed);
     carve_path_walls_animated(maze, wall, speed);
@@ -811,7 +812,7 @@ pub fn print_maze_square(maze: &maze::Maze, p: maze::Point) {
     } else if square & maze::PATH_BIT != 0 {
         print!(" ");
     } else {
-        panic!("Maze square has no category");
+        maze_panic!("Maze square has no category");
     }
 }
 
@@ -826,7 +827,7 @@ pub fn print_square(maze: &maze::Maze, p: maze::Point) {
     } else if square & maze::PATH_BIT != 0 {
         print!(" ");
     } else {
-        panic!("Printed a maze square without a category.");
+        maze_panic!("Printed a maze square without a category.");
     }
 }
 

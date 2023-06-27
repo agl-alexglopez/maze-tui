@@ -6,6 +6,7 @@ pub use crate::utilities::build;
 pub use crate::utilities::maze;
 pub use crate::utilities::print;
 pub use crate::utilities::solve;
+pub use crate::utilities::panics;
 
 pub use crate::builders::arena;
 pub use crate::builders::eller;
@@ -116,7 +117,7 @@ fn main() {
             match prev_flag {
                 "-r" => set_rows(&mut run, &a),
                 "-c" => set_cols(&mut run, &a),
-                _ => panic!("Bad flag snuck past first check?"),
+                _ => maze_panic!("Bad flag snuck past first check?"),
             }
             process_current = false;
             continue;
@@ -124,7 +125,7 @@ fn main() {
         match a.as_str() {
             "-r" => prev_flag = "-r",
             "-c" => prev_flag = "-c",
-            _ => panic!("May only specify row or col size for this program (-r or -c)"),
+            _ => maze_panic!("May only specify row or col size for this program (-r or -c)"),
         }
         process_current = true;
     }
@@ -139,24 +140,24 @@ fn main() {
     loop {
         match run.wall_styles.choose(&mut rng) {
             Some(&style) => run.args.style = style,
-            None => panic!("Styles not set for loop, broken"),
+            None => maze_panic!("Styles not set for loop, broken"),
         }
         let mut maze = maze::Maze::new(run.args);
         let build_speed = match run.builder_speed.choose(&mut rng) {
             Some(&speed) => speed,
-            None => panic!("Build speed array empty."),
+            None => maze_panic!("Build speed array empty."),
         };
         let solve_speed = match run.solver_speed.choose(&mut rng) {
             Some(&speed) => speed,
-            None => panic!("Solve speed array empty."),
+            None => maze_panic!("Solve speed array empty."),
         };
         let build_algo = match run.builders.choose(&mut rng) {
             Some(&algo) => algo,
-            None => panic!("Build algo array empty."),
+            None => maze_panic!("Build algo array empty."),
         };
         let solve_algo = match run.solvers.choose(&mut rng) {
             Some(&algo) => algo,
-            None => panic!("Build algo array empty."),
+            None => maze_panic!("Build algo array empty."),
         };
 
         build_algo(&mut maze, build_speed);
@@ -169,7 +170,7 @@ fn main() {
                 Some(modder) => {
                     modder(&mut maze, build_speed);
                 }
-                None => panic!("Empty modification table."),
+                None => maze_panic!("Empty modification table."),
             }
         }
 
@@ -187,12 +188,12 @@ fn set_rows(run: &mut DemoRunner, size: &str) {
     match size.parse::<i32>() {
         Ok(num) => {
             if num < 7 {
-                panic!("Demo can only run larger than 7x7");
+                maze_panic!("Demo can only run larger than 7x7");
             }
             run.args.odd_rows = num + 1 - (num % 2);
         }
         Err(_) => {
-            panic!("Invalid row size: {}", size);
+            maze_panic!("Invalid row size: {}", size);
         }
     }
 }
@@ -201,12 +202,12 @@ fn set_cols(run: &mut DemoRunner, size: &str) {
     match size.parse::<i32>() {
         Ok(num) => {
             if num < 7 {
-                panic!("Demo can only run larger than 7x7");
+                maze_panic!("Demo can only run larger than 7x7");
             }
             run.args.odd_cols = num + 1 - (num % 2);
         }
         Err(_) => {
-            panic!("Invalid col size: {}", size);
+            maze_panic!("Invalid col size: {}", size);
         }
     }
 }

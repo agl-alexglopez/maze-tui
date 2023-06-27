@@ -1,5 +1,6 @@
 use crate::maze;
 use crate::print;
+use crate::maze_panic;
 
 use rand::prelude::*;
 use std::io::{stdout, Write};
@@ -108,7 +109,7 @@ pub fn find_nearest_square(maze: &maze::Maze, choice: maze::Point) -> maze::Poin
         }
     }
     print_paths(maze);
-    panic!("Could not place a point in this maze. Was it built correctly?");
+    maze_panic!("Could not place a point in this maze. Was it built correctly?");
 }
 
 pub fn clear_and_flush_paths(maze: &maze::Maze) {
@@ -159,7 +160,7 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
         print!(" ");
         return;
     }
-    panic!("Uncategorized maze square! Check the bits.");
+    maze_panic!("Uncategorized maze square! Check the bits.");
 }
 
 pub fn print_hunt_solution_message(winning_index: Option<usize>) {

@@ -54,6 +54,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
         row: 2 * (gen.gen_range(1..maze.row_size() - 2) / 2) + 1,
         col: 2 * (gen.gen_range(1..maze.col_size() - 2) / 2) + 1,
     };
+    build::carve_path_markings_animated(maze, start, start, animation);
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     let mut cur: maze::Point = start;
     let mut branches_remain: bool = true;
