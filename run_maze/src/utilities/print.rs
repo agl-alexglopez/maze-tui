@@ -7,9 +7,13 @@ use std::io::{stdout, Write};
 pub struct InvisibleCursor;
 
 impl InvisibleCursor {
+
     pub fn new() -> Self {
-        stdout().execute(cursor::Hide).expect("Failed to hide cursor.");
         Self
+    }
+
+    pub fn hide(&self) {
+        stdout().execute(cursor::Hide).expect("Failed to hide cursor.");
     }
 }
 

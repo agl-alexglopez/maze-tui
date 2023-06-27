@@ -84,8 +84,9 @@ struct LookupTables {
 }
 
 fn main() {
-    // We take an RAII approach to cursor hiding. On drop it unhides. No call needed.
-    let _ = print::InvisibleCursor::new();
+    // RAII approach to cursor hiding. Call hide and on scope drop it unhides, no call needed.
+    let invisible = print::InvisibleCursor::new();
+    invisible.hide();
     let tables = LookupTables {
         arg_flags: HashSet::from([
             String::from("-r"),
