@@ -13,8 +13,8 @@ macro_rules! maze_panic {
             eprintln!("{}", buf);
         }
         use std::io::stdout;
-        use crossterm::{cursor, ExecutableCommand};
-        stdout().execute(cursor::Show).expect(
+        use crossterm::{cursor::Show, ExecutableCommand};
+        stdout().execute(Show).expect(
             "Failed to unhide the cursor. Sorry! Restart your terminal."
         );
         panic!();
