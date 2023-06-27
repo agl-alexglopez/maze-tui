@@ -26,6 +26,7 @@ pub use crate::solvers::rdfs;
 use std::collections::{HashMap, HashSet};
 use std::env;
 
+use ctrlc;
 
 type BuildFunction = (
     fn(&mut maze::Maze),
@@ -87,6 +88,11 @@ fn main() {
     // RAII approach to cursor hiding. Call hide and on scope drop it unhides, no call needed.
     let invisible = print::InvisibleCursor::new();
     invisible.hide();
+    ctrlc::set_handler(move || {
+        print::unhide_cursor_on_process_exit();
+        std::process::exit(0);
+    }).expect("Could not set quit handler.");
+
     let tables = LookupTables {
         arg_flags: HashSet::from([
             String::from("-r"),
