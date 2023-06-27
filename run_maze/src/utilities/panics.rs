@@ -12,12 +12,11 @@ macro_rules! maze_panic {
             write!(&mut buf, $($arg)*).expect("Couldn't write to buffer");
             eprintln!("{}", buf);
         }
-        use std::panic;
         use std::io::stdout;
         use crossterm::{cursor, ExecutableCommand};
         stdout().execute(cursor::Show).expect(
             "Failed to unhide the cursor. Sorry! Restart your terminal."
         );
-        std::process::exit(1);
+        panic!();
     };
 }
