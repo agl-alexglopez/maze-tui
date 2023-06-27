@@ -3,6 +3,7 @@ use std::io::stdout;
 
 use crossterm::{cursor, ExecutableCommand};
 
+#[allow(dead_code)]
 pub fn set_default_panic() {
     panic::set_hook(Box::new(|_| {
         eprintln!("An unexpected error occured");
