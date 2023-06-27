@@ -84,7 +84,8 @@ struct LookupTables {
 }
 
 fn main() {
-    print::hide_cursor();
+    // We take an RAII approach to cursor hiding. On drop it unhides. No call needed.
+    let _ = print::InvisibleCursor::new();
     let tables = LookupTables {
         arg_flags: HashSet::from([
             String::from("-r"),
@@ -353,8 +354,6 @@ fn main() {
         ViewingMode::StaticImage => run.solve.0(maze),
         ViewingMode::AnimatedPlayback => run.solve.1(maze, run.solve_speed),
     }
-    // Don't forget! User might get confused if their cursor stayed hidden.
-    print::show_cursor();
 }
 
 fn set_args(tables: &LookupTables, run: &mut MazeRunner, pairs: &FlagArg) {

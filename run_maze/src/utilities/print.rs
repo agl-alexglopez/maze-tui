@@ -3,14 +3,22 @@ use crate::maze;
 use crossterm::{cursor, terminal, ExecutableCommand, QueueableCommand};
 use std::io::{stdout, Write};
 
-pub fn hide_cursor() {
-    stdout().execute(cursor::Hide).expect("Failed to hide cursor.");
+// The mazes look WAY better if the cursor square disapears while it builds.
+pub struct InvisibleCursor;
+
+impl InvisibleCursor {
+    pub fn new() -> Self {
+        stdout().execute(cursor::Hide).expect("Failed to hide cursor.");
+        Self
+    }
 }
 
-pub fn show_cursor() {
-    stdout().execute(cursor::Show).expect(
-        "Failed to unhide your cursor. Sorry! Restart your terminal."
-    );
+impl Drop for InvisibleCursor {
+    fn drop(&mut self) {
+        stdout().execute(cursor::Show).expect(
+            "Failed to unhide your cursor. Sorry! Restart your terminal."
+        );
+    }
 }
 
 // Execute the command so clearing the screen forcefully flushes for the caller.
