@@ -17,6 +17,7 @@ debug = false
 [dependencies]
 crossterm = "0.26.1"
 rand = "0.8.5"
+ctrlc = "3.4.0"
 
 [[bin]]
 name = "run_maze"

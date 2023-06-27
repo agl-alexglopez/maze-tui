@@ -4,6 +4,7 @@ use crossterm::{cursor, terminal, ExecutableCommand, QueueableCommand};
 use std::io::{stdout, Write};
 
 // The mazes look WAY better if the cursor square disapears while it builds.
+#[derive(Clone)]
 pub struct InvisibleCursor;
 
 impl InvisibleCursor {
@@ -15,6 +16,7 @@ impl InvisibleCursor {
     pub fn hide(&self) {
         stdout().execute(cursor::Hide).expect("Failed to hide cursor.");
     }
+
 }
 
 impl Drop for InvisibleCursor {
@@ -23,6 +25,13 @@ impl Drop for InvisibleCursor {
             "Failed to unhide your cursor. Sorry! Restart your terminal."
         );
     }
+}
+
+// DO NOT use this in this unless you are exiting program early and Rust won't call drop.
+pub fn unhide_cursor_on_process_exit() {
+    stdout().execute(cursor::Show).expect(
+        "Failed to unhide your cursor. Sorry! Restart your terminal."
+    );
 }
 
 // Execute the command so clearing the screen forcefully flushes for the caller.

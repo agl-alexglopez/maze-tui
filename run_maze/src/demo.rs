@@ -26,6 +26,7 @@ use std::env;
 use std::io::{stdout, Write};
 use std::{thread, time};
 
+use ctrlc;
 use rand::{
     distributions::{Bernoulli, Distribution},
     seq::SliceRandom,
@@ -129,6 +130,12 @@ fn main() {
     }
     let mut rng = thread_rng();
     let modification_probability = Bernoulli::new(0.2);
+    let invisible = print::InvisibleCursor::new();
+    invisible.hide();
+    ctrlc::set_handler(move || {
+        print::unhide_cursor_on_process_exit();
+        std::process::exit(0);
+    }).expect("Could not set quit handler.");
     loop {
         match run.wall_styles.choose(&mut rng) {
             Some(&style) => run.args.style = style,
