@@ -1,6 +1,6 @@
+use crate::build;
 use maze;
 use speed;
-use crate::build;
 
 pub fn add_cross(maze: &mut maze::Maze) {
     for r in 0..maze.row_size() {
@@ -251,4 +251,3 @@ fn add_negative_slope_animated(maze: &mut maze::Maze, p: maze::Point, speed: bui
         }
     }
 }
-

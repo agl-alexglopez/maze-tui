@@ -1,7 +1,7 @@
-use speed;
 use crate::build;
 use maze;
 use print;
+use speed;
 
 use rand::{
     distributions::{Bernoulli, Distribution},
@@ -128,7 +128,6 @@ pub fn generate_maze(maze: &mut maze::Maze) {
         sets_in_this_row.clear();
     }
     complete_final_row(maze, &mut window);
-    build::clear_and_flush_grid(maze);
 }
 
 pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {

@@ -1,6 +1,6 @@
 use crate::build;
-use speed;
 use maze;
+use speed;
 
 pub fn generate_maze(maze: &mut maze::Maze) {
     build::fill_maze_with_walls(maze);
@@ -9,7 +9,6 @@ pub fn generate_maze(maze: &mut maze::Maze) {
             build::build_path(maze, maze::Point { row: r, col: c });
         }
     }
-    build::clear_and_flush_grid(maze);
 }
 
 pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {

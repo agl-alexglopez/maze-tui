@@ -553,4 +553,3 @@ pub fn clear_and_flush_grid(maze: &maze::Maze) {
     }
     print::flush();
 }
-

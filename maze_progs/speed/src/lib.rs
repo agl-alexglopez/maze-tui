@@ -9,4 +9,3 @@ pub enum Speed {
     Speed6,
     Speed7,
 }
-

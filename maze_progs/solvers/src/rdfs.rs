@@ -1,7 +1,7 @@
+use crate::solve;
 use maze;
 use print;
 use speed;
-use crate::solve;
 
 use rand::prelude::*;
 use std::{thread, time};

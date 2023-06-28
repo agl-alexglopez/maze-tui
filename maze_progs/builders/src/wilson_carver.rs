@@ -1,6 +1,6 @@
-use speed;
 use crate::build;
 use maze;
+use speed;
 
 use rand::{seq::SliceRandom, thread_rng, Rng};
 use std::{thread, time};
@@ -294,7 +294,8 @@ fn build_with_marks_animated(
     } else {
         print::maze_panic!(
             "Wall break error. Step through wall didn't work: cur {:?}, next {:?}",
-            cur, next
+            cur,
+            next
         );
     }
     maze[cur.row as usize][cur.col as usize] &= !WALK_BIT;

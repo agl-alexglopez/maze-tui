@@ -1,6 +1,6 @@
+use crate::build;
 use maze;
 use speed;
-use crate::build;
 
 use rand::{seq::SliceRandom, thread_rng, Rng};
 use std::{thread, time};
@@ -15,7 +15,7 @@ struct RunStart {
 // Public Functions-------------------------------------------------------------------------------
 
 pub fn generate_maze(maze: &mut maze::Maze) {
-    build::fill_maze_with_walls_animated(maze);
+    build::fill_maze_with_walls(maze);
     let mut rng = thread_rng();
     let mut dfs: Vec<maze::Point> = Vec::from([maze::Point {
         row: 2 * (rng.gen_range(1..maze.row_size() - 1) / 2) + 1,
@@ -41,7 +41,6 @@ pub fn generate_maze(maze: &mut maze::Maze) {
             dfs.pop();
         }
     }
-    build::clear_and_flush_grid(maze);
 }
 
 pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {

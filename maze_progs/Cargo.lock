@@ -118,6 +118,19 @@ name = "maze"
 version = "0.1.0"
 
 [[package]]
+name = "measure"
+version = "0.1.0"
+dependencies = [
+ "builders",
+ "crossterm",
+ "ctrlc",
+ "maze",
+ "print",
+ "rand",
+ "speed",
+]
+
+[[package]]
 name = "mio"
 version = "0.8.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"

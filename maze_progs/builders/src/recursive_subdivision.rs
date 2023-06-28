@@ -1,6 +1,6 @@
-use speed;
-use maze;
 use crate::build;
+use maze;
+use speed;
 
 use rand::{rngs::ThreadRng, thread_rng, Rng};
 
@@ -85,7 +85,6 @@ pub fn generate_maze(maze: &mut maze::Maze) {
             });
         }
     }
-    build::clear_and_flush_grid(maze);
 }
 
 pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {

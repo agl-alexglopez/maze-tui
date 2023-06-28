@@ -1,12 +1,12 @@
-pub(crate) mod build;
-pub(crate) mod disjoint;
 pub mod arena;
+pub mod build;
+pub(crate) mod disjoint;
 pub mod eller;
 pub mod grid;
 pub mod kruskal;
+pub mod modify;
 pub mod prim;
 pub mod recursive_backtracker;
 pub mod recursive_subdivision;
 pub mod wilson_adder;
 pub mod wilson_carver;
-pub mod modify;

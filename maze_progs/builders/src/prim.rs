@@ -1,6 +1,6 @@
+use crate::build;
 use maze;
 use speed;
-use crate::build;
 
 use rand::{
     distributions::{Distribution, Uniform},
@@ -83,7 +83,6 @@ pub fn generate_maze(maze: &mut maze::Maze) {
             }
         };
     }
-    build::clear_and_flush_grid(maze);
 }
 
 pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {

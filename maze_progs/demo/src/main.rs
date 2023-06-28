@@ -1,17 +1,17 @@
 use maze;
-use speed;
 use print;
+use speed;
 
 use builders::arena;
 use builders::eller;
 use builders::grid;
 use builders::kruskal;
+use builders::modify;
 use builders::prim;
 use builders::recursive_backtracker;
 use builders::recursive_subdivision;
 use builders::wilson_adder;
 use builders::wilson_carver;
-use builders::modify;
 
 use solvers::bfs;
 use solvers::dfs;
@@ -121,7 +121,8 @@ fn main() {
     ctrlc::set_handler(move || {
         print::unhide_cursor_on_process_exit();
         std::process::exit(0);
-    }).expect("Could not set quit handler.");
+    })
+    .expect("Could not set quit handler.");
     loop {
         match run.wall_styles.choose(&mut rng) {
             Some(&style) => run.args.style = style,

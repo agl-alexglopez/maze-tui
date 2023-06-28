@@ -1,8 +1,8 @@
-use maze;
-use speed;
 use crate::build;
 use crate::disjoint;
+use maze;
 use print;
+use speed;
 
 use rand::prelude::*;
 use std::collections::HashMap;
@@ -50,7 +50,6 @@ pub fn generate_maze(maze: &mut maze::Maze) {
             print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
         }
     }
-    build::clear_and_flush_grid(maze);
 }
 
 pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {

@@ -1,31 +1,29 @@
 use maze;
 use print;
 
+use builders::arena;
+use builders::build::clear_and_flush_grid;
+use builders::eller;
+use builders::grid;
+use builders::kruskal;
+use builders::modify;
+use builders::prim;
 use builders::recursive_backtracker;
 use builders::recursive_subdivision;
-use builders::kruskal;
-use builders::prim;
-use builders::eller;
 use builders::wilson_adder;
 use builders::wilson_carver;
-use builders::grid;
-use builders::arena;
-use builders::modify;
 
-use solvers::dfs;
-use solvers::rdfs;
-use solvers::floodfs;
 use solvers::bfs;
+use solvers::dfs;
+use solvers::floodfs;
+use solvers::rdfs;
 
 use std::collections::{HashMap, HashSet};
 use std::env;
 
 use ctrlc;
 
-type BuildFunction = (
-    fn(&mut maze::Maze),
-    fn(&mut maze::Maze, speed::Speed),
-);
+type BuildFunction = (fn(&mut maze::Maze), fn(&mut maze::Maze, speed::Speed));
 
 type SolveFunction = (fn(maze::BoxMaze), fn(maze::BoxMaze, speed::Speed));
 
@@ -84,7 +82,8 @@ fn main() {
     ctrlc::set_handler(move || {
         print::unhide_cursor_on_process_exit();
         std::process::exit(0);
-    }).expect("Could not set quit handler.");
+    })
+    .expect("Could not set quit handler.");
 
     let tables = LookupTables {
         arg_flags: HashSet::from([
@@ -315,7 +314,10 @@ fn main() {
         }
     }
     if process_current {
-        quit(&FlagArg { flag: &prev_flag, arg: "[NONE]" });
+        quit(&FlagArg {
+            flag: &prev_flag,
+            arg: "[NONE]",
+        });
     }
 
     let mut maze = maze::Maze::new(run.args);
@@ -323,6 +325,7 @@ fn main() {
     match run.build_view {
         ViewingMode::StaticImage => {
             run.build.0(&mut maze);
+            clear_and_flush_grid(&maze);
             match run.modify {
                 Some((static_mod, _)) => static_mod(&mut maze),
                 None => {}

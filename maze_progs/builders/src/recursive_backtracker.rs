@@ -1,6 +1,6 @@
+use crate::build;
 use maze;
 use speed;
-use crate::build;
 
 use rand::{seq::SliceRandom, thread_rng, Rng};
 use std::{thread, time};
@@ -43,7 +43,6 @@ pub fn generate_maze(maze: &mut maze::Maze) {
             branches_remain = true;
         }
     }
-    build::clear_and_flush_grid(maze);
 }
 
 pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
