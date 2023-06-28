@@ -30,7 +30,7 @@ const R: usize = 0;
 const G: usize = 1;
 const B: usize = 2;
 const PAINTED_BIT: maze::Square = 0b1_0000;
-const ANIMATION_SPEEDS: [SpeedUnit;8] = [0, 20000, 10000, 5000, 2000, 1000, 500, 250];
+const ANIMATION_SPEEDS: [SpeedUnit;8] = [0, 10000, 5000, 2000, 1000, 500, 250, 50];
 
 pub fn paint_distance_from_center(maze: maze::BoxMaze) {
     let row_mid = maze.row_size() / 2;
