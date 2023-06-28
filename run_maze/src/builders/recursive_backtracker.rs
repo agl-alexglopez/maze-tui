@@ -1,3 +1,4 @@
+pub use crate::utilities::speed;
 pub use crate::utilities::build;
 pub use crate::utilities::maze;
 
@@ -45,7 +46,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
     build::clear_and_flush_grid(maze);
 }
 
-pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
+pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls_animated(maze);
     build::clear_and_flush_grid(maze);

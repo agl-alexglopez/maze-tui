@@ -2,6 +2,7 @@ mod builders;
 mod solvers;
 mod utilities;
 
+pub use crate::utilities::speed;
 pub use crate::utilities::build;
 pub use crate::utilities::maze;
 pub use crate::utilities::print;
@@ -17,6 +18,8 @@ pub use crate::builders::recursive_backtracker;
 pub use crate::builders::recursive_subdivision;
 pub use crate::builders::wilson_adder;
 pub use crate::builders::wilson_carver;
+
+pub use crate::builders::modify;
 
 pub use crate::solvers::bfs;
 pub use crate::solvers::dfs;
@@ -34,33 +37,23 @@ use rand::{
     thread_rng,
 };
 
-type BuildDemo = fn(&mut maze::Maze, build::BuilderSpeed);
+type BuildDemo = fn(&mut maze::Maze, speed::Speed);
 
-type SolveDemo = fn(maze::BoxMaze, solve::SolverSpeed);
+type SolveDemo = fn(maze::BoxMaze, speed::Speed);
 
 struct DemoRunner {
     args: maze::MazeArgs,
-    builder_speed: Vec<build::BuilderSpeed>,
     wall_styles: Vec<maze::MazeStyle>,
     builders: Vec<BuildDemo>,
     modifications: Vec<BuildDemo>,
-    solver_speed: Vec<solve::SolverSpeed>,
     solvers: Vec<SolveDemo>,
+    speeds: Vec<speed::Speed>,
 }
 
 impl DemoRunner {
     fn default() -> Self {
         Self {
             args: maze::MazeArgs::default(),
-            builder_speed: vec![
-                build::BuilderSpeed::Speed1,
-                build::BuilderSpeed::Speed2,
-                build::BuilderSpeed::Speed3,
-                build::BuilderSpeed::Speed4,
-                build::BuilderSpeed::Speed5,
-                build::BuilderSpeed::Speed6,
-                build::BuilderSpeed::Speed7,
-            ],
             wall_styles: vec![
                 maze::MazeStyle::Sharp,
                 maze::MazeStyle::Round,
@@ -80,16 +73,7 @@ impl DemoRunner {
                 wilson_adder::animate_maze,
                 grid::animate_maze,
             ],
-            modifications: vec![build::add_cross_animated, build::add_x_animated],
-            solver_speed: vec![
-                solve::SolverSpeed::Speed1,
-                solve::SolverSpeed::Speed2,
-                solve::SolverSpeed::Speed3,
-                solve::SolverSpeed::Speed4,
-                solve::SolverSpeed::Speed5,
-                solve::SolverSpeed::Speed6,
-                solve::SolverSpeed::Speed7,
-            ],
+            modifications: vec![modify::add_cross_animated, modify::add_x_animated],
             solvers: vec![
                 dfs::animate_hunt,
                 dfs::animate_gather,
@@ -103,6 +87,15 @@ impl DemoRunner {
                 floodfs::animate_hunt,
                 floodfs::animate_gather,
                 floodfs::animate_corner,
+            ],
+            speeds: vec![
+                speed::Speed::Speed1,
+                speed::Speed::Speed2,
+                speed::Speed::Speed3,
+                speed::Speed::Speed4,
+                speed::Speed::Speed5,
+                speed::Speed::Speed6,
+                speed::Speed::Speed7,
             ],
         }
     }
@@ -143,11 +136,11 @@ fn main() {
             None => maze_panic!("Styles not set for loop, broken"),
         }
         let mut maze = maze::Maze::new(run.args);
-        let build_speed = match run.builder_speed.choose(&mut rng) {
+        let build_speed = match run.speeds.choose(&mut rng) {
             Some(&speed) => speed,
             None => maze_panic!("Build speed array empty."),
         };
-        let solve_speed = match run.solver_speed.choose(&mut rng) {
+        let solve_speed = match run.speeds.choose(&mut rng) {
             Some(&speed) => speed,
             None => maze_panic!("Solve speed array empty."),
         };

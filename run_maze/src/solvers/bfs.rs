@@ -1,4 +1,5 @@
 use crate::maze;
+use crate::utilities::speed;
 use crate::utilities::print;
 use crate::utilities::solve;
 use crate::maze_panic;
@@ -70,7 +71,7 @@ pub fn hunt(mut maze: maze::BoxMaze) {
     };
 }
 
-pub fn animate_hunt(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
+pub fn animate_hunt(mut maze: maze::BoxMaze, speed: speed::Speed) {
     print::set_cursor_position(maze::Point {
         row: maze.row_size(),
         col: 0,
@@ -171,7 +172,7 @@ pub fn gather(mut maze: maze::BoxMaze) {
     };
 }
 
-pub fn animate_gather(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
+pub fn animate_gather(mut maze: maze::BoxMaze, speed: speed::Speed) {
     print::set_cursor_position(maze::Point {
         row: maze.row_size(),
         col: 0,
@@ -285,7 +286,7 @@ pub fn corner(mut maze: maze::BoxMaze) {
     };
 }
 
-pub fn animate_corner(mut maze: maze::BoxMaze, speed: solve::SolverSpeed) {
+pub fn animate_corner(mut maze: maze::BoxMaze, speed: speed::Speed) {
     print::set_cursor_position(maze::Point {
         row: maze.row_size(),
         col: 0,

@@ -1,7 +1,8 @@
-use crate::build;
-use crate::maze;
-use crate::maze_panic;
+use crate::utilities::maze;
+use crate::utilities::speed;
+use crate::utilities::build;
 use crate::utilities::disjoint;
+use crate::maze_panic;
 
 use rand::prelude::*;
 use std::collections::HashMap;
@@ -52,7 +53,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
     build::clear_and_flush_grid(maze);
 }
 
-pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
+pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls_animated(maze);
     build::clear_and_flush_grid(maze);

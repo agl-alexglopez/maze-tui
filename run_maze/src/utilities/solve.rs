@@ -12,18 +12,6 @@ pub type ThreadPaint = u16;
 pub type ThreadCache = u16;
 pub type SolveSpeedUnit = u64;
 
-#[derive(Clone, Copy)]
-pub enum SolverSpeed {
-    Instant = 0,
-    Speed1,
-    Speed2,
-    Speed3,
-    Speed4,
-    Speed5,
-    Speed6,
-    Speed7,
-}
-
 pub struct ThreadGuide {
     pub index: usize,
     pub paint: ThreadPaint,

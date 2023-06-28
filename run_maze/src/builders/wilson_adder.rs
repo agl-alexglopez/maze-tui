@@ -1,5 +1,6 @@
-use crate::build;
-use crate::maze;
+pub use crate::utilities::speed;
+pub use crate::utilities::build;
+use crate::utilities::maze;
 use crate::maze_panic;
 
 use rand::{seq::SliceRandom, thread_rng, Rng};
@@ -60,7 +61,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
     }
 }
 
-pub fn animate_maze(maze: &mut maze::Maze, speed: build::BuilderSpeed) {
+pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::build_wall_outline(maze);
     build::clear_and_flush_grid(maze);
