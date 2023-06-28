@@ -1,0 +1,13 @@
+[package]
+name = "builders"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+speed = { path = "../speed" }
+maze = { path = "../maze" }
+print = { path = "../print" }
+rand = "0.8.5"
+
