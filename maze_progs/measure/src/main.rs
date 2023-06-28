@@ -267,7 +267,7 @@ fn set_args(tables: &LookupTables, measure: &mut MeasurementRunner, pairs: &Flag
     match pairs.flag {
         "-h" => {
             print_usage();
-            std::process::exit(0);
+            safe_exit();
         }
         "-r" => measure.args.odd_rows = set_dimension(&pairs),
         "-c" => measure.args.odd_cols = set_dimension(&pairs),
@@ -321,11 +321,17 @@ fn set_dimension(pairs: &FlagArg) -> i32 {
     }
 }
 
+fn safe_exit() {
+    print::unhide_cursor_on_process_exit();
+    std::process::exit(0);
+}
+
 fn quit(pairs: &FlagArg) {
     println!("Flag was: {}", pairs.flag);
     println!("Argument was: {}", pairs.arg);
     print_usage();
-    print::maze_panic!("");
+    print::unhide_cursor_on_process_exit();
+    std::process::exit(0);
 }
 
 fn print_usage() {
