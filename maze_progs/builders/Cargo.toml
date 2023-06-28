@@ -10,4 +10,5 @@ speed = { path = "../speed" }
 maze = { path = "../maze" }
 print = { path = "../print" }
 rand = "0.8.5"
+crossterm = "0.26.1"
 

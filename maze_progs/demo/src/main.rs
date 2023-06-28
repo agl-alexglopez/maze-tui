@@ -1,30 +1,22 @@
-mod builders;
-mod solvers;
-mod utilities;
+use maze;
+use speed;
+use print;
 
-pub use crate::utilities::speed;
-pub use crate::utilities::build;
-pub use crate::utilities::maze;
-pub use crate::utilities::print;
-pub use crate::utilities::solve;
-pub use crate::utilities::panics;
+use builders::arena;
+use builders::eller;
+use builders::grid;
+use builders::kruskal;
+use builders::prim;
+use builders::recursive_backtracker;
+use builders::recursive_subdivision;
+use builders::wilson_adder;
+use builders::wilson_carver;
+use builders::modify;
 
-pub use crate::builders::arena;
-pub use crate::builders::eller;
-pub use crate::builders::grid;
-pub use crate::builders::kruskal;
-pub use crate::builders::prim;
-pub use crate::builders::recursive_backtracker;
-pub use crate::builders::recursive_subdivision;
-pub use crate::builders::wilson_adder;
-pub use crate::builders::wilson_carver;
-
-pub use crate::builders::modify;
-
-pub use crate::solvers::bfs;
-pub use crate::solvers::dfs;
-pub use crate::solvers::floodfs;
-pub use crate::solvers::rdfs;
+use solvers::bfs;
+use solvers::dfs;
+use solvers::floodfs;
+use solvers::rdfs;
 
 use std::env;
 use std::io::{stdout, Write};
@@ -110,7 +102,7 @@ fn main() {
             match prev_flag {
                 "-r" => set_rows(&mut run, &a),
                 "-c" => set_cols(&mut run, &a),
-                _ => maze_panic!("Bad flag snuck past first check?"),
+                _ => print::maze_panic!("Bad flag snuck past first check?"),
             }
             process_current = false;
             continue;
@@ -118,7 +110,7 @@ fn main() {
         match a.as_str() {
             "-r" => prev_flag = "-r",
             "-c" => prev_flag = "-c",
-            _ => maze_panic!("May only specify row or col size for this program (-r or -c)"),
+            _ => print::maze_panic!("May only specify row or col size for this program (-r or -c)"),
         }
         process_current = true;
     }
@@ -133,24 +125,24 @@ fn main() {
     loop {
         match run.wall_styles.choose(&mut rng) {
             Some(&style) => run.args.style = style,
-            None => maze_panic!("Styles not set for loop, broken"),
+            None => print::maze_panic!("Styles not set for loop, broken"),
         }
         let mut maze = maze::Maze::new(run.args);
         let build_speed = match run.speeds.choose(&mut rng) {
             Some(&speed) => speed,
-            None => maze_panic!("Build speed array empty."),
+            None => print::maze_panic!("Build speed array empty."),
         };
         let solve_speed = match run.speeds.choose(&mut rng) {
             Some(&speed) => speed,
-            None => maze_panic!("Solve speed array empty."),
+            None => print::maze_panic!("Solve speed array empty."),
         };
         let build_algo = match run.builders.choose(&mut rng) {
             Some(&algo) => algo,
-            None => maze_panic!("Build algo array empty."),
+            None => print::maze_panic!("Build algo array empty."),
         };
         let solve_algo = match run.solvers.choose(&mut rng) {
             Some(&algo) => algo,
-            None => maze_panic!("Build algo array empty."),
+            None => print::maze_panic!("Build algo array empty."),
         };
 
         build_algo(&mut maze, build_speed);
@@ -163,7 +155,7 @@ fn main() {
                 Some(modder) => {
                     modder(&mut maze, build_speed);
                 }
-                None => maze_panic!("Empty modification table."),
+                None => print::maze_panic!("Empty modification table."),
             }
         }
 
@@ -181,12 +173,12 @@ fn set_rows(run: &mut DemoRunner, size: &str) {
     match size.parse::<i32>() {
         Ok(num) => {
             if num < 7 {
-                maze_panic!("Demo can only run larger than 7x7");
+                print::maze_panic!("Demo can only run larger than 7x7");
             }
             run.args.odd_rows = num + 1 - (num % 2);
         }
         Err(_) => {
-            maze_panic!("Invalid row size: {}", size);
+            print::maze_panic!("Invalid row size: {}", size);
         }
     }
 }
@@ -195,12 +187,12 @@ fn set_cols(run: &mut DemoRunner, size: &str) {
     match size.parse::<i32>() {
         Ok(num) => {
             if num < 7 {
-                maze_panic!("Demo can only run larger than 7x7");
+                print::maze_panic!("Demo can only run larger than 7x7");
             }
             run.args.odd_cols = num + 1 - (num % 2);
         }
         Err(_) => {
-            maze_panic!("Invalid col size: {}", size);
+            print::maze_panic!("Invalid col size: {}", size);
         }
     }
 }

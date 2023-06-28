@@ -18,7 +18,6 @@ pub const BUILDER_BIT: maze::Square = 0b0001_0000_0000_0000;
 pub const MARKER_SHIFT: u8 = 4;
 pub const NUM_DIRECTIONS: usize = 4;
 pub const MARKERS_MASK: BacktrackMarker = 0b1111_0000;
-pub const IS_ORIGIN: BacktrackMarker = 0b0000_0000;
 pub const FROM_NORTH: BacktrackMarker = 0b0001_0000;
 pub const FROM_EAST: BacktrackMarker = 0b0010_0000;
 pub const FROM_SOUTH: BacktrackMarker = 0b0011_0000;
@@ -193,18 +192,6 @@ pub fn build_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, speed: Sp
 
 // Path Carving Helpers
 
-pub fn clear_for_wall_adders(maze: &mut maze::Maze) {
-    for r in 0..maze.row_size() {
-        for c in 0..maze.col_size() {
-            if c == 0 || c == maze.col_size() - 1 || r == 0 || r == maze.row_size() - 1 {
-                maze[r as usize][c as usize] |= BUILDER_BIT;
-                continue;
-            }
-            build_path(maze, maze::Point { row: r, col: c });
-        }
-    }
-}
-
 pub fn mark_origin(maze: &mut maze::Maze, walk: maze::Point, next: maze::Point) {
     let u_next_row = next.row as usize;
     let u_next_col = next.col as usize;
@@ -344,7 +331,7 @@ pub fn carve_path_markings(maze: &mut maze::Maze, cur: maze::Point, next: maze::
         wall.col += 1;
         maze[u_next_row][u_next_col] |= FROM_WEST;
     } else {
-        maze_panic!("Wall break error. Cur: {:?} Next: {:?}", cur, next);
+        print::maze_panic!("Wall break error. Cur: {:?} Next: {:?}", cur, next);
     }
     carve_path_walls(maze, cur);
     carve_path_walls(maze, next);
@@ -373,7 +360,7 @@ pub fn carve_path_markings_animated(
         wall.col += 1;
         maze[u_next_row][u_next_col] |= FROM_WEST;
     } else {
-        maze_panic!("Wall break error. Cur: {:?} Next: {:?}", cur, next);
+        print::maze_panic!("Wall break error. Cur: {:?} Next: {:?}", cur, next);
     }
     carve_path_walls_animated(maze, cur, speed);
     carve_path_walls_animated(maze, next, speed);
@@ -393,7 +380,7 @@ pub fn join_squares(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point) 
     } else if next.col > cur.col {
         wall.col += 1;
     } else {
-        maze_panic!("Cell join error. Cur: {:?} Next: {:?}", cur, next);
+        print::maze_panic!("Cell join error. Cur: {:?} Next: {:?}", cur, next);
     }
     build_path(maze, wall);
     maze[wall.row as usize][wall.col as usize] |= BUILDER_BIT;
@@ -417,7 +404,7 @@ pub fn join_squares_animated(
     } else if next.col > cur.col {
         wall.col += 1;
     } else {
-        maze_panic!("Cell join error. Maze won't build");
+        print::maze_panic!("Cell join error. Maze won't build");
     }
     carve_path_walls_animated(maze, cur, speed);
     carve_path_walls_animated(maze, wall, speed);
@@ -541,18 +528,6 @@ pub fn flush_cursor_maze_coordinate(maze: &maze::Maze, p: maze::Point) {
     print::flush();
 }
 
-pub fn print_maze_square(maze: &maze::Maze, p: maze::Point) {
-    let square = &maze[p.row as usize][p.col as usize];
-    print::set_cursor_position(p);
-    if square & maze::PATH_BIT == 0 {
-        print!("{}", maze.wall_style()[(square & maze::WALL_MASK) as usize]);
-    } else if square & maze::PATH_BIT != 0 {
-        print!(" ");
-    } else {
-        maze_panic!("Maze square has no category");
-    }
-}
-
 pub fn print_square(maze: &maze::Maze, p: maze::Point) {
     let square = &maze[p.row as usize][p.col as usize];
     print::set_cursor_position(p);
@@ -564,7 +539,7 @@ pub fn print_square(maze: &maze::Maze, p: maze::Point) {
     } else if square & maze::PATH_BIT != 0 {
         print!(" ");
     } else {
-        maze_panic!("Printed a maze square without a category.");
+        print::maze_panic!("Printed a maze square without a category.");
     }
 }
 
@@ -579,11 +554,3 @@ pub fn clear_and_flush_grid(maze: &maze::Maze) {
     print::flush();
 }
 
-pub fn print_maze(maze: &maze::Maze) {
-    for r in 0..maze.row_size() {
-        for c in 0..maze.col_size() {
-            print_square(maze, maze::Point { row: r, col: c });
-        }
-        print!("\n");
-    }
-}

@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "run_maze",
+    "demo",
     "maze",
     "builders",
     "solvers",

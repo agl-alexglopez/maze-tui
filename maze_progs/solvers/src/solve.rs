@@ -1,6 +1,5 @@
-use crate::maze;
-use crate::print;
-use crate::maze_panic;
+use maze;
+use print;
 
 use rand::prelude::*;
 use std::io::{stdout, Write};
@@ -97,12 +96,7 @@ pub fn find_nearest_square(maze: &maze::Maze, choice: maze::Point) -> maze::Poin
         }
     }
     print_paths(maze);
-    maze_panic!("Could not place a point in this maze. Was it built correctly?");
-}
-
-pub fn clear_and_flush_paths(maze: &maze::Maze) {
-    print::clear_screen();
-    print_paths(maze);
+    print::maze_panic!("Could not place a point in this maze. Was it built correctly?");
 }
 
 pub fn print_paths(maze: &maze::Maze) {
@@ -148,7 +142,7 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
         print!(" ");
         return;
     }
-    maze_panic!("Uncategorized maze square! Check the bits.");
+    print::maze_panic!("Uncategorized maze square! Check the bits.");
 }
 
 pub fn print_hunt_solution_message(winning_index: Option<usize>) {
@@ -220,15 +214,9 @@ pub const ZERO_THREAD: ThreadPaint = 0b0001_0000;
 pub const ONE_THREAD: ThreadPaint = 0b0010_0000;
 pub const TWO_THREAD: ThreadPaint = 0b0100_0000;
 pub const THREE_THREAD: ThreadPaint = 0b1000_0000;
-pub const ERROR_THREAD: ThreadPaint = 0b0000_0000;
 pub const THREAD_MASKS: [ThreadPaint; 4] = [ZERO_THREAD, ONE_THREAD, TWO_THREAD, THREE_THREAD];
 
-pub const CLEAR_CACHE: ThreadCache = 0b0001_1111_1111_0000;
 pub const CACHE_MASK: ThreadCache = 0b1111_0000_0000;
-pub const ZERO_SEEN: ThreadCache = 0b0001_0000_0000;
-pub const ONE_SEEN: ThreadCache = 0b0010_0000_0000;
-pub const TWO_SEEN: ThreadCache = 0b0100_0000_0000;
-pub const THREE_SEEN: ThreadCache = 0b1000_0000_0000;
 
 pub const ANSI_RED: &str = "\x1b[38;5;1m█\x1b[0m";
 pub const ANSI_GRN: &str = "\x1b[38;5;2m█\x1b[0m";
@@ -239,15 +227,12 @@ pub const ANSI_MAG: &str = "\x1b[38;5;201m█\x1b[0m";
 pub const ANSI_CYN: &str = "\x1b[38;5;87m█\x1b[0m";
 pub const ANSI_WIT: &str = "\x1b[38;5;231m█\x1b[0m";
 pub const ANSI_PRP_RED: &str = "\x1b[38;5;204m█\x1b[0m";
-pub const ANSI_BLU_MAG: &str = "\x1b[38;5;105m█\x1b[0m";
 pub const ANSI_RED_GRN_BLU: &str = "\x1b[38;5;121m█\x1b[0m";
 pub const ANSI_GRN_PRP: &str = "\x1b[38;5;106m█\x1b[0m";
 pub const ANSI_GRN_BLU_PRP: &str = "\x1b[38;5;60m█\x1b[0m";
 pub const ANSI_RED_GRN_PRP: &str = "\x1b[38;5;105m█\x1b[0m";
 pub const ANSI_RED_BLU_PRP: &str = "\x1b[38;5;89m█\x1b[0m";
 pub const ANSI_DRK_BLU_MAG: &str = "\x1b[38;5;57m█\x1b[0m";
-pub const ANSI_BOLD: &str = "\x1b[1m";
-pub const ANSI_NIL: &str = "\x1b[0m";
 pub const ANSI_NO_SOLUTION: &str = "\x1b[38;5;15m\x1b[48;255;0;0m╳ no thread won..\x1b[0m";
 pub const ANSI_FINISH: &str = "\x1b[1m\x1b[38;5;87mF\x1b[0m";
 pub const ANSI_START: &str = "\x1b[1m\x1b[38;5;87mS\x1b[0m";

@@ -1,9 +1,21 @@
 use maze;
 use print;
 
-use builders;
+use builders::recursive_backtracker;
+use builders::recursive_subdivision;
+use builders::kruskal;
+use builders::prim;
+use builders::eller;
+use builders::wilson_adder;
+use builders::wilson_carver;
+use builders::grid;
+use builders::arena;
+use builders::modify;
 
-use solvers;
+use solvers::dfs;
+use solvers::rdfs;
+use solvers::floodfs;
+use solvers::bfs;
 
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -412,7 +424,7 @@ fn quit(pairs: &FlagArg) {
     println!("Flag was: {}", pairs.flag);
     println!("Argument was: {}", pairs.arg);
     print_usage();
-    maze_panic!("");
+    print::maze_panic!("");
 }
 
 fn print_usage() {

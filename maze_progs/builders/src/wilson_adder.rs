@@ -1,5 +1,5 @@
-pub use speed;
-pub use crate::build;
+use speed;
+use crate::build;
 use maze;
 use print;
 
@@ -259,7 +259,7 @@ fn build_with_marks(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point) 
     } else if next.col > cur.col {
         wall.col += 1;
     } else {
-        maze_panic!("Wall break error. Step through wall didn't work");
+        print::maze_panic!("Wall break error. Step through wall didn't work");
     }
     maze[cur.row as usize][cur.col as usize] &= !WALK_BIT;
     maze[next.row as usize][next.col as usize] &= !WALK_BIT;
@@ -284,7 +284,7 @@ fn build_with_marks_animated(
     } else if next.col > cur.col {
         wall.col += 1;
     } else {
-        maze_panic!(
+        print::maze_panic!(
             "Wall break error. Step through wall didn't work: cur {:?}, next {:?}",
             cur, next
         );

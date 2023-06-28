@@ -30,7 +30,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                     build::join_squares(maze, above, below);
                 }
             } else {
-                maze_panic!("Kruskal couldn't find a cell id. Build broke.");
+                print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
             }
             continue;
         }
@@ -47,7 +47,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                 build::join_squares(maze, right, left);
             }
         } else {
-            maze_panic!("Kruskal couldn't find a cell id. Build broke.");
+            print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
         }
     }
     build::clear_and_flush_grid(maze);
@@ -77,7 +77,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                 }
                 continue;
             }
-            maze_panic!("Kruskal couldn't find a cell id. Build broke.");
+            print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
         }
         let left = maze::Point {
             row: w.row,
@@ -93,7 +93,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
             }
             continue;
         }
-        maze_panic!("Kruskal couldn't find a cell id. Build broke.");
+        print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
     }
 }
 

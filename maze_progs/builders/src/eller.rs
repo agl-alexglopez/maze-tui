@@ -52,7 +52,7 @@ impl SlidingSetWindow {
 
     fn generate_sets(&mut self, row: usize) {
         if row > WINDOW_SIZE {
-            maze_panic!(
+            print::maze_panic!(
                 "Cannot generate sets for a row that does not exist, row: {}",
                 row
             );

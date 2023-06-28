@@ -1,4 +1,5 @@
-pub mod build;
+pub(crate) mod build;
+pub(crate) mod disjoint;
 pub mod arena;
 pub mod eller;
 pub mod grid;
