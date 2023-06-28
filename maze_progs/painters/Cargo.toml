@@ -1,5 +1,5 @@
 [package]
-name = "measure"
+name = "painters"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,7 +10,4 @@ maze = { path = "../maze" }
 builders = { path = "../builders" }
 print = { path = "../print" }
 speed = { path = "../speed" }
-painters = { path = "../painters" }
 crossterm = "0.26.1"
-rand = "0.8.5"
-ctrlc = "3.4.0"

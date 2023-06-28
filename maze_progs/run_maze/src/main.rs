@@ -2,7 +2,6 @@ use maze;
 use print;
 
 use builders::arena;
-use builders::build::clear_and_flush_grid;
 use builders::eller;
 use builders::grid;
 use builders::kruskal;
@@ -12,6 +11,7 @@ use builders::recursive_backtracker;
 use builders::recursive_subdivision;
 use builders::wilson_adder;
 use builders::wilson_carver;
+use builders::build::clear_and_flush_grid;
 
 use solvers::bfs;
 use solvers::dfs;
@@ -24,7 +24,6 @@ use std::env;
 use ctrlc;
 
 type BuildFunction = (fn(&mut maze::Maze), fn(&mut maze::Maze, speed::Speed));
-
 type SolveFunction = (fn(maze::BoxMaze), fn(maze::BoxMaze, speed::Speed));
 
 struct FlagArg<'a, 'b> {
@@ -92,7 +91,6 @@ fn main() {
             String::from("-b"),
             String::from("-s"),
             String::from("-h"),
-            String::from("-g"),
             String::from("-d"),
             String::from("-m"),
             String::from("-sa"),
@@ -307,9 +305,10 @@ fn main() {
                 prev_flag = flag;
             }
             None => {
-                println!("Invalid argument flag: {}", a);
-                print_usage();
-                std::process::exit(1);
+                quit(&FlagArg {
+                    flag: &a,
+                    arg: "[NONE]",
+                });
             }
         }
     }
@@ -355,8 +354,8 @@ fn set_args(tables: &LookupTables, run: &mut MazeRunner, pairs: &FlagArg) {
             print_usage();
             std::process::exit(0);
         }
-        "-r" => set_rows(run, &pairs),
-        "-c" => set_cols(run, &pairs),
+        "-r" => run.args.odd_rows = set_dimension(&pairs),
+        "-c" => run.args.odd_cols = set_dimension(&pairs),
         "-b" => match tables.build_table.get(pairs.arg) {
             Some(build_tuple) => run.build = *build_tuple,
             None => quit(pairs),
@@ -391,8 +390,8 @@ fn set_args(tables: &LookupTables, run: &mut MazeRunner, pairs: &FlagArg) {
     }
 }
 
-fn set_rows(run: &mut MazeRunner, pairs: &FlagArg) {
-    run.args.odd_rows = match pairs.arg.parse::<i32>() {
+fn set_dimension(pairs: &FlagArg) -> i32 {
+    match pairs.arg.parse::<i32>() {
         Ok(num) => {
             if num < 7 {
                 quit(&pairs);
@@ -404,23 +403,7 @@ fn set_rows(run: &mut MazeRunner, pairs: &FlagArg) {
             quit(&pairs);
             std::process::exit(1);
         }
-    };
-}
-
-fn set_cols(run: &mut MazeRunner, pairs: &FlagArg) {
-    run.args.odd_cols = match pairs.arg.parse::<i32>() {
-        Ok(num) => {
-            if num < 7 {
-                quit(&pairs);
-                std::process::exit(1);
-            }
-            num
-        }
-        Err(_) => {
-            quit(&pairs);
-            std::process::exit(1);
-        }
-    };
+    }
 }
 
 fn quit(pairs: &FlagArg) {

@@ -125,6 +125,7 @@ dependencies = [
  "crossterm",
  "ctrlc",
  "maze",
+ "painters",
  "print",
  "rand",
  "speed",
@@ -152,6 +153,17 @@ dependencies = [
  "cfg-if",
  "libc",
  "static_assertions",
+]
+
+[[package]]
+name = "painters"
+version = "0.1.0"
+dependencies = [
+ "builders",
+ "crossterm",
+ "maze",
+ "print",
+ "speed",
 ]
 
 [[package]]
