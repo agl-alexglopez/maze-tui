@@ -163,6 +163,7 @@ dependencies = [
  "crossterm",
  "maze",
  "print",
+ "rand",
  "speed",
 ]
 

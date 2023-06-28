@@ -18,6 +18,8 @@ use painters;
 use std::collections::{HashMap, HashSet};
 use std::env;
 
+use ctrlc;
+
 type BuildFunction = (fn(&mut maze::Maze), fn(&mut maze::Maze, speed::Speed));
 type PaintFunction = (fn(maze::BoxMaze), fn(maze::BoxMaze, speed::Speed));
 
@@ -72,6 +74,11 @@ struct LookupTables {
 fn main() {
     let invisible = print::InvisibleCursor::new();
     invisible.hide();
+    ctrlc::set_handler(move || {
+        print::unhide_cursor_on_process_exit();
+        std::process::exit(0);
+    }).expect("Could not set quit handler.");
+
     let tables = LookupTables {
         arg_flags: HashSet::from([
             String::from("-r"),

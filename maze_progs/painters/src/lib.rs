@@ -6,12 +6,12 @@ use std::collections::{HashMap, VecDeque};
 use std::io::{stdout, Write};
 use std::{thread, time};
 
+use rand::{thread_rng, Rng};
+
 type SpeedUnit = u64;
 
 struct Rgb {
-    r: u8,
-    g: u8,
-    b: u8,
+    ch: [u8;3],
 }
 
 struct DistanceMap {
@@ -26,6 +26,9 @@ impl DistanceMap {
 }
 
 const RGB_ESCAPE: &str = "\x1b[38;2;";
+const R: usize = 0;
+const G: usize = 1;
+const B: usize = 2;
 const PAINTED_BIT: maze::Square = 0b1_0000;
 const ANIMATION_SPEEDS: [SpeedUnit;8] = [0, 20000, 10000, 5000, 2000, 1000, 500, 250];
 
@@ -113,6 +116,8 @@ fn animate_distances(mut maze: maze::BoxMaze, map: &DistanceMap, animation: Spee
         col: col_mid + 1 - (col_mid % 2),
     };
     let mut bfs = VecDeque::from([start]);
+    let mut rng = thread_rng();
+    let rand_color_choice: usize = rng.gen_range(0..3);
     while let Some(cur) = bfs.pop_front() {
         maze[cur.row as usize][cur.col as usize] |= PAINTED_BIT;
         match map.distances.get(&cur) {
@@ -120,12 +125,10 @@ fn animate_distances(mut maze: maze::BoxMaze, map: &DistanceMap, animation: Spee
                 let intensity = (map.max - dist) as f64 / map.max as f64;
                 let dark = (255f64 * intensity) as u8;
                 let bright = 128 + (127f64 * intensity) as u8;
+                let mut color = Rgb {ch: [dark, dark, dark] };
+                color.ch[rand_color_choice] = bright;
                 print_rgb(
-                    Rgb {
-                        r: dark,
-                        g: bright,
-                        b: dark,
-                    },
+                    color,
                     cur,
                 );
                 stdout().flush().expect("Couldn't flush cursor");
@@ -149,6 +152,8 @@ fn animate_distances(mut maze: maze::BoxMaze, map: &DistanceMap, animation: Spee
     println!();
 }
 fn print_distances(maze: maze::BoxMaze, map: &DistanceMap) {
+    let mut rng = thread_rng();
+    let rand_color_choice: usize = rng.gen_range(0..3);
     for r in 0..maze.row_size() {
         for c in 0..maze.col_size() {
             let cur = maze::Point { row: r, col: c };
@@ -157,12 +162,10 @@ fn print_distances(maze: maze::BoxMaze, map: &DistanceMap) {
                     let intensity = (map.max - dist) as f64 / map.max as f64;
                     let dark = (255f64 * intensity) as u8;
                     let bright = 128 + (127f64 * intensity) as u8;
+                    let mut color = Rgb {ch: [dark, dark, dark]};
+                    color.ch[rand_color_choice] = bright;
                     print_rgb(
-                        Rgb {
-                            r: dark,
-                            g: dark,
-                            b: bright,
-                        },
+                        color,
                         cur,
                     );
                 }
@@ -179,11 +182,11 @@ fn print_rgb(rgb: Rgb, p: maze::Point) {
         "{}",
         String::from(
             RGB_ESCAPE.to_owned()
-                + &rgb.r.to_string()
+                + &rgb.ch[R].to_string()
                 + ";"
-                + &rgb.g.to_string()
+                + &rgb.ch[G].to_string()
                 + ";"
-                + &rgb.b.to_string()
+                + &rgb.ch[B].to_string()
                 + "m"
                 + "█"
                 + "\x1b[0m"

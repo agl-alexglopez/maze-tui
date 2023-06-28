@@ -81,8 +81,7 @@ fn main() {
     ctrlc::set_handler(move || {
         print::unhide_cursor_on_process_exit();
         std::process::exit(0);
-    })
-    .expect("Could not set quit handler.");
+    }).expect("Could not set quit handler.");
 
     let tables = LookupTables {
         arg_flags: HashSet::from([
