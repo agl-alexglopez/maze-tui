@@ -336,7 +336,7 @@ fn print_usage() {
     │ ╷ ╵ ┌───┐ ╷ └─╴ ╷ │ ╷ │ ┌─╴ ┌─┬─╴ │ ╶─┐ ╵ ┌───╴ │ ╶───┬─┐ ╶─┬─┘ ╶─┐ │
     │ │   │   │ │     │ │ │ │ │   │ │   │   │   │     │     │ │   │     │ │
     │ └───┤ ┌─┘ ├─────┘ └─┤ ╵ │ ┌─┘ ╵ ┌─┴─┐ └───┤ ╶───┴───┐ │ └─┐ ╵ ┌─┬─┘ │
-    │     │ │   │      Thread Maze Usage Instructions     │ │   │   │ │   │
+    │     │ │   │       Maze Measurement Instructions     │ │   │   │ │   │
     ├───┐ ╵ │ -Use flags, followed by arguments, in any order:╷ └─┬─┘ │ ╷ │
     │   │   │ -r Rows flag. Set rows for the maze.    │   │ │ │   │   │ │ │
     │ ╶─┴─┐ └─┐ Any number > 7. Zoom out for larger mazes!╵ ╵ ├─┐ │ ╶─┤ └─┤
