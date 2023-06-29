@@ -40,7 +40,6 @@ pub fn generate_maze(maze: &mut maze::Maze) {
     let weight_range = Uniform::from(1..=100);
     let start = PriorityPoint {
         priority: weight_range.sample(&mut rng),
-        // This point must be random and odd.
         p: maze::Point {
             row: 2 * rng.gen_range(1..((maze.row_size() - 2) / 2)) + 1,
             col: 2 * rng.gen_range(1..((maze.col_size() - 2) / 2)) + 1,
