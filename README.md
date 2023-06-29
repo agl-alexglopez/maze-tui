@@ -9,7 +9,7 @@
 This project is a command line application that can be run with various combinations of commands. The basic principle behind the commands is that you can ask for any combination of settings, include any settings, exclude any settings, and the program will just work. There are sensible defaults for every flag so experiment with different combinations and tweaks until you get what you are looking for. To start, you should focus mainly on how big you want the maze to be, what algorithm you want to generate it, what algorithm you want to solve it, and if any of these algorithms should be animated in real time. I would reccomend using cargo to build the project.
 
 ```zsh
-$ cd run_maze/
+$ cd maze_progs/
 $ cargo build --release
 $ cargo run --release --bin run_maze
 ```
@@ -17,7 +17,7 @@ $ cargo run --release --bin run_maze
 If you would rather just see some cool mazes right away, run the demo I have included. It runs infinite random permutations of maze builder and solver animations so you can see a wide range of what the project has to offer. Stop the loop at any time with `CTRL<C>`.
 
 ```zsh
-$ cd run_maze/
+$ cd maze_progs/
 $ cargo build --release
 $ cargo run --release --bin demo
 # Or set the rows and columns to your liking for bigger or smaller demo mazes.
@@ -130,6 +130,72 @@ The `-d` flag determines the lines used to draw the maze. The walls are an inter
 ### Animation Flags
 
 The `-ba` flag indicates the speed of the builder animation on a scale from 1-7. The `-sa` flag does the same for the solver animation. This allows you to decide how fast the build or solve process should run. Faster speeds are needed if you zoom out to draw very large mazes.
+
+## Maze Measurement Program
+
+This next section is pretty much directly inspired by Jamis Buck's implementation of colorizing his mazes based upon distance from a starting point, most commonly the center. All settings for this section are based on being able to see some aspect of maze quality rated with a color heat map. The program works by painting the maze, starting at a single point, based on some criterion such as distance from that point. This can help us assess the quality of the mazes that we produce. Here are the settings to use the program.
+
+```zsh
+$ cd maze_progs/
+$ cargo build --release
+$ cargo run --release --bin measure
+```
+If you wish to dive into the more specific `run_maze` program, here is the help message that comes with the `-h` flag to get started.
+
+Use flags, followed by arguments, in any order:
+
+- `-r` Rows flag. Set rows for the maze.
+	- Any number > 7. Zoom out for larger mazes!
+- `-c` Columns flag. Set columns for the maze.
+	- Any number > 7. Zoom out for larger mazes!
+- `-b` Builder flag. Set maze building algorithm.
+	- `rdfs` - Randomized Depth First Search.
+	- `kruskal` - Randomized Kruskal's algorithm.
+	- `prim` - Randomized Prim's algorithm.
+	- `eller` - Randomized Eller's algorithm.
+	- `wilson` - Loop-Erased Random Path Carver.
+	- `wilson-walls` - Loop-Erased Random Wall Adder.
+	- `fractal` - Randomized recursive subdivision.
+	- `grid` - A random grid pattern.
+	- `arena` - Open floor with no walls.
+- `-m` Modification flag. Add shortcuts to the maze.
+	- `cross` - Add crossroads through the center.
+	- `x` - Add an x of crossing paths through center.
+- `-p` Painter flag. Set maze measuring algorithm.
+    - 'distance' - Distance from the center.
+- `-d` Draw flag. Set the line style for the maze.
+	- `sharp` - The default straight lines.
+	- `round` - Rounded corners.
+	- `doubles` - Sharp double lines.
+	- `bold` - Thicker straight lines.
+	- `contrast` - Full block width and height walls.
+	- `spikes` - Connected lines with spikes.
+- `-pa` Painter Animation flag. Watch the maze solution.
+	- Any number 1-7. Speed increases with number.
+- `-ba` Builder Animation flag. Watch the maze build.
+	- Any number 1-7. Speed increases with number.
+- `-h` Help flag. Make this prompt appear.
+
+If any flags are omitted, defaults are used.
+
+Examples:
+
+```zsh
+cargo run --release --bin measure
+cargo run --release --bin measure -- -r 51 -c 111 -b rdfs
+cargo run --release --bin measure -- -c 111 -p distance
+cargo run --release --bin measure -- -h
+```
+
+### Distance
+
+This is a basic concept that can reveal great details about mazes that are hard for use to notice just by looking them over. Starting from the center, every cell is simple coded with an intensity corresponding to the distance from the center. Lighter colors mean a path cell is closer to the center while darker colors are further from the center. You can choose to view the image as a static complete image all at once or animate the coloring process. I randomize the color you may see between red, green, and blue. There is no deeper significance to the color channel choice.
+
+![measure-distance-static](/images/measure-distance-static.png)
+
+The animated version is basically a visual representation of a breadth first search with coloring parameters added in.
+
+![measure-distance-animated](/images/measure-distance-animated.gif)
 
 ## Maze Generation Algorithms
 
