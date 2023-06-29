@@ -3,7 +3,6 @@ use print;
 use builders::build::print_square;
 
 use std::collections::{HashMap, HashSet, VecDeque};
-use std::io::{stdout, Write};
 use std::sync::{Arc, Mutex};
 use std::{thread, time};
 
@@ -280,5 +279,5 @@ fn animate_rgb(rgb: Rgb, p: maze::Point) {
                 + "\x1b[0m"
         )
     );
-    stdout().flush().expect("Could not flush stdout.");
+    print::flush();
 }
