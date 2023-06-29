@@ -140,8 +140,6 @@ $ cd maze_progs/
 $ cargo build --release
 $ cargo run --release --bin measure
 ```
-If you wish to dive into the more specific `run_maze` program, here is the help message that comes with the `-h` flag to get started.
-
 Use flags, followed by arguments, in any order:
 
 - `-r` Rows flag. Set rows for the maze.
@@ -183,7 +181,7 @@ Examples:
 ```zsh
 cargo run --release --bin measure
 cargo run --release --bin measure -- -r 51 -c 111 -b rdfs
-cargo run --release --bin measure -- -c 111 -p distance
+cargo run --release --bin measure -- -c 111 -p distance -ba 5 -pa 5
 cargo run --release --bin measure -- -h
 ```
 
