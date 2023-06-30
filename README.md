@@ -195,6 +195,16 @@ The animated version is basically a visual representation of a breadth first sea
 
 ![measure-distance-animated](/images/measure-distance-animated.gif)
 
+### Run Length
+
+This measurement will tell you the bias for straight passages that a maze has. Relative to the center of the maze you will see the bias for straight passages illustrated with a color heat map. For example, compare the tendency for long passages in a algorithm like the recursive backtracker when compared to the short dead ends in one like prim.
+
+![measure-runs-static](/images/measure-runs-static.png)
+
+The animated version illustrates the process of finding the runs from a breadth first search perspective.
+
+![measure-runs-animated](/images/measure-runs-static.gif)
+
 ## Maze Generation Algorithms
 
 When I started this project I was most interested in multithreading the maze solver algorithms. However, as I needed to come up with mazes for the threads to solve I found that the maze generation algorithms are far more interesting. There are even some algorithms in the collection that I think would be well suited for multithreading and I will definitely extend these when I get the chance. For the design of this project I gave myself some constraints and goals. They are as follows.
