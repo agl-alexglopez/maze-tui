@@ -203,7 +203,7 @@ This measurement will tell you the bias for straight passages that a maze has. R
 
 The animated version illustrates the process of finding the runs from a breadth first search perspective.
 
-![measure-runs-animated](/images/measure-runs-static.gif)
+![measure-runs-animated](/images/measure-runs-animated.gif)
 
 ## Maze Generation Algorithms
 
