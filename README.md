@@ -161,6 +161,7 @@ Use flags, followed by arguments, in any order:
 	- `x` - Add an x of crossing paths through center.
 - `-p` Painter flag. Set maze measuring algorithm.
     - `distance` - Distance from the center.
+    - `runs` - Run length bias of straight passages.
 - `-d` Draw flag. Set the line style for the maze.
 	- `sharp` - The default straight lines.
 	- `round` - Rounded corners.
