@@ -13,7 +13,8 @@ use builders::wilson_carver;
 use builders::modify;
 use builders::build::clear_and_flush_grid;
 
-use painters;
+use painters::distance;
+use painters::runs;
 
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -57,7 +58,7 @@ impl MeasurementRunner {
             modify: None,
             paint_view: ViewingMode::StaticImage,
             paint_speed: speed::Speed::Speed4,
-            paint: (painters::paint_distance_from_center, painters::animate_distance_from_center),
+            paint: (distance::paint_distance_from_center, distance::animate_distance_from_center),
         }
     }
 }
@@ -172,13 +173,22 @@ fn main() {
                 ),
             ),
         ]),
-        paint_table: HashMap::from([(
-            String::from("distance"),
+        paint_table: HashMap::from([
             (
-                painters::paint_distance_from_center as fn(maze::BoxMaze),
-                painters::animate_distance_from_center as fn(maze::BoxMaze, speed::Speed),
+                String::from("distance"),
+                (
+                    distance::paint_distance_from_center as fn(maze::BoxMaze),
+                    distance::animate_distance_from_center as fn(maze::BoxMaze, speed::Speed),
+                ),
             ),
-        )]),
+            (
+                String::from("runs"),
+                (
+                    runs::paint_run_lengths as fn(maze::BoxMaze),
+                    runs::animate_run_lengths as fn(maze::BoxMaze, speed::Speed),
+                ),
+            ),
+        ]),
         style_table: HashMap::from([
             (String::from("sharp"), maze::MazeStyle::Sharp),
             (String::from("round"), maze::MazeStyle::Round),
@@ -279,7 +289,7 @@ fn set_args(tables: &LookupTables, measure: &mut MeasurementRunner, pairs: &Flag
             Some(mod_tuple) => measure.modify = Some(*mod_tuple),
             None => quit(pairs),
         },
-        "-s" => match tables.paint_table.get(pairs.arg) {
+        "-p" => match tables.paint_table.get(pairs.arg) {
             Some(solve_tuple) => measure.paint = *solve_tuple,
             None => quit(pairs),
         },
@@ -362,7 +372,8 @@ fn print_usage() {
     │   │     │ cross - Add crossroads through the center.      │ │ │     │
     │ ┌─┘ ┌─┐ │ x - Add an x of crossing paths through center.──┘ │ └─────┤
     │ │   │ │ -p Paint flag. Choose the metric to measure and paint.      │
-    │ │ ┌─┘ │ └─distance - Distance from the center─┴─┬─┘ │ │  ───┴─────┐ │
+    │ │ ┌─┘ │ │ distance - Distance from the center─┴─┬─┘ │ │     │       │
+    │ │ │   │   runs - Run lengths of straight passages.  │ │    ─┴─────┐ │
     │ │ │   └─-d Draw flag. Set the line style for the maze.┴─┐     ┌─┬─┘ │
     │ │ │       sharp - The default straight lines. │   │     │     │ │   │
     │ │ └─┬───╴ round - Rounded corners.──────┐     │ ╶─┴─┐ ╶─┴─────┘ │ ╶─┤
