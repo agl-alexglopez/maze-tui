@@ -486,3 +486,4 @@ This is just a simple arena of paths. Try different solver algorithms to see som
 
 - *Mazes for Programmers* by Jamis Buck was a great starting point for many of the core ideas behind the algorithms that build these mazes. However, writing in Rust required me to often take a different approaches than those used by Buck.
 - The [Maze Generation Algorithm](https://en.wikipedia.org/wiki/Maze_generation_algorithm) Wikipedia page is very helpful in outlining some pseudocode for most of these algorithms.
+- The [Think Labyrnth](https://www.astrolog.org/labyrnth/algrithm.htm) website by Walter D. Pullen is a great resource for extensive knowledge on mazes. For example, I did not know that a wall adder wilson's algorithm was possible until reading the website.
