@@ -6,7 +6,6 @@ use crate::rgb;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::{thread, time};
-use std::cmp;
 
 use rand::{thread_rng, Rng};
 
@@ -74,14 +73,14 @@ pub fn paint_run_lengths(maze: maze::BoxMaze) {
             if (maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0 {
                 continue;
             }
-            let mut this_run = cur.len;
-            if cmp::max((next.row).abs_diff(cur.prev.row), (next.col).abs_diff(cur.prev.col)) == 1 {
-                this_run = 0;
-            }
-            let next_run_len = this_run + 1;
             match map.runs.get_mut(&next) {
                 Some(_) => {}
                 None => {
+                    let next_run_len = if (next.row).abs_diff(cur.prev.row) == (next.col).abs_diff(cur.prev.col) {
+                        1
+                    } else {
+                        cur.len + 1
+                    };
                     map.runs.insert(next, next_run_len);
                     bfs.push_back(RunPoint {len: next_run_len, prev: cur.cur, cur: next});
                 }
@@ -113,14 +112,14 @@ pub fn animate_run_lengths(maze: maze::BoxMaze, speed: speed::Speed) {
             if (maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0 {
                 continue;
             }
-            let mut this_run = cur.len;
-            if cmp::max((next.row).abs_diff(cur.prev.row), (next.col).abs_diff(cur.prev.col)) == 1 {
-                this_run = 0;
-            }
-            let next_run_len = this_run + 1;
             match map.runs.get_mut(&next) {
                 Some(_) => {}
                 None => {
+                    let next_run_len = if (next.row).abs_diff(cur.prev.row) == (next.col).abs_diff(cur.prev.col) {
+                        1
+                    } else {
+                        cur.len + 1
+                    };
                     map.runs.insert(next, next_run_len);
                     bfs.push_back(RunPoint {len: next_run_len, prev: cur.cur, cur: next});
                 }
