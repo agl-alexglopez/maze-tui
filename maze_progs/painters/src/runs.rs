@@ -9,6 +9,8 @@ use std::{thread, time};
 
 use rand::{thread_rng, Rng};
 
+const IS_MEASURED_BIT: maze::Square = 0b1000_0000;
+
 struct RunMap {
     max: u32,
     runs: HashMap<maze::Point, u32>,
@@ -52,7 +54,7 @@ impl BfsPainter {
 
 type BfsMonitor = Arc<Mutex<BfsPainter>>;
 
-pub fn paint_run_lengths(maze: maze::BoxMaze) {
+pub fn paint_run_lengths(mut maze: maze::BoxMaze) {
     let row_mid = maze.row_size() / 2;
     let col_mid = maze.col_size() / 2;
     let start = maze::Point {
@@ -62,6 +64,7 @@ pub fn paint_run_lengths(maze: maze::BoxMaze) {
     let mut map = RunMap::new(start, 0);
     let mut bfs = VecDeque::from([RunPoint {len: 0, prev: start, cur: start}]);
     while let Some(cur) = bfs.pop_front() {
+        maze[cur.cur.row as usize][cur.cur.col as usize] |= IS_MEASURED_BIT;
         if cur.len > map.max {
             map.max = cur.len;
         }
@@ -70,28 +73,24 @@ pub fn paint_run_lengths(maze: maze::BoxMaze) {
                 row: cur.cur.row + p.row,
                 col: cur.cur.col + p.col,
             };
-            if (maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0 {
+            if (maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0
+                || (maze[next.row as usize][next.col as usize] & IS_MEASURED_BIT) != 0 {
                 continue;
             }
-            match map.runs.get_mut(&next) {
-                Some(_) => {}
-                None => {
-                    let next_run_len = if (next.row).abs_diff(cur.prev.row) == (next.col).abs_diff(cur.prev.col) {
-                        1
-                    } else {
-                        cur.len + 1
-                    };
-                    map.runs.insert(next, next_run_len);
-                    bfs.push_back(RunPoint {len: next_run_len, prev: cur.cur, cur: next});
-                }
+            let next_run_len = if (next.row).abs_diff(cur.prev.row) == (next.col).abs_diff(cur.prev.col) {
+                1
+            } else {
+                cur.len + 1
             };
+            map.runs.insert(next, next_run_len);
+            bfs.push_back(RunPoint {len: next_run_len, prev: cur.cur, cur: next});
         }
     }
     painter(maze, &map);
     println!();
 }
 
-pub fn animate_run_lengths(maze: maze::BoxMaze, speed: speed::Speed) {
+pub fn animate_run_lengths(mut maze: maze::BoxMaze, speed: speed::Speed) {
     let row_mid = maze.row_size() / 2;
     let col_mid = maze.col_size() / 2;
     let start = maze::Point {
@@ -101,6 +100,7 @@ pub fn animate_run_lengths(maze: maze::BoxMaze, speed: speed::Speed) {
     let mut map = RunMap::new(start, 0);
     let mut bfs = VecDeque::from([RunPoint {len: 0, prev: start, cur: start}]);
     while let Some(cur) = bfs.pop_front() {
+        maze[cur.cur.row as usize][cur.cur.col as usize] |= IS_MEASURED_BIT;
         if cur.len > map.max {
             map.max = cur.len;
         }
@@ -109,21 +109,17 @@ pub fn animate_run_lengths(maze: maze::BoxMaze, speed: speed::Speed) {
                 row: cur.cur.row + p.row,
                 col: cur.cur.col + p.col,
             };
-            if (maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0 {
+            if (maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0
+                || (maze[next.row as usize][next.col as usize] & IS_MEASURED_BIT) != 0 {
                 continue;
             }
-            match map.runs.get_mut(&next) {
-                Some(_) => {}
-                None => {
-                    let next_run_len = if (next.row).abs_diff(cur.prev.row) == (next.col).abs_diff(cur.prev.col) {
-                        1
-                    } else {
-                        cur.len + 1
-                    };
-                    map.runs.insert(next, next_run_len);
-                    bfs.push_back(RunPoint {len: next_run_len, prev: cur.cur, cur: next});
-                }
+            let next_run_len = if (next.row).abs_diff(cur.prev.row) == (next.col).abs_diff(cur.prev.col) {
+                1
+            } else {
+                cur.len + 1
             };
+            map.runs.insert(next, next_run_len);
+            bfs.push_back(RunPoint {len: next_run_len, prev: cur.cur, cur: next});
         }
     }
     let box_map = Box::new(map);
