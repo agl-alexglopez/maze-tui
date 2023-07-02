@@ -38,22 +38,22 @@ pub fn generate_maze(maze: &mut maze::Maze) {
     };
     maze[cur.walk.row as usize][cur.walk.col as usize] &= !build::MARKERS_MASK;
     let mut indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
-    loop {
+    'walking: loop {
         maze[cur.walk.row as usize][cur.walk.col as usize] |= WALK_BIT;
         indices.shuffle(&mut rng);
-        for &i in indices.iter() {
+        'choosing_step: for &i in indices.iter() {
             let p = &build::GENERATE_DIRECTIONS[i];
             cur.next = maze::Point {
                 row: cur.walk.row + p.row,
                 col: cur.walk.col + p.col,
             };
             if !is_valid_step(maze, cur.next, cur.prev) {
-                continue;
+                continue 'choosing_step;
             }
             match complete_walk(maze, cur) {
                 Some(new_walk) => {
                     cur = new_walk;
-                    break;
+                    continue 'walking;
                 }
                 None => {
                     build::clear_and_flush_grid(maze);
@@ -83,23 +83,23 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     };
     maze[cur.walk.row as usize][cur.walk.col as usize] &= !build::MARKERS_MASK;
     let mut indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
-    loop {
+    'walking: loop {
         maze[cur.walk.row as usize][cur.walk.col as usize] |= WALK_BIT;
         indices.shuffle(&mut rng);
-        for &i in indices.iter() {
+        'choosing_step: for &i in indices.iter() {
             let p = &build::GENERATE_DIRECTIONS[i];
             cur.next = maze::Point {
                 row: cur.walk.row + p.row,
                 col: cur.walk.col + p.col,
             };
             if !is_valid_step(maze, cur.next, cur.prev) {
-                continue;
+                continue 'choosing_step;
             }
 
             match complete_walk_animated(maze, cur, animation) {
                 Some(new_walk) => {
                     cur = new_walk;
-                    break;
+                    continue 'walking;
                 }
                 None => {
                     return;
