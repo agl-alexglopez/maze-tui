@@ -8,11 +8,7 @@
 
 This project is a command line application that can be run with various combinations of commands. The basic principle behind the commands is that you can ask for any combination of settings, include any settings, exclude any settings, and the program will just work. There are sensible defaults for every flag so experiment with different combinations and tweaks until you get what you are looking for. To start, you should focus mainly on how big you want the maze to be, what algorithm you want to generate it, what algorithm you want to solve it, and if any of these algorithms should be animated in real time. I would reccomend using cargo to build the project.
 
-```zsh
-$ cd maze_progs/
-$ cargo build --release
-$ cargo run --release --bin run_maze
-```
+## Demo
 
 If you would rather just see some cool mazes right away, run the demo I have included. It runs infinite random permutations of maze builder and solver animations so you can see a wide range of what the project has to offer. Stop the loop at any time with `CTRL<C>`.
 
@@ -23,6 +19,15 @@ $ cargo run --release --bin demo
 # Or set the rows and columns to your liking for bigger or smaller demo mazes.
 $ cargo run --release --bin demo -- -r 50 -c 50
 ```
+
+## Run Maze Program
+
+```zsh
+$ cd maze_progs/
+$ cargo build --release
+$ cargo run --release --bin run_maze
+```
+
 If you wish to dive into the more specific `run_maze` program, here is the help message that comes with the `-h` flag to get started.
 
 Use flags, followed by arguments, in any order:
