@@ -8,6 +8,7 @@ use std::{thread, time};
 
 use rand::{thread_rng, Rng};
 
+const IS_MEASURED_BIT: maze::Square = 0b1000_0000;
 
 struct DistanceMap {
     max: u64,
@@ -47,7 +48,7 @@ impl BfsPainter {
 type BfsMonitor = Arc<Mutex<BfsPainter>>;
 
 
-pub fn paint_distance_from_center(maze: maze::BoxMaze) {
+pub fn paint_distance_from_center(mut maze: maze::BoxMaze) {
     let row_mid = maze.row_size() / 2;
     let col_mid = maze.col_size() / 2;
     let start = maze::Point {
@@ -57,6 +58,7 @@ pub fn paint_distance_from_center(maze: maze::BoxMaze) {
     let mut map = DistanceMap::new(start, 0);
     let mut bfs = VecDeque::from([(start, 0u64)]);
     while let Some(cur) = bfs.pop_front() {
+        maze[cur.0.row as usize][cur.0.col as usize] |= IS_MEASURED_BIT;
         if cur.1 > map.max {
             map.max = cur.1;
         }
@@ -65,24 +67,19 @@ pub fn paint_distance_from_center(maze: maze::BoxMaze) {
                 row: cur.0.row + p.row,
                 col: cur.0.col + p.col,
             };
-            if (maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0 {
+            if (maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0
+                || (maze[next.row as usize][next.col as usize] & IS_MEASURED_BIT) != 0 {
                 continue;
             }
-            let cur_dist = cur.1;
-            match map.distances.get_mut(&next) {
-                Some(_) => {}
-                None => {
-                    map.distances.insert(next, cur_dist + 1);
-                    bfs.push_back((next, cur_dist + 1));
-                }
-            };
+            map.distances.insert(next, cur.1 + 1);
+            bfs.push_back((next, cur.1 + 1));
         }
     }
     painter(maze, &map);
     println!();
 }
 
-pub fn animate_distance_from_center(maze: maze::BoxMaze, speed: speed::Speed) {
+pub fn animate_distance_from_center(mut maze: maze::BoxMaze, speed: speed::Speed) {
     let row_mid = maze.row_size() / 2;
     let col_mid = maze.col_size() / 2;
     let start = maze::Point {
@@ -92,6 +89,7 @@ pub fn animate_distance_from_center(maze: maze::BoxMaze, speed: speed::Speed) {
     let mut map = DistanceMap::new(start, 0);
     let mut bfs = VecDeque::from([(start, 0u64)]);
     while let Some(cur) = bfs.pop_front() {
+        maze[cur.0.row as usize][cur.0.col as usize] |= IS_MEASURED_BIT;
         if cur.1 > map.max {
             map.max = cur.1;
         }
@@ -100,17 +98,12 @@ pub fn animate_distance_from_center(maze: maze::BoxMaze, speed: speed::Speed) {
                 row: cur.0.row + p.row,
                 col: cur.0.col + p.col,
             };
-            if (maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0 {
+            if (maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0
+                || (maze[next.row as usize][next.col as usize] & IS_MEASURED_BIT) != 0 {
                 continue;
             }
-            let cur_dist = cur.1;
-            match map.distances.get_mut(&next) {
-                Some(_) => {}
-                None => {
-                    map.distances.insert(next, cur_dist + 1);
-                    bfs.push_back((next, cur_dist + 1));
-                }
-            };
+            map.distances.insert(next, cur.1 + 1);
+            bfs.push_back((next, cur.1 + 1));
         }
     }
 
