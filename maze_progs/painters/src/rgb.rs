@@ -3,12 +3,12 @@ use print;
 pub type SpeedUnit = u64;
 
 pub struct Rgb {
-    pub ch: [u8;3],
+    pub ch: [u8; 3],
 }
 
 pub const PAINTED_BIT: maze::Square = 0b1_0000;
 pub const NUM_PAINTERS: usize = 4;
-pub const ANIMATION_SPEEDS: [SpeedUnit;8] = [0, 10000, 5000, 2000, 1000, 500, 250, 50];
+pub const ANIMATION_SPEEDS: [SpeedUnit; 8] = [0, 10000, 5000, 2000, 1000, 500, 250, 50];
 
 const RGB_ESCAPE: &str = "\x1b[38;2;";
 const R: usize = 0;

@@ -2,16 +2,16 @@ use maze;
 use print;
 
 use builders::arena;
+use builders::build::clear_and_flush_grid;
+use builders::eller;
 use builders::grid;
+use builders::kruskal;
+use builders::modify;
+use builders::prim;
 use builders::recursive_backtracker;
 use builders::recursive_subdivision;
-use builders::prim;
-use builders::eller;
-use builders::kruskal;
 use builders::wilson_adder;
 use builders::wilson_carver;
-use builders::modify;
-use builders::build::clear_and_flush_grid;
 
 use painters::distance;
 use painters::runs;
@@ -58,7 +58,10 @@ impl MeasurementRunner {
             modify: None,
             paint_view: ViewingMode::StaticImage,
             paint_speed: speed::Speed::Speed4,
-            paint: (distance::paint_distance_from_center, distance::animate_distance_from_center),
+            paint: (
+                distance::paint_distance_from_center,
+                distance::animate_distance_from_center,
+            ),
         }
     }
 }
@@ -78,7 +81,8 @@ fn main() {
     ctrlc::set_handler(move || {
         print::unhide_cursor_on_process_exit();
         std::process::exit(0);
-    }).expect("Could not set quit handler.");
+    })
+    .expect("Could not set quit handler.");
 
     let tables = LookupTables {
         arg_flags: HashSet::from([
@@ -218,8 +222,8 @@ fn main() {
                 &mut measure,
                 &FlagArg {
                     flag: prev_flag,
-                    arg: &a
-                }
+                    arg: &a,
+                },
             );
             process_current = false;
             continue;

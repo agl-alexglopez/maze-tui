@@ -361,10 +361,9 @@ pub fn animate_corner(mut maze: maze::BoxMaze, speed: speed::Speed) {
 // Dispatch Functions for each Thread--------------------------------------------------------------
 
 fn hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
-    let mut seen: HashMap<maze::Point, maze::Point> = HashMap::new();
-    seen.insert(guide.start, maze::Point { row: -1, col: -1 });
-    let mut bfs: VecDeque<maze::Point> = VecDeque::new();
-    bfs.push_back(guide.start);
+    let mut seen: HashMap<maze::Point, maze::Point> =
+        HashMap::from([(guide.start, maze::Point { row: -1, col: -1 })]);
+    let mut bfs: VecDeque<maze::Point> = VecDeque::from([guide.start]);
 
     while let Some(cur) = bfs.pop_front() {
         match monitor.lock() {
@@ -415,10 +414,9 @@ fn hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
 }
 
 fn animated_hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
-    let mut seen: HashMap<maze::Point, maze::Point> = HashMap::new();
-    seen.insert(guide.start, maze::Point { row: -1, col: -1 });
-    let mut bfs: VecDeque<maze::Point> = VecDeque::new();
-    bfs.push_back(guide.start);
+    let mut seen: HashMap<maze::Point, maze::Point> =
+        HashMap::from([(guide.start, maze::Point { row: -1, col: -1 })]);
+    let mut bfs: VecDeque<maze::Point> = VecDeque::from([guide.start]);
 
     while let Some(cur) = bfs.pop_front() {
         match monitor.lock() {
@@ -473,11 +471,10 @@ fn animated_hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
 }
 
 fn gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
-    let mut seen: HashMap<maze::Point, maze::Point> = HashMap::new();
+    let mut seen: HashMap<maze::Point, maze::Point> =
+        HashMap::from([(guide.start, maze::Point { row: -1, col: -1 })]);
     let seen_bit: solve::ThreadCache = guide.paint << 4;
-    seen.insert(guide.start, maze::Point { row: -1, col: -1 });
-    let mut bfs: VecDeque<maze::Point> = VecDeque::new();
-    bfs.push_back(guide.start);
+    let mut bfs: VecDeque<maze::Point> = VecDeque::from([guide.start]);
 
     while let Some(cur) = bfs.pop_front() {
         match monitor.lock() {
@@ -522,11 +519,10 @@ fn gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
 }
 
 fn animated_gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
-    let mut seen: HashMap<maze::Point, maze::Point> = HashMap::new();
+    let mut seen: HashMap<maze::Point, maze::Point> =
+        HashMap::from([(guide.start, maze::Point { row: -1, col: -1 })]);
     let seen_bit: solve::ThreadCache = guide.paint << 4;
-    seen.insert(guide.start, maze::Point { row: -1, col: -1 });
-    let mut bfs: VecDeque<maze::Point> = VecDeque::new();
-    bfs.push_back(guide.start);
+    let mut bfs: VecDeque<maze::Point> = VecDeque::from([guide.start]);
 
     while let Some(cur) = bfs.pop_front() {
         match monitor.lock() {

@@ -1,6 +1,6 @@
-use maze;
-use builders::build::print_square;
 use crate::rgb;
+use builders::build::print_square;
+use maze;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
@@ -19,7 +19,10 @@ type BoxMap = Box<DistanceMap>;
 
 impl DistanceMap {
     fn new(p: maze::Point, dist: u64) -> Self {
-        Self { max: dist, distances: HashMap::from([(p, dist)]) }
+        Self {
+            max: dist,
+            distances: HashMap::from([(p, dist)]),
+        }
     }
 }
 
@@ -47,7 +50,6 @@ impl BfsPainter {
 
 type BfsMonitor = Arc<Mutex<BfsPainter>>;
 
-
 pub fn paint_distance_from_center(mut maze: maze::BoxMaze) {
     let row_mid = maze.row_size() / 2;
     let col_mid = maze.col_size() / 2;
@@ -68,7 +70,8 @@ pub fn paint_distance_from_center(mut maze: maze::BoxMaze) {
                 col: cur.0.col + p.col,
             };
             if (maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0
-                || (maze[next.row as usize][next.col as usize] & IS_MEASURED_BIT) != 0 {
+                || (maze[next.row as usize][next.col as usize] & IS_MEASURED_BIT) != 0
+            {
                 continue;
             }
             map.distances.insert(next, cur.1 + 1);
@@ -99,7 +102,8 @@ pub fn animate_distance_from_center(mut maze: maze::BoxMaze, speed: speed::Speed
                 col: cur.0.col + p.col,
             };
             if (maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0
-                || (maze[next.row as usize][next.col as usize] & IS_MEASURED_BIT) != 0 {
+                || (maze[next.row as usize][next.col as usize] & IS_MEASURED_BIT) != 0
+            {
                 continue;
             }
             map.distances.insert(next, cur.1 + 1);
@@ -132,7 +136,10 @@ pub fn animate_distance_from_center(mut maze: maze::BoxMaze, speed: speed::Speed
     }
     match monitor.lock() {
         Ok(lk) => {
-            print::set_cursor_position(maze::Point{row: lk.maze.row_size(), col: lk.maze.col_size()});
+            print::set_cursor_position(maze::Point {
+                row: lk.maze.row_size(),
+                col: lk.maze.col_size(),
+            });
             println!();
         }
         Err(p) => print::maze_panic!("Thread panicked: {}", p),
@@ -152,12 +159,11 @@ fn painter(maze: maze::BoxMaze, map: &DistanceMap) {
                     let intensity = (map.max - dist) as f64 / map.max as f64;
                     let dark = (255f64 * intensity) as u8;
                     let bright = 128 + (127f64 * intensity) as u8;
-                    let mut color = rgb::Rgb {ch: [dark, dark, dark]};
+                    let mut color = rgb::Rgb {
+                        ch: [dark, dark, dark],
+                    };
                     color.ch[rand_color_choice] = bright;
-                    rgb::print_rgb(
-                        color,
-                        cur,
-                    );
+                    rgb::print_rgb(color, cur);
                 }
                 None => print_square(&maze, cur),
             }
@@ -175,17 +181,20 @@ fn painter_animated(monitor: &mut BfsMonitor, guide: ThreadGuide, animation: rgb
                 if lk.count == lk.map.distances.len() {
                     return;
                 }
-                let dist = lk.map.distances.get(&cur).expect("Could not find map entry?");
+                let dist = lk
+                    .map
+                    .distances
+                    .get(&cur)
+                    .expect("Could not find map entry?");
                 if (lk.maze[cur.row as usize][cur.col as usize] & rgb::PAINTED_BIT) == 0 {
                     let intensity = (lk.map.max - dist) as f64 / lk.map.max as f64;
                     let dark = (255f64 * intensity) as u8;
                     let bright = 128 + (127f64 * intensity) as u8;
-                    let mut color = rgb::Rgb {ch: [dark, dark, dark]};
+                    let mut color = rgb::Rgb {
+                        ch: [dark, dark, dark],
+                    };
                     color.ch[guide.color_i] = bright;
-                    rgb::animate_rgb(
-                        color,
-                        cur,
-                    );
+                    rgb::animate_rgb(color, cur);
                     lk.maze[cur.row as usize][cur.col as usize] |= rgb::PAINTED_BIT;
                     lk.count += 1;
                 }
@@ -204,7 +213,8 @@ fn painter_animated(monitor: &mut BfsMonitor, guide: ThreadGuide, animation: rgb
             let mut push_next = false;
             match monitor.lock() {
                 Ok(lk) => {
-                    push_next = (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0
+                    push_next = (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT)
+                        != 0
                         && !cached;
                 }
                 Err(p) => print::maze_panic!("Panic with lock: {}, push next: {}", p, push_next),
@@ -218,4 +228,3 @@ fn painter_animated(monitor: &mut BfsMonitor, guide: ThreadGuide, animation: rgb
         } {}
     }
 }
-

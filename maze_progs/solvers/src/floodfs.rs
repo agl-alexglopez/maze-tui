@@ -302,7 +302,7 @@ fn hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
 
-    while let Some(&cur) = dfs.last() {
+    'branching: while let Some(&cur) = dfs.last() {
         match monitor.lock() {
             Ok(mut lk) => match lk.win {
                 Some(_) => {
@@ -324,8 +324,7 @@ fn hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
 
         // Bias threads towards their original dispatch direction with do-while loop.
         let mut i = guide.index;
-        let mut found_branch = false;
-        'search: while {
+        while {
             let p: &maze::Point = &maze::CARDINAL_DIRECTIONS[i];
             let next = maze::Point {
                 row: cur.row + p.row,
@@ -343,17 +342,13 @@ fn hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
             };
 
             if push_next {
-                found_branch = true;
                 dfs.push(next);
-                break 'search;
+                continue 'branching;
             }
             i = (i + 1) % solve::NUM_DIRECTIONS;
             i != guide.index
         } {}
-
-        if !found_branch {
-            dfs.pop();
-        }
+        dfs.pop();
     }
 }
 
@@ -361,7 +356,7 @@ fn animated_hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
-    while let Some(&cur) = dfs.last() {
+    'branching: while let Some(&cur) = dfs.last() {
         match monitor.lock() {
             Ok(mut lk) => match lk.win {
                 Some(_) => return,
@@ -382,8 +377,7 @@ fn animated_hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide
 
         // Bias threads towards their original dispatch direction with do-while loop.
         let mut i = guide.index;
-        let mut found_branch = false;
-        'search: while {
+        while {
             let p: &maze::Point = &maze::CARDINAL_DIRECTIONS[i];
             let next = maze::Point {
                 row: cur.row + p.row,
@@ -401,17 +395,13 @@ fn animated_hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide
             }
 
             if push_next {
-                found_branch = true;
                 dfs.push(next);
-                break 'search;
+                continue 'branching;
             }
             i = (i + 1) % solve::NUM_DIRECTIONS;
             i != guide.index
         } {}
-
-        if !found_branch {
-            dfs.pop();
-        }
+        dfs.pop();
     }
 }
 
@@ -419,7 +409,7 @@ fn gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
-    while let Some(&cur) = dfs.last() {
+    'branching: while let Some(&cur) = dfs.last() {
         match monitor.lock() {
             Ok(mut lk) => {
                 if (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT) != 0
@@ -435,8 +425,7 @@ fn gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
 
         // Bias threads towards their original dispatch direction with do-while loop.
         let mut i = guide.index;
-        let mut found_branch = false;
-        'search: while {
+        while {
             let p: &maze::Point = &maze::CARDINAL_DIRECTIONS[i];
             let next = maze::Point {
                 row: cur.row + p.row,
@@ -454,17 +443,13 @@ fn gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
             };
 
             if push_next {
-                found_branch = true;
                 dfs.push(next);
-                break 'search;
+                continue 'branching;
             }
             i = (i + 1) % solve::NUM_DIRECTIONS;
             i != guide.index
         } {}
-
-        if !found_branch {
-            dfs.pop();
-        }
+        dfs.pop();
     }
 }
 
@@ -472,7 +457,7 @@ fn animated_gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGui
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
-    while let Some(&cur) = dfs.last() {
+    'branching: while let Some(&cur) = dfs.last() {
         match monitor.lock() {
             Ok(mut lk) => {
                 if (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT) != 0
@@ -492,8 +477,7 @@ fn animated_gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGui
 
         // Bias threads towards their original dispatch direction with do-while loop.
         let mut i = guide.index;
-        let mut found_branch = false;
-        'search: while {
+        while {
             let p: &maze::Point = &maze::CARDINAL_DIRECTIONS[i];
             let next = maze::Point {
                 row: cur.row + p.row,
@@ -510,16 +494,12 @@ fn animated_gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGui
                 Err(p) => print::maze_panic!("Solve thread panic: {} push_next: {}", p, push_next),
             };
             if push_next {
-                found_branch = true;
                 dfs.push(next);
-                break 'search;
+                continue 'branching;
             }
             i = (i + 1) % solve::NUM_DIRECTIONS;
             i != guide.index
         } {}
-
-        if !found_branch {
-            dfs.pop();
-        }
+        dfs.pop();
     }
 }

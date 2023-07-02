@@ -29,9 +29,8 @@ pub fn generate_maze(maze: &mut maze::Maze) {
             cur = branch;
             continue 'branching;
         }
-        let dir: build::BacktrackMarker = (maze[cur.row as usize][cur.col as usize]
-            & build::MARKERS_MASK)
-            >> build::MARKER_SHIFT;
+        let dir: build::BacktrackMarker =
+            (maze[cur.row as usize][cur.col as usize] & build::MARKERS_MASK) >> build::MARKER_SHIFT;
         // The solvers will need these bits later so we need to clear bits.
         maze[cur.row as usize][cur.col as usize] &= !build::MARKERS_MASK;
         let backtracking: &maze::Point = &build::BACKTRACKING_POINTS[dir as usize];
@@ -68,9 +67,8 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
             cur = branch;
             continue 'branching;
         }
-        let dir: build::BacktrackMarker = (maze[cur.row as usize][cur.col as usize]
-            & build::MARKERS_MASK)
-            >> build::MARKER_SHIFT;
+        let dir: build::BacktrackMarker =
+            (maze[cur.row as usize][cur.col as usize] & build::MARKERS_MASK) >> build::MARKER_SHIFT;
         // The solvers will need these bits later so we need to clear bits.
         maze[cur.row as usize][cur.col as usize] &= !build::MARKERS_MASK;
         let backtracking: &maze::Point = &build::BACKTRACKING_POINTS[dir as usize];
