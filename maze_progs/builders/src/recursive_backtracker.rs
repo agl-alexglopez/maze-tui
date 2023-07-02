@@ -18,15 +18,15 @@ pub fn generate_maze(maze: &mut maze::Maze) {
         random_direction_indices.shuffle(&mut gen);
         'choosing_branch: for &i in random_direction_indices.iter() {
             let direction = &build::GENERATE_DIRECTIONS[i];
-            let next = maze::Point {
+            let branch = maze::Point {
                 row: cur.row + direction.row,
                 col: cur.col + direction.col,
             };
-            if !build::can_build_new_square(maze, next) {
+            if !build::can_build_new_square(maze, branch) {
                 continue 'choosing_branch;
             }
-            build::carve_path_markings(maze, cur, next);
-            cur = next;
+            build::carve_path_markings(maze, cur, branch);
+            cur = branch;
             continue 'branching;
         }
         let dir: build::BacktrackMarker = (maze[cur.row as usize][cur.col as usize]
@@ -57,15 +57,15 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         random_direction_indices.shuffle(&mut gen);
         'choosing_branch: for &i in random_direction_indices.iter() {
             let direction = &build::GENERATE_DIRECTIONS[i];
-            let next = maze::Point {
+            let branch = maze::Point {
                 row: cur.row + direction.row,
                 col: cur.col + direction.col,
             };
-            if !build::can_build_new_square(maze, next) {
+            if !build::can_build_new_square(maze, branch) {
                 continue 'choosing_branch;
             }
-            build::carve_path_markings_animated(maze, cur, next, animation);
-            cur = next;
+            build::carve_path_markings_animated(maze, cur, branch, animation);
+            cur = branch;
             continue 'branching;
         }
         let dir: build::BacktrackMarker = (maze[cur.row as usize][cur.col as usize]
