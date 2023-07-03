@@ -79,6 +79,8 @@ fn main() {
     let invisible = print::InvisibleCursor::new();
     invisible.hide();
     ctrlc::set_handler(move || {
+        print::clear_screen();
+        print::set_cursor_position(maze::Point { row: 0, col: 0 });
         print::unhide_cursor_on_process_exit();
         std::process::exit(0);
     })

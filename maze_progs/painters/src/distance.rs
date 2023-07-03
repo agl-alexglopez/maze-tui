@@ -8,7 +8,7 @@ use std::{thread, time};
 
 use rand::{thread_rng, Rng};
 
-const IS_MEASURED_BIT: maze::Square = 0b1000_0000;
+const IS_MEASURED_BIT: maze::Square = 0b1_0000_0000;
 
 struct DistanceMap {
     max: u64,
@@ -59,8 +59,8 @@ pub fn paint_distance_from_center(mut maze: maze::BoxMaze) {
     };
     let mut map = DistanceMap::new(start, 0);
     let mut bfs = VecDeque::from([(start, 0u64)]);
+    maze[start.row as usize][start.col as usize] |= IS_MEASURED_BIT;
     while let Some(cur) = bfs.pop_front() {
-        maze[cur.0.row as usize][cur.0.col as usize] |= IS_MEASURED_BIT;
         if cur.1 > map.max {
             map.max = cur.1;
         }
@@ -74,6 +74,7 @@ pub fn paint_distance_from_center(mut maze: maze::BoxMaze) {
             {
                 continue;
             }
+            maze[next.row as usize][next.col as usize] |= IS_MEASURED_BIT;
             map.distances.insert(next, cur.1 + 1);
             bfs.push_back((next, cur.1 + 1));
         }
@@ -91,8 +92,8 @@ pub fn animate_distance_from_center(mut maze: maze::BoxMaze, speed: speed::Speed
     };
     let mut map = DistanceMap::new(start, 0);
     let mut bfs = VecDeque::from([(start, 0u64)]);
+    maze[start.row as usize][start.col as usize] |= IS_MEASURED_BIT;
     while let Some(cur) = bfs.pop_front() {
-        maze[cur.0.row as usize][cur.0.col as usize] |= IS_MEASURED_BIT;
         if cur.1 > map.max {
             map.max = cur.1;
         }
@@ -106,6 +107,7 @@ pub fn animate_distance_from_center(mut maze: maze::BoxMaze, speed: speed::Speed
             {
                 continue;
             }
+            maze[next.row as usize][next.col as usize] |= IS_MEASURED_BIT;
             map.distances.insert(next, cur.1 + 1);
             bfs.push_back((next, cur.1 + 1));
         }
@@ -209,17 +211,11 @@ fn painter_animated(monitor: &mut BfsMonitor, guide: ThreadGuide, animation: rgb
                 row: cur.row + p.row,
                 col: cur.col + p.col,
             };
-            let cached = seen.contains(&next);
-            let mut push_next = false;
-            match monitor.lock() {
-                Ok(lk) => {
-                    push_next = (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT)
-                        != 0
-                        && !cached;
-                }
-                Err(p) => print::maze_panic!("Panic with lock: {}, push next: {}", p, push_next),
-            }
-            if push_next {
+            let is_path: bool = match monitor.lock() {
+                Ok(lk) => (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0,
+                Err(p) => print::maze_panic!("Panic with lock: {}", p),
+            };
+            if is_path && !seen.contains(&next) {
                 seen.insert(next);
                 bfs.push_back(next);
             }

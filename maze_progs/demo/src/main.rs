@@ -18,8 +18,10 @@ use solvers::dfs;
 use solvers::floodfs;
 use solvers::rdfs;
 
+use painters::distance;
+use painters::runs;
+
 use std::env;
-use std::io::{stdout, Write};
 use std::{thread, time};
 
 use ctrlc;
@@ -79,6 +81,8 @@ impl DemoRunner {
                 floodfs::animate_hunt,
                 floodfs::animate_gather,
                 floodfs::animate_corner,
+                runs::animate_run_lengths,
+                distance::animate_distance_from_center,
             ],
             speeds: vec![
                 speed::Speed::Speed1,
@@ -119,6 +123,8 @@ fn main() {
     let invisible = print::InvisibleCursor::new();
     invisible.hide();
     ctrlc::set_handler(move || {
+        print::clear_screen();
+        print::set_cursor_position(maze::Point { row: 0, col: 0 });
         print::unhide_cursor_on_process_exit();
         std::process::exit(0);
     })
@@ -164,7 +170,7 @@ fn main() {
 
         solve_algo(maze, solve_speed);
         print!("Loading next maze...");
-        stdout().flush().expect("Couldn't flush stdout");
+        print::flush();
         thread::sleep(time::Duration::from_secs(2));
         print::set_cursor_position(maze::Point { row: 0, col: 0 });
     }
