@@ -2,7 +2,6 @@ use maze;
 use print;
 
 use rand::prelude::*;
-use std::io::{stdout, Write};
 use std::sync::{Arc, Mutex};
 
 // Types available to all solvers.
@@ -106,17 +105,13 @@ pub fn print_paths(maze: &maze::Maze) {
         }
         print!("\n");
     }
-    stdout()
-        .flush()
-        .expect("Could not flush screen, terminal issue.");
+    print::flush();
 }
 
 pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     print::set_cursor_position(point);
     print_point(maze, point);
-    stdout()
-        .flush()
-        .expect("Could not flush screen, terminal issue.");
+    print::flush();
 }
 
 pub fn print_point(maze: &maze::Maze, point: maze::Point) {
