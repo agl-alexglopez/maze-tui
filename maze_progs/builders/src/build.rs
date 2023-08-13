@@ -1,5 +1,6 @@
 use maze;
 use print;
+use print::maze_panic;
 
 use std::{thread, time};
 
@@ -70,6 +71,21 @@ pub fn build_wall_outline(maze: &mut maze::Maze) {
 pub fn choose_arbitrary_point(maze: &maze::Maze, parity: ParityPoint) -> Option<maze::Point> {
     let init = if parity == ParityPoint::Even { 2 } else { 1 };
     for r in (init..maze.row_size() - 1).step_by(2) {
+        for c in (init..maze.col_size() - 1).step_by(2) {
+            if (maze[r as usize][c as usize] & BUILDER_BIT) == 0 {
+                return Some(maze::Point { row: r, col: c });
+            }
+        }
+    }
+    None
+}
+
+pub fn choose_point_from_row_start(maze: &maze::Maze, row_start: i32, parity: ParityPoint) -> Option<maze::Point> {
+    let init = if parity == ParityPoint::Even { 2 } else { 1 };
+    if (row_start % 2) != (init % 2) {
+        maze_panic!("Row start parity did not match requested parity.");
+    }
+    for r in (row_start..maze.row_size() - 1).step_by(2) {
         for c in (init..maze.col_size() - 1).step_by(2) {
             if (maze[r as usize][c as usize] & BUILDER_BIT) == 0 {
                 return Some(maze::Point { row: r, col: c });

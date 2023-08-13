@@ -16,6 +16,8 @@ struct Loop {
 
 #[derive(Clone, Copy)]
 struct RandomWalk {
+    // I scan for a random walk starts row by row. This way we don't check built rows.
+    prev_row_start: i32,
     prev: maze::Point,
     walk: maze::Point,
     next: maze::Point,
@@ -27,8 +29,9 @@ pub fn generate_maze(maze: &mut maze::Maze) {
     build::build_wall_outline(maze);
     let mut rng = thread_rng();
     let mut cur = RandomWalk {
+        prev_row_start: 2,
         prev: maze::Point { row: 0, col: 0 },
-        walk: maze::Point {
+        walk: maze::Point{
             row: 2 * (rng.gen_range(2..maze.row_size() - 1) / 2),
             col: 2 * (rng.gen_range(2..maze.col_size() - 1) / 2),
         },
@@ -67,6 +70,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     build::clear_and_flush_grid(maze);
     let mut rng = thread_rng();
     let mut cur = RandomWalk {
+        prev_row_start: 2,
         prev: maze::Point { row: 0, col: 0 },
         walk: maze::Point {
             row: 2 * (rng.gen_range(2..maze.row_size() - 1) / 2),
@@ -107,8 +111,9 @@ fn complete_walk(maze: &mut maze::Maze, mut walk: RandomWalk) -> Option<RandomWa
     if build::has_builder_bit(maze, walk.next) {
         build_with_marks(maze, walk.walk, walk.next);
         connect_walk(maze, walk.walk);
-        match build::choose_arbitrary_point(maze, build::ParityPoint::Even) {
+        match build::choose_point_from_row_start(maze, walk.prev_row_start, build::ParityPoint::Even) {
             Some(point) => {
+                walk.prev_row_start = point.row;
                 walk.walk = point;
                 maze[walk.walk.row as usize][walk.walk.col as usize] &= !build::MARKERS_MASK;
                 walk.prev = maze::Point { row: 0, col: 0 };
@@ -149,8 +154,9 @@ fn complete_walk_animated(
     if build::has_builder_bit(maze, walk.next) {
         build_with_marks_animated(maze, walk.walk, walk.next, speed);
         connect_walk_animated(maze, walk.walk, speed);
-        match build::choose_arbitrary_point(maze, build::ParityPoint::Even) {
+        match build::choose_point_from_row_start(maze, walk.prev_row_start, build::ParityPoint::Even) {
             Some(point) => {
+                walk.prev_row_start = point.row;
                 walk.walk = point;
                 maze[walk.walk.row as usize][walk.walk.col as usize] &= !build::MARKERS_MASK;
                 walk.prev = maze::Point { row: 0, col: 0 };
