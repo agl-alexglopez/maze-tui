@@ -55,14 +55,14 @@ pub fn gather(mut maze: maze::BoxMaze) {
 
     let monitor: solve::SolverMonitor = solve::Solver::new(maze);
     let mut handles = Vec::with_capacity(solve::NUM_THREADS);
-    for i_thread in 0..solve::NUM_THREADS {
+    for (i_thread, &mask) in solve::THREAD_MASKS.iter().enumerate() {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
             gatherer(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
-                    paint: solve::THREAD_MASKS[i_thread],
+                    paint: mask,
                     start: all_start,
                     speed: 0,
                 },
@@ -106,14 +106,14 @@ pub fn corner(mut maze: maze::BoxMaze) {
     corner_starts.shuffle(&mut thread_rng());
     let monitor: solve::SolverMonitor = solve::Solver::new(maze);
     let mut handles = Vec::with_capacity(solve::NUM_THREADS);
-    for i_thread in 0..solve::NUM_THREADS {
+    for (i_thread, &mask) in solve::THREAD_MASKS.iter().enumerate() {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
             hunter(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
-                    paint: solve::THREAD_MASKS[i_thread],
+                    paint: mask,
                     start: corner_starts[i_thread],
                     speed: 0,
                 },
@@ -150,14 +150,14 @@ pub fn animate_hunt(mut maze: maze::BoxMaze, speed: speed::Speed) {
 
     let monitor: solve::SolverMonitor = solve::Solver::new(maze);
     let mut handles = Vec::with_capacity(solve::NUM_THREADS);
-    for i_thread in 0..solve::NUM_THREADS {
+    for (i_thread, &mask) in solve::THREAD_MASKS.iter().enumerate() {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
             animated_hunter(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
-                    paint: solve::THREAD_MASKS[i_thread],
+                    paint: mask,
                     start: all_start,
                     speed: animation,
                 },
@@ -200,14 +200,14 @@ pub fn animate_gather(mut maze: maze::BoxMaze, speed: speed::Speed) {
 
     let monitor: solve::SolverMonitor = solve::Solver::new(maze);
     let mut handles = Vec::with_capacity(solve::NUM_THREADS);
-    for i_thread in 0..solve::NUM_THREADS {
+    for (i_thread, &mask) in solve::THREAD_MASKS.iter().enumerate() {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
             animated_gatherer(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
-                    paint: solve::THREAD_MASKS[i_thread],
+                    paint: mask,
                     start: all_start,
                     speed: animation,
                 },
@@ -265,14 +265,14 @@ pub fn animate_corner(mut maze: maze::BoxMaze, speed: speed::Speed) {
     corner_starts.shuffle(&mut thread_rng());
     let monitor: solve::SolverMonitor = solve::Solver::new(maze);
     let mut handles = Vec::with_capacity(solve::NUM_THREADS);
-    for i_thread in 0..solve::NUM_THREADS {
+    for (i_thread, &mask) in solve::THREAD_MASKS.iter().enumerate() {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
             animated_hunter(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
-                    paint: solve::THREAD_MASKS[i_thread],
+                    paint: mask,
                     start: corner_starts[i_thread],
                     speed: animation,
                 },

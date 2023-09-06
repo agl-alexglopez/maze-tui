@@ -1,6 +1,3 @@
-use maze;
-use print;
-
 use rand::prelude::*;
 use std::sync::{Arc, Mutex};
 
@@ -61,7 +58,7 @@ pub fn set_corner_starts(maze: &maze::Maze) -> [maze::Point; 4] {
     if (maze[point4.row as usize][point4.col as usize] & maze::PATH_BIT) == 0 {
         point4 = find_nearest_square(maze, point4);
     }
-    return [point1, point2, point3, point4];
+    [point1, point2, point3, point4]
 }
 
 pub fn pick_random_point(maze: &maze::Maze) -> maze::Point {
@@ -186,13 +183,13 @@ pub fn print_overlap_key() {
 // Private Module Function
 
 fn is_valid_start_or_finish(maze: &maze::Maze, choice: maze::Point) -> bool {
-    return choice.row > 0
+    choice.row > 0
         && choice.row < maze.row_size() - 1
         && choice.col > 0
         && choice.col < maze.col_size() - 1
         && (maze[choice.row as usize][choice.col as usize] & maze::PATH_BIT) != 0
         && (maze[choice.row as usize][choice.col as usize] & FINISH_BIT) == 0
-        && (maze[choice.row as usize][choice.col as usize] & START_BIT) == 0;
+        && (maze[choice.row as usize][choice.col as usize] & START_BIT) == 0
 }
 
 // Read Only Data Available to All Solvers

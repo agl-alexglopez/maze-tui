@@ -1,6 +1,3 @@
-use maze;
-use print;
-
 use builders::arena;
 use builders::build::clear_and_flush_grid;
 use builders::eller;
@@ -18,8 +15,6 @@ use painters::runs;
 
 use std::collections::{HashMap, HashSet};
 use std::env;
-
-use ctrlc;
 
 type BuildFunction = (fn(&mut maze::Maze), fn(&mut maze::Maze, speed::Speed));
 type PaintFunction = (fn(maze::BoxMaze), fn(maze::BoxMaze, speed::Speed));
@@ -245,7 +240,7 @@ fn main() {
     }
     if process_current {
         quit(&FlagArg {
-            flag: &prev_flag,
+            flag: prev_flag,
             arg: "[NONE]",
         });
     }
@@ -256,17 +251,11 @@ fn main() {
         ViewingMode::StaticImage => {
             measure.build.0(&mut maze);
             clear_and_flush_grid(&maze);
-            match measure.modify {
-                Some((static_mod, _)) => static_mod(&mut maze),
-                None => {}
-            }
+            if let Some((static_mod, _)) = measure.modify { static_mod(&mut maze) }
         }
         ViewingMode::AnimatedPlayback => {
             measure.build.1(&mut maze, measure.build_speed);
-            match measure.modify {
-                Some((_, animate_mod)) => animate_mod(&mut maze, measure.build_speed),
-                None => {}
-            }
+            if let Some((_, animate_mod)) = measure.modify { animate_mod(&mut maze, measure.build_speed) }
         }
     }
 
@@ -285,8 +274,8 @@ fn set_args(tables: &LookupTables, measure: &mut MeasurementRunner, pairs: &Flag
             print_usage();
             safe_exit();
         }
-        "-r" => measure.args.odd_rows = set_dimension(&pairs),
-        "-c" => measure.args.odd_cols = set_dimension(&pairs),
+        "-r" => measure.args.odd_rows = set_dimension(pairs),
+        "-c" => measure.args.odd_cols = set_dimension(pairs),
         "-b" => match tables.build_table.get(pairs.arg) {
             Some(build_tuple) => measure.build = *build_tuple,
             None => quit(pairs),
@@ -325,13 +314,13 @@ fn set_dimension(pairs: &FlagArg) -> i32 {
     match pairs.arg.parse::<i32>() {
         Ok(num) => {
             if num < 7 {
-                quit(&pairs);
+                quit(pairs);
                 std::process::exit(1);
             }
             num
         }
         Err(_) => {
-            quit(&pairs);
+            quit(pairs);
             std::process::exit(1);
         }
     }

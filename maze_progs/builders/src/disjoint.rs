@@ -29,14 +29,18 @@ impl DisjointSet {
         if x == y {
             return false;
         }
-        if self.set_rank[x] > self.set_rank[y] {
-            self.parent_set[y] = x;
-        } else if self.set_rank[x] < self.set_rank[y] {
-            self.parent_set[x] = y;
-        } else {
-            self.parent_set[x] = y;
-            self.set_rank[y] += 1;
+        match self.set_rank[x].cmp(&self.set_rank[y]) {
+            std::cmp::Ordering::Greater => {
+                self.parent_set[y] = x;
+            }
+            std::cmp::Ordering::Less => {
+                self.parent_set[x] = y;
+            }
+            std::cmp::Ordering::Equal => {
+                self.parent_set[x] = y;
+                self.set_rank[y] += 1;
+            }
         }
-        return true;
+        true
     }
 }

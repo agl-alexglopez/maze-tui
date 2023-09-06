@@ -133,7 +133,7 @@ fn complete_walk(maze: &mut maze::Maze, mut walk: RandomWalk) -> Option<RandomWa
             },
         );
         walk.walk = walk.next;
-        let dir: &'static maze::Point = &backtrack_point(maze, &walk.walk);
+        let dir: &'static maze::Point = backtrack_point(maze, &walk.walk);
         walk.prev = maze::Point {
             row: walk.walk.row + dir.row,
             col: walk.walk.col + dir.col,
@@ -177,7 +177,7 @@ fn complete_walk_animated(
             speed,
         );
         walk.walk = walk.next;
-        let dir: &'static maze::Point = &backtrack_point(maze, &walk.walk);
+        let dir: &'static maze::Point = backtrack_point(maze, &walk.walk);
         walk.prev = maze::Point {
             row: walk.walk.row + dir.row,
             col: walk.walk.col + dir.col,
@@ -193,7 +193,7 @@ fn complete_walk_animated(
 fn erase_loop(maze: &mut maze::Maze, mut walk: Loop) {
     while walk.walk != walk.root {
         maze[walk.walk.row as usize][walk.walk.col as usize] &= !WALK_BIT;
-        let dir: &'static maze::Point = &backtrack_point(maze, &walk.walk);
+        let dir: &'static maze::Point = backtrack_point(maze, &walk.walk);
         let next = maze::Point {
             row: walk.walk.row + dir.row,
             col: walk.walk.col + dir.col,
@@ -206,7 +206,7 @@ fn erase_loop(maze: &mut maze::Maze, mut walk: Loop) {
 fn erase_loop_animated(maze: &mut maze::Maze, mut walk: Loop, speed: build::SpeedUnit) {
     while walk.walk != walk.root {
         maze[walk.walk.row as usize][walk.walk.col as usize] &= !WALK_BIT;
-        let dir: &'static maze::Point = &backtrack_point(maze, &walk.walk);
+        let dir: &'static maze::Point = backtrack_point(maze, &walk.walk);
         let next = maze::Point {
             row: walk.walk.row + dir.row,
             col: walk.walk.col + dir.col,
@@ -220,7 +220,7 @@ fn erase_loop_animated(maze: &mut maze::Maze, mut walk: Loop, speed: build::Spee
 
 fn connect_walk(maze: &mut maze::Maze, mut walk: maze::Point) {
     while (maze[walk.row as usize][walk.col as usize] & build::MARKERS_MASK) != 0 {
-        let dir: &'static maze::Point = &backtrack_point(maze, &walk);
+        let dir: &'static maze::Point = backtrack_point(maze, &walk);
         let next = maze::Point {
             row: walk.row + dir.row,
             col: walk.col + dir.col,
@@ -236,7 +236,7 @@ fn connect_walk(maze: &mut maze::Maze, mut walk: maze::Point) {
 
 fn connect_walk_animated(maze: &mut maze::Maze, mut walk: maze::Point, speed: build::SpeedUnit) {
     while (maze[walk.row as usize][walk.col as usize] & build::MARKERS_MASK) != 0 {
-        let dir: &'static maze::Point = &backtrack_point(maze, &walk);
+        let dir: &'static maze::Point = backtrack_point(maze, &walk);
         let next = maze::Point {
             row: walk.row + dir.row,
             col: walk.col + dir.col,

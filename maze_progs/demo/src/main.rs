@@ -1,7 +1,3 @@
-use maze;
-use print;
-use speed;
-
 use builders::arena;
 use builders::eller;
 use builders::grid;
@@ -24,7 +20,6 @@ use painters::runs;
 use std::env;
 use std::{thread, time};
 
-use ctrlc;
 use rand::{
     distributions::{Bernoulli, Distribution},
     seq::SliceRandom,

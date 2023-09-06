@@ -36,14 +36,14 @@ pub fn hunt(mut maze: maze::BoxMaze) {
 
     let monitor = BfsSolver::new(maze);
     let mut handles = Vec::with_capacity(solve::NUM_THREADS);
-    for i_thread in 0..solve::NUM_THREADS {
+    for (i_thread, &mask) in solve::THREAD_MASKS.iter().enumerate() {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
             hunter(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
-                    paint: solve::THREAD_MASKS[i_thread],
+                    paint: mask,
                     start: all_start,
                     speed: 0,
                 },
@@ -87,14 +87,14 @@ pub fn animate_hunt(mut maze: maze::BoxMaze, speed: speed::Speed) {
 
     let monitor = BfsSolver::new(maze);
     let mut handles = Vec::with_capacity(solve::NUM_THREADS);
-    for i_thread in 0..solve::NUM_THREADS {
+    for (i_thread, &mask) in solve::THREAD_MASKS.iter().enumerate() {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
             animated_hunter(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
-                    paint: solve::THREAD_MASKS[i_thread],
+                    paint: mask,
                     start: all_start,
                     speed: animation,
                 },
@@ -136,14 +136,14 @@ pub fn gather(mut maze: maze::BoxMaze) {
 
     let monitor = BfsSolver::new(maze);
     let mut handles = Vec::with_capacity(solve::NUM_THREADS);
-    for i_thread in 0..solve::NUM_THREADS {
+    for (i_thread, &mask) in solve::THREAD_MASKS.iter().enumerate() {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
             gatherer(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
-                    paint: solve::THREAD_MASKS[i_thread],
+                    paint: mask,
                     start: all_start,
                     speed: 0,
                 },
@@ -190,14 +190,14 @@ pub fn animate_gather(mut maze: maze::BoxMaze, speed: speed::Speed) {
 
     let monitor = BfsSolver::new(maze);
     let mut handles = Vec::with_capacity(solve::NUM_THREADS);
-    for i_thread in 0..solve::NUM_THREADS {
+    for (i_thread, &mask) in solve::THREAD_MASKS.iter().enumerate() {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
             animated_gatherer(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
-                    paint: solve::THREAD_MASKS[i_thread],
+                    paint: mask,
                     start: all_start,
                     speed: animation,
                 },
@@ -250,14 +250,14 @@ pub fn corner(mut maze: maze::BoxMaze) {
     all_starts.shuffle(&mut thread_rng());
     let monitor = BfsSolver::new(maze);
     let mut handles = Vec::with_capacity(solve::NUM_THREADS);
-    for i_thread in 0..solve::NUM_THREADS {
+    for (i_thread, &mask) in solve::THREAD_MASKS.iter().enumerate() {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
             hunter(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
-                    paint: solve::THREAD_MASKS[i_thread],
+                    paint: mask,
                     start: all_starts[i_thread],
                     speed: 0,
                 },
@@ -320,14 +320,14 @@ pub fn animate_corner(mut maze: maze::BoxMaze, speed: speed::Speed) {
 
     let monitor = BfsSolver::new(maze);
     let mut handles = Vec::with_capacity(solve::NUM_THREADS);
-    for i_thread in 0..solve::NUM_THREADS {
+    for (i_thread, &mask) in solve::THREAD_MASKS.iter().enumerate() {
         let mut monitor_clone = monitor.clone();
         handles.push(thread::spawn(move || {
             animated_hunter(
                 &mut monitor_clone,
                 solve::ThreadGuide {
                     index: i_thread,
-                    paint: solve::THREAD_MASKS[i_thread],
+                    paint: mask,
                     start: all_starts[i_thread],
                     speed: animation,
                 },
@@ -376,7 +376,7 @@ fn hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
                         };
                         while prev.row > 0 {
                             lk.win_path.push((*prev, guide.paint));
-                            prev = match parents.get(&prev) {
+                            prev = match parents.get(prev) {
                                 Some(parent) => parent,
                                 None => print::maze_panic!("Bfs could not find parent."),
                             };
@@ -427,7 +427,7 @@ fn animated_hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
                         };
                         while prev.row > 0 {
                             lk.win_path.push((*prev, guide.paint));
-                            prev = match parents.get(&prev) {
+                            prev = match parents.get(prev) {
                                 Some(parent) => parent,
                                 None => print::maze_panic!("Bfs could not find parent."),
                             };

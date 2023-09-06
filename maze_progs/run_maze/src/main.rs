@@ -1,6 +1,3 @@
-use maze;
-use print;
-
 use builders::arena;
 use builders::build::clear_and_flush_grid;
 use builders::eller;
@@ -20,8 +17,6 @@ use solvers::rdfs;
 
 use std::collections::{HashMap, HashSet};
 use std::env;
-
-use ctrlc;
 
 type BuildFunction = (fn(&mut maze::Maze), fn(&mut maze::Maze, speed::Speed));
 type SolveFunction = (fn(maze::BoxMaze), fn(maze::BoxMaze, speed::Speed));
@@ -316,7 +311,7 @@ fn main() {
     }
     if process_current {
         quit(&FlagArg {
-            flag: &prev_flag,
+            flag: prev_flag,
             arg: "[NONE]",
         });
     }
@@ -327,17 +322,11 @@ fn main() {
         ViewingMode::StaticImage => {
             run.build.0(&mut maze);
             clear_and_flush_grid(&maze);
-            match run.modify {
-                Some((static_mod, _)) => static_mod(&mut maze),
-                None => {}
-            }
+            if let Some((static_mod, _)) = run.modify { static_mod(&mut maze) }
         }
         ViewingMode::AnimatedPlayback => {
             run.build.1(&mut maze, run.build_speed);
-            match run.modify {
-                Some((_, animate_mod)) => animate_mod(&mut maze, run.build_speed),
-                None => {}
-            }
+            if let Some((_, animate_mod)) = run.modify { animate_mod(&mut maze, run.build_speed) }
         }
     }
 
@@ -356,8 +345,8 @@ fn set_args(tables: &LookupTables, run: &mut MazeRunner, pairs: &FlagArg) {
             print_usage();
             safe_exit();
         }
-        "-r" => run.args.odd_rows = set_dimension(&pairs),
-        "-c" => run.args.odd_cols = set_dimension(&pairs),
+        "-r" => run.args.odd_rows = set_dimension(pairs),
+        "-c" => run.args.odd_cols = set_dimension(pairs),
         "-b" => match tables.build_table.get(pairs.arg) {
             Some(build_tuple) => run.build = *build_tuple,
             None => quit(pairs),
@@ -396,13 +385,13 @@ fn set_dimension(pairs: &FlagArg) -> i32 {
     match pairs.arg.parse::<i32>() {
         Ok(num) => {
             if num < 7 {
-                quit(&pairs);
+                quit(pairs);
                 std::process::exit(1);
             }
             num
         }
         Err(_) => {
-            quit(&pairs);
+            quit(pairs);
             std::process::exit(1);
         }
     }

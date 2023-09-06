@@ -1,5 +1,3 @@
-use maze;
-
 use crossterm::{cursor, terminal, ExecutableCommand, QueueableCommand};
 use std::io::{stdout, Write};
 
@@ -16,6 +14,12 @@ impl InvisibleCursor {
         stdout()
             .execute(cursor::Hide)
             .expect("Failed to hide cursor.");
+    }
+}
+
+impl Default for InvisibleCursor {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

@@ -1,5 +1,3 @@
-use print;
-
 pub type SpeedUnit = u64;
 
 pub struct Rgb {
@@ -20,17 +18,15 @@ pub fn print_rgb(rgb: Rgb, p: maze::Point) {
     print::set_cursor_position(p);
     print!(
         "{}",
-        String::from(
-            RGB_ESCAPE.to_owned()
-                + &rgb.ch[R].to_string()
-                + ";"
-                + &rgb.ch[G].to_string()
-                + ";"
-                + &rgb.ch[B].to_string()
-                + "m"
-                + "█"
-                + "\x1b[0m"
-        )
+        RGB_ESCAPE.to_owned()
+            + &rgb.ch[R].to_string()
+            + ";"
+            + &rgb.ch[G].to_string()
+            + ";"
+            + &rgb.ch[B].to_string()
+            + "m"
+            + "█"
+            + "\x1b[0m"
     );
 }
 
@@ -38,17 +34,15 @@ pub fn animate_rgb(rgb: Rgb, p: maze::Point) {
     print::set_cursor_position(p);
     print!(
         "{}",
-        String::from(
-            RGB_ESCAPE.to_owned()
-                + &rgb.ch[R].to_string()
-                + ";"
-                + &rgb.ch[G].to_string()
-                + ";"
-                + &rgb.ch[B].to_string()
-                + "m"
-                + "█"
-                + "\x1b[0m"
-        )
+        RGB_ESCAPE.to_owned()
+            + &rgb.ch[R].to_string()
+            + ";"
+            + &rgb.ch[G].to_string()
+            + ";"
+            + &rgb.ch[B].to_string()
+            + "m"
+            + "█"
+            + "\x1b[0m"
     );
     print::flush();
 }
