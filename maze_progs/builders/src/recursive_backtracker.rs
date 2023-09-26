@@ -5,6 +5,9 @@ use speed;
 use rand::{seq::SliceRandom, thread_rng, Rng};
 use std::{thread, time};
 
+// Backtracking was too fast because it just clears square. Slow down for animation.
+const BACKTRACK_DELAY: build::SpeedUnit = 8;
+
 pub fn generate_maze(maze: &mut maze::Maze) {
     build::fill_maze_with_walls(maze);
     let mut gen = thread_rng();
@@ -71,7 +74,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         maze[cur.row as usize][cur.col as usize] &= !build::MARKERS_MASK;
         let backtracking: &maze::Point = &build::BACKTRACKING_POINTS[dir as usize];
         build::flush_cursor_maze_coordinate(maze, cur);
-        thread::sleep(time::Duration::from_micros(animation));
+        thread::sleep(time::Duration::from_micros(animation * BACKTRACK_DELAY));
         cur.row += backtracking.row;
         cur.col += backtracking.col;
 
