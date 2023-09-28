@@ -119,7 +119,8 @@ fn complete_walk(maze: &mut maze::Maze, mut walk: RandomWalk) -> Option<RandomWa
     if build::has_builder_bit(maze, walk.next) {
         build_with_marks(maze, walk.walk, walk.next);
         connect_walk(maze, walk.walk);
-        match build::choose_point_from_row_start(maze, walk.prev_row_start, build::ParityPoint::Odd) {
+        match build::choose_point_from_row_start(maze, walk.prev_row_start, build::ParityPoint::Odd)
+        {
             Some(point) => {
                 walk.prev_row_start = point.row;
                 walk.walk = point;
@@ -162,7 +163,8 @@ fn complete_walk_animated(
     if build::has_builder_bit(maze, walk.next) {
         build_with_marks_animated(maze, walk.walk, walk.next, speed);
         connect_walk_animated(maze, walk.walk, speed);
-        match build::choose_point_from_row_start(maze, walk.prev_row_start, build::ParityPoint::Odd) {
+        match build::choose_point_from_row_start(maze, walk.prev_row_start, build::ParityPoint::Odd)
+        {
             Some(point) => {
                 walk.prev_row_start = point.row;
                 walk.walk = point;

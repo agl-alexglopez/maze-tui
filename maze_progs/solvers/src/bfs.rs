@@ -398,10 +398,9 @@ fn hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
             };
             if match monitor.lock() {
                 Err(p) => print::maze_panic!("Thread panicked: {}", p),
-                Ok(lk) => {
-                    (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0
-                }
-            } && !parents.contains_key(&next) {
+                Ok(lk) => (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0,
+            } && !parents.contains_key(&next)
+            {
                 parents.insert(next, cur);
                 bfs.push_back(next);
             }
@@ -454,10 +453,9 @@ fn animated_hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
             };
             if match monitor.lock() {
                 Err(p) => print::maze_panic!("Thread panicked: {}", p),
-                Ok(lk) => {
-                    (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0
-                }
-            } && !parents.contains_key(&next) {
+                Ok(lk) => (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0,
+            } && !parents.contains_key(&next)
+            {
                 parents.insert(next, cur);
                 bfs.push_back(next);
             }
@@ -479,9 +477,7 @@ fn gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
                 {
                     lk.maze[cur.row as usize][cur.col as usize] |= seen_bit;
                     let p = match parents.get(&cur) {
-                        Some(point) => {
-                            point
-                        }
+                        Some(point) => point,
                         None => print::maze_panic!("Could not find parent to maze point in bfs."),
                     };
                     lk.win_path.push((*p, guide.paint));
@@ -501,10 +497,9 @@ fn gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
             };
             if match monitor.lock() {
                 Err(p) => print::maze_panic!("Thread panicked: {}", p),
-                Ok(lk) => {
-                    (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0
-                }
-            } && !parents.contains_key(&next) {
+                Ok(lk) => (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0,
+            } && !parents.contains_key(&next)
+            {
                 parents.insert(next, cur);
                 bfs.push_back(next);
             }
@@ -526,9 +521,7 @@ fn animated_gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
                 {
                     lk.maze[cur.row as usize][cur.col as usize] |= seen_bit;
                     let p = match parents.get(&cur) {
-                        Some(point) => {
-                            point
-                        }
+                        Some(point) => point,
                         None => print::maze_panic!("Could not find parent to maze point in bfs."),
                     };
                     lk.win_path.push((*p, guide.paint));
@@ -551,10 +544,9 @@ fn animated_gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
             };
             if match monitor.lock() {
                 Err(p) => print::maze_panic!("Thread panicked: {}", p),
-                Ok(lk) => {
-                    (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0
-                }
-            } && !parents.contains_key(&next) {
+                Ok(lk) => (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0,
+            } && !parents.contains_key(&next)
+            {
                 parents.insert(next, cur);
                 bfs.push_back(next);
             }

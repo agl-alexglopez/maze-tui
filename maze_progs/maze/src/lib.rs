@@ -70,9 +70,10 @@ pub struct MazeArgs {
     pub style: MazeStyle,
 }
 
+// Model a ROWxCOLUMN maze in a flat Vec. Implement tricky indexing in Index impls.
 #[derive(Debug, Default)]
 pub struct Maze {
-    maze: Vec<Vec<Square>>,
+    maze: Vec<Square>,
     maze_row_size: i32,
     maze_col_size: i32,
     wall_style_index: usize,
@@ -93,7 +94,7 @@ impl Maze {
         let rows = args.odd_rows + 1 - (args.odd_rows % 2);
         let cols = args.odd_cols + 1 - (args.odd_cols % 2);
         Box::new(Self {
-            maze: (vec![vec![0; cols as usize]; rows as usize]),
+            maze: (vec![0; rows as usize * cols as usize]),
             maze_row_size: (rows),
             maze_col_size: (cols),
             wall_style_index: (args.style as usize),
@@ -114,15 +115,17 @@ impl Maze {
 }
 
 impl Index<usize> for Maze {
-    type Output = Vec<Square>;
+    type Output = [Square];
     fn index(&self, index: usize) -> &Self::Output {
-        &self.maze[index]
+        &self.maze[(index * self.maze_col_size as usize)
+            ..(index * self.maze_col_size as usize + self.maze_col_size as usize)]
     }
 }
 
 impl IndexMut<usize> for Maze {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.maze[index]
+        &mut self.maze[(index * self.maze_col_size as usize)
+            ..(index * self.maze_col_size as usize + self.maze_col_size as usize)]
     }
 }
 

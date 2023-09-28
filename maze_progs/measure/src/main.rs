@@ -251,11 +251,15 @@ fn main() {
         ViewingMode::StaticImage => {
             measure.build.0(&mut maze);
             clear_and_flush_grid(&maze);
-            if let Some((static_mod, _)) = measure.modify { static_mod(&mut maze) }
+            if let Some((static_mod, _)) = measure.modify {
+                static_mod(&mut maze)
+            }
         }
         ViewingMode::AnimatedPlayback => {
             measure.build.1(&mut maze, measure.build_speed);
-            if let Some((_, animate_mod)) = measure.modify { animate_mod(&mut maze, measure.build_speed) }
+            if let Some((_, animate_mod)) = measure.modify {
+                animate_mod(&mut maze, measure.build_speed)
+            }
         }
     }
 

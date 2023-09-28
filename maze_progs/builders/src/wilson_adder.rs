@@ -31,7 +31,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
     let mut cur = RandomWalk {
         prev_row_start: 2,
         prev: maze::Point { row: 0, col: 0 },
-        walk: maze::Point{
+        walk: maze::Point {
             row: 2 * (rng.gen_range(2..maze.row_size() - 1) / 2),
             col: 2 * (rng.gen_range(2..maze.col_size() - 1) / 2),
         },
@@ -111,7 +111,11 @@ fn complete_walk(maze: &mut maze::Maze, mut walk: RandomWalk) -> Option<RandomWa
     if build::has_builder_bit(maze, walk.next) {
         build_with_marks(maze, walk.walk, walk.next);
         connect_walk(maze, walk.walk);
-        match build::choose_point_from_row_start(maze, walk.prev_row_start, build::ParityPoint::Even) {
+        match build::choose_point_from_row_start(
+            maze,
+            walk.prev_row_start,
+            build::ParityPoint::Even,
+        ) {
             Some(point) => {
                 walk.prev_row_start = point.row;
                 walk.walk = point;
@@ -154,7 +158,11 @@ fn complete_walk_animated(
     if build::has_builder_bit(maze, walk.next) {
         build_with_marks_animated(maze, walk.walk, walk.next, speed);
         connect_walk_animated(maze, walk.walk, speed);
-        match build::choose_point_from_row_start(maze, walk.prev_row_start, build::ParityPoint::Even) {
+        match build::choose_point_from_row_start(
+            maze,
+            walk.prev_row_start,
+            build::ParityPoint::Even,
+        ) {
             Some(point) => {
                 walk.prev_row_start = point.row;
                 walk.walk = point;

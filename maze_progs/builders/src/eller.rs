@@ -57,7 +57,7 @@ impl SlidingSetWindow {
         &mut self.sets[row * self.width + col]
     }
 
-    fn row(&mut self, row: usize) -> &mut[SetId] {
+    fn row(&mut self, row: usize) -> &mut [SetId] {
         &mut self.sets[(row * self.width)..(row * self.width + self.width)]
     }
 

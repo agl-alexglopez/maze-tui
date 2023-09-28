@@ -24,7 +24,7 @@ pub const FROM_EAST: BacktrackMarker = 0b0010_0000;
 pub const FROM_SOUTH: BacktrackMarker = 0b0011_0000;
 pub const FROM_WEST: BacktrackMarker = 0b0100_0000;
 pub static BACKTRACKING_SYMBOLS: [&str; 5] = [
-    " ",                                 // I came from the orgin.
+    " ",                                   // I came from the orgin.
     "\x1b[38;5;15m\x1b[48;5;1m↑\x1b[0m", // I came from the north.
     "\x1b[38;5;15m\x1b[48;5;2m→\x1b[0m", // I came from the east.
     "\x1b[38;5;15m\x1b[48;5;3m↓\x1b[0m", // I came from the south.
@@ -80,7 +80,11 @@ pub fn choose_arbitrary_point(maze: &maze::Maze, parity: ParityPoint) -> Option<
     None
 }
 
-pub fn choose_point_from_row_start(maze: &maze::Maze, row_start: i32, parity: ParityPoint) -> Option<maze::Point> {
+pub fn choose_point_from_row_start(
+    maze: &maze::Maze,
+    row_start: i32,
+    parity: ParityPoint,
+) -> Option<maze::Point> {
     let init = if parity == ParityPoint::Even { 2 } else { 1 };
     if (row_start % 2) != (init % 2) {
         maze_panic!("Row start parity did not match requested parity.");
@@ -108,10 +112,7 @@ pub fn has_builder_bit(maze: &maze::Maze, next: maze::Point) -> bool {
 }
 
 pub fn is_square_within_perimeter_walls(maze: &maze::Maze, next: maze::Point) -> bool {
-    next.row < maze.row_size() - 1
-        && next.row > 0
-        && next.col < maze.col_size() - 1
-        && next.col > 0
+    next.row < maze.row_size() - 1 && next.row > 0 && next.col < maze.col_size() - 1 && next.col > 0
 }
 
 // Wall Adder Helpers

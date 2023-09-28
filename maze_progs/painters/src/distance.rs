@@ -211,10 +211,9 @@ fn painter_animated(monitor: &mut BfsMonitor, guide: ThreadGuide, animation: rgb
             };
             if match monitor.lock() {
                 Err(p) => print::maze_panic!("Panic with lock: {}", p),
-                Ok(lk) => {
-                    (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0
-                }
-            } && !seen.contains(&next) {
+                Ok(lk) => (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0,
+            } && !seen.contains(&next)
+            {
                 seen.insert(next);
                 bfs.push_back(next);
             }
