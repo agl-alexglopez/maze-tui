@@ -109,8 +109,8 @@ impl Maze {
         self.maze_col_size
     }
 
-    pub fn wall_style(&self) -> &[&str; 16] {
-        &WALL_STYLES[self.wall_style_index]
+    pub fn wall_style(&self) -> &[&'static str] {
+        &WALL_STYLES[(self.wall_style_index * WALL_ROW)..(self.wall_style_index * WALL_ROW + WALL_ROW)]
     }
 }
 
@@ -155,33 +155,22 @@ pub const SOUTH_WALL: WallLine = 0b0100;
 pub const WEST_WALL: WallLine = 0b1000;
 // Walls are constructed in terms of other walls they need to connect to. For example, read
 // 0b0011 as, "this is a wall square that must connect to other walls to the East and North."
-pub static WALL_STYLES: [[&str; 16]; 6] = [
+const WALL_ROW: usize = 16;
+pub static WALL_STYLES: [&str; 96] = [
     // 0bWestSouthEastNorth. Note: 0b0000 is a floating wall with no walls around.
     // Then, count from 0 (0b0000) to 15 (0b1111) in binary to form different wall shapes.
-    [
-        // sharp
-        "■", "╵", "╶", "└", "╷", "│", "┌", "├", "╴", "┘", "─", "┴", "┐", "┤", "┬", "┼",
-    ],
-    [
-        // rounded
-        "●", "╵", "╶", "╰", "╷", "│", "╭", "├", "╴", "╯", "─", "┴", "╮", "┤", "┬", "┼",
-    ],
-    [
-        // doubles
-        "◫", "║", "═", "╚", "║", "║", "╔", "╠", "═", "╝", "═", "╩", "╗", "╣", "╦", "╬",
-    ],
-    [
-        // bold
-        "■", "╹", "╺", "┗", "╻", "┃", "┏", "┣", "╸", "┛", "━", "┻", "┓", "┫", "┳", "╋",
-    ],
-    [
-        // contrast
-        "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█",
-    ],
-    [
-        // spikes
-        "✸", "╀", "┾", "╊", "╁", "╂", "╆", "╊", "┽", "╃", "┿", "╇", "╅", "╉", "╈", "╋",
-    ],
+    // sharp
+    "■", "╵", "╶", "└", "╷", "│", "┌", "├", "╴", "┘", "─", "┴", "┐", "┤", "┬", "┼",
+    // rounded
+    "●", "╵", "╶", "╰", "╷", "│", "╭", "├", "╴", "╯", "─", "┴", "╮", "┤", "┬", "┼",
+    // doubles
+    "◫", "║", "═", "╚", "║", "║", "╔", "╠", "═", "╝", "═", "╩", "╗", "╣", "╦", "╬",
+    // bold
+    "■", "╹", "╺", "┗", "╻", "┃", "┏", "┣", "╸", "┛", "━", "┻", "┓", "┫", "┳", "╋",
+    // contrast
+    "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█",
+    // spikes
+    "✸", "╀", "┾", "╊", "╁", "╂", "╆", "╊", "┽", "╃", "┿", "╇", "╅", "╉", "╈", "╋",
 ];
 
 // north, east, south, west provided to any users of a maze for convenience.
