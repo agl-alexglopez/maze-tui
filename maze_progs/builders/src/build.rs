@@ -24,7 +24,7 @@ pub const FROM_EAST: BacktrackMarker = 0b0010_0000;
 pub const FROM_SOUTH: BacktrackMarker = 0b0011_0000;
 pub const FROM_WEST: BacktrackMarker = 0b0100_0000;
 pub static BACKTRACKING_SYMBOLS: [&str; 5] = [
-    " ",                                   // I came from the orgin.
+    " ",                                 // I came from the orgin.
     "\x1b[38;5;15m\x1b[48;5;1m↑\x1b[0m", // I came from the north.
     "\x1b[38;5;15m\x1b[48;5;2m→\x1b[0m", // I came from the east.
     "\x1b[38;5;15m\x1b[48;5;3m↓\x1b[0m", // I came from the south.
@@ -36,6 +36,14 @@ pub const BACKTRACKING_POINTS: [maze::Point; 5] = [
     maze::Point { row: 0, col: 2 },
     maze::Point { row: 2, col: 0 },
     maze::Point { row: 0, col: -2 },
+];
+
+pub const BACKTRACKING_HALF_POINTS: [maze::Point; 5] = [
+    maze::Point { row: 0, col: 0 },
+    maze::Point { row: -1, col: 0 },
+    maze::Point { row: 0, col: 1 },
+    maze::Point { row: 1, col: 0 },
+    maze::Point { row: 0, col: -1 },
 ];
 
 // Most builder algorithms will need to use these so leave them in one place.
@@ -231,15 +239,26 @@ pub fn mark_origin_animated(
 ) {
     let u_next_row = next.row as usize;
     let u_next_col = next.col as usize;
+    let mut wall = walk;
     if next.row > walk.row {
+        wall.row += 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_NORTH;
         maze[u_next_row][u_next_col] |= FROM_NORTH;
     } else if next.row < walk.row {
+        wall.row -= 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_SOUTH;
         maze[u_next_row][u_next_col] |= FROM_SOUTH;
     } else if next.col < walk.col {
+        wall.col -= 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_EAST;
         maze[u_next_row][u_next_col] |= FROM_EAST;
     } else if next.col > walk.col {
+        wall.col += 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_WEST;
         maze[u_next_row][u_next_col] |= FROM_WEST;
     }
+    flush_cursor_maze_coordinate(maze, wall);
+    thread::sleep(time::Duration::from_micros(speed));
     flush_cursor_maze_coordinate(maze, next);
     thread::sleep(time::Duration::from_micros(speed));
 }
@@ -366,15 +385,19 @@ pub fn carve_path_markings_animated(
     let mut wall: maze::Point = cur;
     if next.row < cur.row {
         wall.row -= 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_SOUTH;
         maze[u_next_row][u_next_col] |= FROM_SOUTH;
     } else if next.row > cur.row {
         wall.row += 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_NORTH;
         maze[u_next_row][u_next_col] |= FROM_NORTH;
     } else if next.col < cur.col {
         wall.col -= 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_EAST;
         maze[u_next_row][u_next_col] |= FROM_EAST;
     } else if next.col > cur.col {
         wall.col += 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_WEST;
         maze[u_next_row][u_next_col] |= FROM_WEST;
     } else {
         print::maze_panic!("Wall break error. Cur: {:?} Next: {:?}", cur, next);

@@ -215,11 +215,19 @@ fn erase_loop_animated(maze: &mut maze::Maze, mut walk: Loop, speed: build::Spee
     while walk.walk != walk.root {
         maze[walk.walk.row as usize][walk.walk.col as usize] &= !WALK_BIT;
         let dir: &'static maze::Point = backtrack_point(maze, &walk.walk);
+        let half: &'static maze::Point = backtrack_half_step(maze, &walk.walk);
+        let half_step = maze::Point {
+            row: walk.walk.row + half.row,
+            col: walk.walk.col + half.col,
+        };
         let next = maze::Point {
             row: walk.walk.row + dir.row,
             col: walk.walk.col + dir.col,
         };
+        maze[half_step.row as usize][half_step.col as usize] &= !build::MARKERS_MASK;
         maze[walk.walk.row as usize][walk.walk.col as usize] &= !build::MARKERS_MASK;
+        build::flush_cursor_maze_coordinate(maze, half_step);
+        thread::sleep(time::Duration::from_micros(speed));
         build::flush_cursor_maze_coordinate(maze, walk.walk);
         thread::sleep(time::Duration::from_micros(speed));
         walk.walk = next;
@@ -245,12 +253,20 @@ fn connect_walk(maze: &mut maze::Maze, mut walk: maze::Point) {
 fn connect_walk_animated(maze: &mut maze::Maze, mut walk: maze::Point, speed: build::SpeedUnit) {
     while (maze[walk.row as usize][walk.col as usize] & build::MARKERS_MASK) != 0 {
         let dir: &'static maze::Point = backtrack_point(maze, &walk);
+        let half: &'static maze::Point = backtrack_half_step(maze, &walk);
+        let half_step = maze::Point {
+            row: walk.row + half.row,
+            col: walk.col + half.col,
+        };
         let next = maze::Point {
             row: walk.row + dir.row,
             col: walk.col + dir.col,
         };
         build_with_marks_animated(maze, walk, next, speed);
+        maze[half_step.row as usize][half_step.col as usize] &= !build::MARKERS_MASK;
         maze[walk.row as usize][walk.col as usize] &= !build::MARKERS_MASK;
+        build::flush_cursor_maze_coordinate(maze, half_step);
+        thread::sleep(time::Duration::from_micros(speed));
         build::flush_cursor_maze_coordinate(maze, walk);
         thread::sleep(time::Duration::from_micros(speed));
         walk = next;
@@ -321,6 +337,11 @@ fn is_valid_step(maze: &maze::Maze, next: maze::Point, prev: maze::Point) -> boo
 
 fn backtrack_point(maze: &maze::Maze, walk: &maze::Point) -> &'static maze::Point {
     &build::BACKTRACKING_POINTS[((maze[walk.row as usize][walk.col as usize] & build::MARKERS_MASK)
+        >> build::MARKER_SHIFT) as usize]
+}
+
+fn backtrack_half_step(maze: &maze::Maze, walk: &maze::Point) -> &'static maze::Point {
+    &build::BACKTRACKING_HALF_POINTS[((maze[walk.row as usize][walk.col as usize] & build::MARKERS_MASK)
         >> build::MARKER_SHIFT) as usize]
 }
 

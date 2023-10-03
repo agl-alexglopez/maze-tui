@@ -71,8 +71,13 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         let dir: build::BacktrackMarker =
             (maze[cur.row as usize][cur.col as usize] & build::MARKERS_MASK) >> build::MARKER_SHIFT;
         // The solvers will need these bits later so we need to clear bits.
-        maze[cur.row as usize][cur.col as usize] &= !build::MARKERS_MASK;
         let backtracking: &maze::Point = &build::BACKTRACKING_POINTS[dir as usize];
+        let half: &maze::Point = &build::BACKTRACKING_HALF_POINTS[dir as usize];
+        let half_step = maze::Point { row: cur.row + half.row, col: cur.col + half.col };
+        maze[cur.row as usize][cur.col as usize] &= !build::MARKERS_MASK;
+        maze[half_step.row as usize][half_step.col as usize] &= !build::MARKERS_MASK;
+        build::flush_cursor_maze_coordinate(maze, half_step);
+        thread::sleep(time::Duration::from_micros(animation * BACKTRACK_DELAY));
         build::flush_cursor_maze_coordinate(maze, cur);
         thread::sleep(time::Duration::from_micros(animation * BACKTRACK_DELAY));
         cur.row += backtracking.row;
