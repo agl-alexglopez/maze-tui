@@ -17,7 +17,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
     };
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     let mut cur: maze::Point = start;
-    'branching: while {
+    'branching: loop {
         random_direction_indices.shuffle(&mut gen);
         for &i in random_direction_indices.iter() {
             let direction = &build::GENERATE_DIRECTIONS[i];
@@ -39,8 +39,10 @@ pub fn generate_maze(maze: &mut maze::Maze) {
         cur.row += backtracking.row;
         cur.col += backtracking.col;
 
-        cur != start
-    } {}
+        if cur == start {
+            return;
+        }
+    }
 }
 
 pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
@@ -54,7 +56,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     };
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     let mut cur: maze::Point = start;
-    'branching: while {
+    'branching: loop {
         random_direction_indices.shuffle(&mut gen);
         for &i in random_direction_indices.iter() {
             let direction = &build::GENERATE_DIRECTIONS[i];
@@ -73,7 +75,10 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         // The solvers will need these bits later so we need to clear bits.
         let backtracking: &maze::Point = &build::BACKTRACKING_POINTS[dir as usize];
         let half: &maze::Point = &build::BACKTRACKING_HALF_POINTS[dir as usize];
-        let half_step = maze::Point { row: cur.row + half.row, col: cur.col + half.col };
+        let half_step = maze::Point {
+            row: cur.row + half.row,
+            col: cur.col + half.col,
+        };
         maze[cur.row as usize][cur.col as usize] &= !build::MARKERS_MASK;
         maze[half_step.row as usize][half_step.col as usize] &= !build::MARKERS_MASK;
         build::flush_cursor_maze_coordinate(maze, half_step);
@@ -83,6 +88,8 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         cur.row += backtracking.row;
         cur.col += backtracking.col;
 
-        cur != start
-    } {}
+        if cur == start {
+            return;
+        }
+    }
 }
