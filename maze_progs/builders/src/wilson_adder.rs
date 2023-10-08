@@ -341,7 +341,8 @@ fn backtrack_point(maze: &maze::Maze, walk: &maze::Point) -> &'static maze::Poin
 }
 
 fn backtrack_half_step(maze: &maze::Maze, walk: &maze::Point) -> &'static maze::Point {
-    &build::BACKTRACKING_HALF_POINTS[((maze[walk.row as usize][walk.col as usize] & build::MARKERS_MASK)
+    &build::BACKTRACKING_HALF_POINTS[((maze[walk.row as usize][walk.col as usize]
+        & build::MARKERS_MASK)
         >> build::MARKER_SHIFT) as usize]
 }
 

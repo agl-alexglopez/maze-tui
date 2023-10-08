@@ -110,7 +110,8 @@ impl Maze {
     }
 
     pub fn wall_style(&self) -> &[&'static str] {
-        &WALL_STYLES[(self.wall_style_index * WALL_ROW)..(self.wall_style_index * WALL_ROW + WALL_ROW)]
+        &WALL_STYLES
+            [(self.wall_style_index * WALL_ROW)..(self.wall_style_index * WALL_ROW + WALL_ROW)]
     }
 }
 
