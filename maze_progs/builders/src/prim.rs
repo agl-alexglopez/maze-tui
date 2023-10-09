@@ -22,7 +22,7 @@ impl PartialEq for PriorityPoint {
 
 impl PartialOrd for PriorityPoint {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.priority.partial_cmp(&other.priority)
+        Some(self.cmp(other))
     }
 }
 

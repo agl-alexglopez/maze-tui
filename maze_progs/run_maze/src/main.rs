@@ -11,6 +11,10 @@ use builders::wilson_adder;
 use builders::wilson_carver;
 
 use solvers::bfs;
+use solvers::darkbfs;
+use solvers::darkdfs;
+use solvers::darkfloodfs;
+use solvers::darkrdfs;
 use solvers::dfs;
 use solvers::floodfs;
 use solvers::rdfs;
@@ -259,6 +263,90 @@ fn main() {
                     rdfs::animate_corner as fn(maze::BoxMaze, speed::Speed),
                 ),
             ),
+            (
+                String::from("darkdfs-hunt"),
+                (
+                    dfs::hunt as fn(maze::BoxMaze),
+                    darkdfs::animate_hunt as fn(maze::BoxMaze, speed::Speed),
+                ),
+            ),
+            (
+                String::from("darkdfs-gather"),
+                (
+                    dfs::gather as fn(maze::BoxMaze),
+                    darkdfs::animate_gather as fn(maze::BoxMaze, speed::Speed),
+                ),
+            ),
+            (
+                String::from("darkdfs-corners"),
+                (
+                    dfs::corner as fn(maze::BoxMaze),
+                    darkdfs::animate_corner as fn(maze::BoxMaze, speed::Speed),
+                ),
+            ),
+            (
+                String::from("darkfloodfs-hunt"),
+                (
+                    floodfs::hunt as fn(maze::BoxMaze),
+                    darkfloodfs::animate_hunt as fn(maze::BoxMaze, speed::Speed),
+                ),
+            ),
+            (
+                String::from("darkfloodfs-gather"),
+                (
+                    floodfs::gather as fn(maze::BoxMaze),
+                    darkfloodfs::animate_gather as fn(maze::BoxMaze, speed::Speed),
+                ),
+            ),
+            (
+                String::from("darkfloodfs-corners"),
+                (
+                    floodfs::corner as fn(maze::BoxMaze),
+                    darkfloodfs::animate_corner as fn(maze::BoxMaze, speed::Speed),
+                ),
+            ),
+            (
+                String::from("darkrdfs-hunt"),
+                (
+                    rdfs::hunt as fn(maze::BoxMaze),
+                    darkrdfs::animate_hunt as fn(maze::BoxMaze, speed::Speed),
+                ),
+            ),
+            (
+                String::from("darkrdfs-gather"),
+                (
+                    rdfs::gather as fn(maze::BoxMaze),
+                    darkrdfs::animate_gather as fn(maze::BoxMaze, speed::Speed),
+                ),
+            ),
+            (
+                String::from("darkrdfs-corners"),
+                (
+                    rdfs::corner as fn(maze::BoxMaze),
+                    darkrdfs::animate_corner as fn(maze::BoxMaze, speed::Speed),
+                ),
+            ),
+            (
+                String::from("darkbfs-hunt"),
+                (
+                    bfs::hunt as fn(maze::BoxMaze),
+                    darkbfs::animate_hunt as fn(maze::BoxMaze, speed::Speed),
+                ),
+            ),
+            (
+                String::from("darkbfs-gather"),
+                (
+                    bfs::gather as fn(maze::BoxMaze),
+                    darkbfs::animate_gather as fn(maze::BoxMaze, speed::Speed),
+                ),
+            ),
+            (
+                String::from("darkbfs-corners"),
+                (
+                    bfs::corner as fn(maze::BoxMaze),
+                    darkbfs::animate_corner as fn(maze::BoxMaze, speed::Speed),
+                ),
+            ),
         ]),
         style_table: HashMap::from([
             (String::from("sharp"), maze::MazeStyle::Sharp),
@@ -454,6 +542,7 @@ fn print_usage() {
     │   │     │ bfs-hunt - Breadth First Search     │   │   │ │   │     │ │
     ├─┐ │ ┌─┐ └─bfs-gather - Breadth First Search─┐ ╵ ╷ ├─╴ │ └─┐ ├───╴ │ │
     │ │ │ │ │   bfs-corners - Breadth First Search│   │ │   │   │ │     │ │
+    │ │ │ │ │   dark[solver]-[game] - A mystery...│   │ │   │   │ │     │ │
     │ │ │ ╵ └─-d Draw flag. Set the line style for the maze.┴─┐ └─┘ ┌─┬─┘ │
     │ │ │       sharp - The default straight lines. │   │     │     │ │   │
     │ │ └─┬───╴ round - Rounded corners.──╴ │ ╷ ╵ ╵ │ ╶─┴─┐ ╶─┴─────┘ │ ╶─┤

@@ -111,7 +111,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
         for c in (1..maze.col_size() - 1).step_by(2) {
             sets_in_this_row
                 .entry(window.at(window.cur_row, c as usize))
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(maze::Point { row: r, col: c });
         }
 
@@ -177,7 +177,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         for c in (1..maze.col_size() - 1).step_by(2) {
             sets_in_this_row
                 .entry(window.at(window.cur_row, c as usize))
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(maze::Point { row: r, col: c });
         }
 

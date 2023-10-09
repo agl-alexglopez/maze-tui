@@ -313,10 +313,14 @@ fn hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
                 }
                 None => {
                     if (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT) != 0 {
+                        lk.maze[cur.row as usize][cur.col as usize] |= guide.paint;
                         lk.win.get_or_insert(guide.index);
-                        dfs.pop();
                         for p in dfs {
-                            lk.maze[p.row as usize][p.col as usize] |= guide.paint;
+                            if (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT)
+                                == 0
+                            {
+                                lk.maze[p.row as usize][p.col as usize] |= guide.paint;
+                            }
                         }
                         return;
                     }
@@ -363,8 +367,9 @@ fn animated_hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide
                 Some(_) => return,
                 None => {
                     if (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT) != 0 {
+                        lk.maze[cur.row as usize][cur.col as usize] |= guide.paint;
+                        solve::flush_cursor_path_coordinate(&lk.maze, cur);
                         lk.win.get_or_insert(guide.index);
-                        dfs.pop();
                         return;
                     }
                     lk.maze[cur.row as usize][cur.col as usize] |= seen | guide.paint;
@@ -419,17 +424,28 @@ fn gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
     'branching: while let Some(&cur) = dfs.last() {
         match monitor.lock() {
             Ok(mut lk) => {
-                if (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT) != 0
-                    && (lk.maze[cur.row as usize][cur.col as usize] & solve::CACHE_MASK) == 0
-                {
-                    lk.maze[cur.row as usize][cur.col as usize] |= seen;
-                    dfs.pop();
-                    for p in dfs {
-                        lk.maze[p.row as usize][p.col as usize] |= guide.paint;
+                match (
+                    (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT) != 0,
+                    (lk.maze[cur.row as usize][cur.col as usize] & solve::CACHE_MASK) == 0,
+                ) {
+                    (true, true) => {
+                        lk.maze[cur.row as usize][cur.col as usize] |= seen | guide.paint;
+                        for p in dfs {
+                            if (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT)
+                                == 0
+                            {
+                                lk.maze[p.row as usize][p.col as usize] |= guide.paint;
+                            }
+                        }
+                        return;
                     }
-                    return;
+                    (true, false) => {
+                        lk.maze[cur.row as usize][cur.col as usize] |= seen;
+                    }
+                    (_, _) => {
+                        lk.maze[cur.row as usize][cur.col as usize] |= seen | guide.paint;
+                    }
                 }
-                lk.maze[cur.row as usize][cur.col as usize] |= seen;
             }
             Err(p) => print::maze_panic!("Solve thread panic!: {}", p),
         };
@@ -467,15 +483,23 @@ fn animated_gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGui
     'branching: while let Some(&cur) = dfs.last() {
         match monitor.lock() {
             Ok(mut lk) => {
-                if (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT) != 0
-                    && (lk.maze[cur.row as usize][cur.col as usize] & solve::CACHE_MASK) == 0
-                {
-                    lk.maze[cur.row as usize][cur.col as usize] |= seen;
-                    dfs.pop();
-                    return;
+                match (
+                    (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT) != 0,
+                    (lk.maze[cur.row as usize][cur.col as usize] & solve::CACHE_MASK) == 0,
+                ) {
+                    (true, true) => {
+                        lk.maze[cur.row as usize][cur.col as usize] |= guide.paint | seen;
+                        solve::flush_cursor_path_coordinate(&lk.maze, cur);
+                        return;
+                    }
+                    (true, false) => {
+                        lk.maze[cur.row as usize][cur.col as usize] |= seen;
+                    }
+                    (_, _) => {
+                        lk.maze[cur.row as usize][cur.col as usize] |= guide.paint | seen;
+                        solve::flush_cursor_path_coordinate(&lk.maze, cur);
+                    }
                 }
-                lk.maze[cur.row as usize][cur.col as usize] |= seen | guide.paint;
-                solve::flush_cursor_path_coordinate(&lk.maze, cur);
             }
             Err(p) => print::maze_panic!("Solve thread panic!: {}", p),
         }

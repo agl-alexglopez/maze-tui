@@ -589,7 +589,7 @@ pub fn clear_and_flush_grid(maze: &maze::Maze) {
         for c in 0..maze.col_size() {
             print_square(maze, maze::Point { row: r, col: c });
         }
-        print!("\n");
+        println!();
     }
     print::flush();
 }

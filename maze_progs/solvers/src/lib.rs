@@ -1,4 +1,8 @@
 pub mod bfs;
+pub mod darkbfs;
+pub mod darkdfs;
+pub mod darkfloodfs;
+pub mod darkrdfs;
 pub mod dfs;
 pub mod floodfs;
 pub mod rdfs;
