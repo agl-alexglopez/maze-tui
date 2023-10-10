@@ -3,6 +3,7 @@ members = [
     "run_maze",
     "demo",
     "measure",
+    "run_tui",
     "maze",
     "builders",
     "solvers",
