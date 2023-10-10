@@ -71,7 +71,7 @@ pub struct MazeArgs {
 }
 
 // Model a ROWxCOLUMN maze in a flat Vec. Implement tricky indexing in Index impls.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Maze {
     maze: Vec<Square>,
     maze_row_size: i32,

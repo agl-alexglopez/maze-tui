@@ -193,10 +193,18 @@ pub fn print_gather_solution_message() {
     println!(" All threads found their finish squares!");
 }
 
-pub fn print_overlap_key() {
+pub fn print_overlap_key(mut pos: maze::Point) {
+    print::set_cursor_position(pos);
+    pos.row += 1;
     println!("┌────────────────────────────────────────────────────────────────┐");
+    print::set_cursor_position(pos);
+    pos.row += 1;
     println!("│     Overlap Key: 3_THREAD | 2_THREAD | 1_THREAD | 0_THREAD     │");
+    print::set_cursor_position(pos);
+    pos.row += 1;
     println!("├────────────┬────────────┬────────────┬────────────┬────────────┤");
+    print::set_cursor_position(pos);
+    pos.row += 1;
     println!(
         "│ {} = 0      │ {} = 1      │ {} = 1|0    │ {} = 2      │ {} = 2|0    │",
         THREAD_COLORS[1].block,
@@ -205,7 +213,11 @@ pub fn print_overlap_key() {
         THREAD_COLORS[4].block,
         THREAD_COLORS[5].block
     );
+    print::set_cursor_position(pos);
+    pos.row += 1;
     println!("├────────────┼────────────┼────────────┼────────────┼────────────┤");
+    print::set_cursor_position(pos);
+    pos.row += 1;
     println!(
         "│ {} = 2|1    │ {} = 2|1|0  │ {} = 3      │ {} = 3|0    │ {} = 3|1    │",
         THREAD_COLORS[6].block,
@@ -214,7 +226,11 @@ pub fn print_overlap_key() {
         THREAD_COLORS[9].block,
         THREAD_COLORS[10].block
     );
+    print::set_cursor_position(pos);
+    pos.row += 1;
     println!("├────────────┼────────────┼────────────┼────────────┼────────────┤");
+    print::set_cursor_position(pos);
+    pos.row += 1;
     println!(
         "│ {} = 3|1|0  │ {} = 3|2    │ {} = 3|2|0  │ {} = 3|2|1  │ {} = 3|2|1|0│",
         THREAD_COLORS[11].block,
@@ -223,6 +239,7 @@ pub fn print_overlap_key() {
         THREAD_COLORS[14].block,
         THREAD_COLORS[15].block
     );
+    print::set_cursor_position(pos);
     println!("└────────────┴────────────┴────────────┴────────────┴────────────┘");
 }
 

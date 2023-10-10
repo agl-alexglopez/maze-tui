@@ -362,6 +362,7 @@ dependencies = [
  "crossterm 0.27.0",
  "ctrlc",
  "maze",
+ "painters",
  "print",
  "rand",
  "ratatui",

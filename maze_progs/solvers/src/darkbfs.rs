@@ -29,11 +29,10 @@ type BfsMonitor = Arc<Mutex<BfsSolver>>;
 // Public Solver Functions-------------------------------------------------------------------------
 
 pub fn animate_hunt(mut maze: maze::BoxMaze, speed: speed::Speed) {
-    print::set_cursor_position(maze::Point {
+    solve::print_overlap_key(maze::Point {
         row: maze.row_size(),
         col: 0,
     });
-    solve::print_overlap_key();
     solve::deluminate_maze(maze.row_size(), maze.col_size());
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let all_start: maze::Point = solve::pick_random_point(&maze);
@@ -82,11 +81,10 @@ pub fn animate_hunt(mut maze: maze::BoxMaze, speed: speed::Speed) {
 }
 
 pub fn animate_gather(mut maze: maze::BoxMaze, speed: speed::Speed) {
-    print::set_cursor_position(maze::Point {
+    solve::print_overlap_key(maze::Point {
         row: maze.row_size(),
         col: 0,
     });
-    solve::print_overlap_key();
     solve::deluminate_maze(maze.row_size(), maze.col_size());
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let all_start: maze::Point = solve::pick_random_point(&maze);
@@ -138,11 +136,10 @@ pub fn animate_gather(mut maze: maze::BoxMaze, speed: speed::Speed) {
 }
 
 pub fn animate_corner(mut maze: maze::BoxMaze, speed: speed::Speed) {
-    print::set_cursor_position(maze::Point {
+    solve::print_overlap_key(maze::Point {
         row: maze.row_size(),
         col: 0,
     });
-    solve::print_overlap_key();
     solve::deluminate_maze(maze.row_size(), maze.col_size());
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let mut all_starts: [maze::Point; 4] = solve::set_corner_starts(&maze);
