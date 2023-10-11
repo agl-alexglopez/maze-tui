@@ -71,13 +71,14 @@ pub struct MazeArgs {
 }
 
 // Model a ROWxCOLUMN maze in a flat Vec. Implement tricky indexing in Index impls.
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default)]
 pub struct Maze {
     maze: Vec<Square>,
     maze_row_size: i32,
     maze_col_size: i32,
     wall_style_index: usize,
 }
+pub type BoxMaze = Box<Maze>;
 
 // Core Maze Object Implementation
 
@@ -86,9 +87,6 @@ pub struct Maze {
 // Builders and solvers use the visitor pattern to operate on and extend
 // what they wish on the maze. A BoxMaze allows borrows during its scope.
 // This is necessary for the multithreading in the solver functions.
-
-pub type BoxMaze = Box<Maze>;
-
 impl Maze {
     pub fn new(args: MazeArgs) -> Box<Self> {
         let rows = args.odd_rows + 1 - (args.odd_rows % 2);

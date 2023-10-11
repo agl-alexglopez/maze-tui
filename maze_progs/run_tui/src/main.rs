@@ -14,8 +14,8 @@ use painters::distance;
 use painters::runs;
 use ratatui::widgets::Borders;
 use ratatui::{
-    prelude::{Alignment, CrosstermBackend, Terminal},
-    widgets::{Block, Paragraph},
+    prelude::{CrosstermBackend, Terminal},
+    widgets::{Block, Padding},
 };
 
 use solvers::bfs;
@@ -420,12 +420,14 @@ fn shutdown() -> std::io::Result<()> {
 }
 
 fn ui(f: &mut Frame<'_>) {
-    f.render_widget(
-        Paragraph::new("Welcome to the Maze Runner TUI! Press <r> to run.")
-            .block(Block::new().title("Mazes").borders(Borders::ALL))
-            .alignment(Alignment::Center),
-        f.size(),
-    );
+    let frame_block = Block::default()
+        .title("Maze Algorithms")
+        .borders(Borders::ALL)
+        .padding(Padding::new(10, 10, 10, 10));
+    let inner_area = frame_block.inner(f.size());
+    let maze_block = Block::new().borders(Borders::ALL).title("Maze Frame?");
+    f.render_widget(frame_block, f.size());
+    f.render_widget(maze_block, inner_area)
 }
 
 fn update(run: &mut MazeRunner, tables: &LookupTables) -> std::io::Result<()> {
