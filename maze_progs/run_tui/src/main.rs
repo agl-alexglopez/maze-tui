@@ -9,7 +9,10 @@ use builders::recursive_backtracker;
 use builders::recursive_subdivision;
 use builders::wilson_adder;
 use builders::wilson_carver;
-use crossterm::terminal::EnterAlternateScreen;
+use crossterm::event::{
+    self, DisableMouseCapture, EnableMouseCapture, Event as CrosstermEvent, KeyEvent, MouseEvent,
+};
+use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use painters::distance;
 use painters::runs;
 use ratatui::widgets::Borders;
@@ -28,10 +31,39 @@ use solvers::floodfs;
 use solvers::rdfs;
 
 use std::collections::{HashMap, HashSet};
+use std::{
+    sync::mpsc,
+    thread,
+    time::{Duration, Instant},
+};
 
-pub type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<std::io::Stderr>>;
+type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<std::io::Stderr>>;
+type Err = Box<dyn std::error::Error>;
+type Result<T> = std::result::Result<T, Err>;
+type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stderr>>;
+
 type BuildFunction = (fn(&mut maze::Maze), fn(&mut maze::Maze, speed::Speed));
 type SolveFunction = (fn(maze::BoxMaze), fn(maze::BoxMaze, speed::Speed));
+
+struct Tui {
+    terminal: CrosstermTerminal,
+    events: EventHandler,
+}
+
+#[derive(Clone, Copy, Debug)]
+enum Event {
+    Tick,
+    Key(KeyEvent),
+    Mouse(MouseEvent),
+    Resize(u16, u16),
+}
+
+#[derive(Debug)]
+struct EventHandler {
+    sender: mpsc::Sender<Event>,
+    receiver: mpsc::Receiver<Event>,
+    handler: thread::JoinHandle<()>,
+}
 
 struct FlagArg<'a, 'b> {
     flag: &'a str,
@@ -52,7 +84,7 @@ struct MazeRunner {
     solve_view: ViewingMode,
     solve_speed: speed::Speed,
     solve: SolveFunction,
-    quit: bool,
+    do_quit: bool,
 }
 
 impl MazeRunner {
@@ -73,8 +105,11 @@ impl MazeRunner {
             solve_view: ViewingMode::AnimatedPlayback,
             solve_speed: speed::Speed::Speed4,
             solve: (dfs::hunt, dfs::animate_hunt),
-            quit: false,
+            do_quit: false,
         }
+    }
+    fn quit(&mut self) {
+        self.do_quit = true;
     }
 }
 
@@ -87,15 +122,13 @@ struct LookupTables {
     animation_table: HashMap<String, speed::Speed>,
 }
 
-fn main() -> std::io::Result<()> {
-    startup()?;
+fn main() -> Result<()> {
     let status = run();
-    shutdown()?;
     status?;
     Ok(())
 }
 
-fn run() -> std::io::Result<()> {
+fn run() -> Result<()> {
     let mut terminal = Terminal::new(CrosstermBackend::new(std::io::stderr()))?;
     let tables = LookupTables {
         arg_flags: HashSet::from([
@@ -394,28 +427,22 @@ fn run() -> std::io::Result<()> {
         ]),
     };
     let mut run = MazeRunner::default();
+    let backend = CrosstermBackend::new(std::io::stderr());
+    let terminal = Terminal::new(backend)?;
+    let events = EventHandler::new(250);
+    let mut tui = Tui::new(terminal, events);
+    tui.enter()?;
 
-    'poll: loop {
-        terminal.draw(|f| {
-            ui(f);
-        })?;
-        update(&mut run, &tables)?;
-        if run.quit {
-            break 'poll;
-        }
+    while !run.do_quit {
+        tui.draw()?;
+        match tui.events.next()? {
+            Event::Tick => {}
+            Event::Key(key_event) => update(&mut run, key_event)?,
+            Event::Mouse(_) => {}
+            Event::Resize(_, _) => {}
+        };
     }
-    Ok(())
-}
-
-fn startup() -> std::io::Result<()> {
-    crossterm::terminal::enable_raw_mode()?;
-    crossterm::execute!(std::io::stderr(), EnterAlternateScreen)?;
-    Ok(())
-}
-
-fn shutdown() -> std::io::Result<()> {
-    crossterm::execute!(std::io::stderr(), crossterm::terminal::LeaveAlternateScreen)?;
-    crossterm::terminal::disable_raw_mode()?;
+    tui.exit()?;
     Ok(())
 }
 
@@ -430,19 +457,119 @@ fn ui(f: &mut Frame<'_>) {
     f.render_widget(maze_block, inner_area)
 }
 
-fn update(run: &mut MazeRunner, tables: &LookupTables) -> std::io::Result<()> {
-    if crossterm::event::poll(std::time::Duration::from_millis(250))? {
-        if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
-            if key.kind == crossterm::event::KeyEventKind::Press {
-                match key.code {
-                    crossterm::event::KeyCode::Char('q') => run.quit = true,
-                    crossterm::event::KeyCode::Char('r') => {
-                        run_random::rand(run.args.odd_rows, run.args.odd_cols)
-                    }
-                    _ => (),
-                }
-            }
-        }
+fn update(run: &mut MazeRunner, key_event: KeyEvent) -> Result<()> {
+    match key_event.code {
+        event::KeyCode::Char('q') | event::KeyCode::Esc => run.quit(),
+        event::KeyCode::Char('r') => run_random::rand(run.args.odd_rows, run.args.odd_cols),
+        _ => (),
     }
     Ok(())
+}
+
+impl Tui {
+    /// Constructs a new instance of [`Tui`].
+    pub fn new(terminal: CrosstermTerminal, events: EventHandler) -> Self {
+        Self { terminal, events }
+    }
+
+    /// Initializes the terminal interface.
+    ///
+    /// It enables the raw mode and sets terminal properties.
+    pub fn enter(&mut self) -> Result<()> {
+        crossterm::terminal::enable_raw_mode()?;
+        crossterm::execute!(std::io::stderr(), EnterAlternateScreen, EnableMouseCapture)?;
+
+        // Define a custom panic hook to reset the terminal properties.
+        // This way, you won't have your terminal messed up if an unexpected error happens.
+        let panic_hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |panic| {
+            Self::reset().expect("failed to reset the terminal");
+            panic_hook(panic);
+        }));
+
+        self.terminal.hide_cursor()?;
+        self.terminal.clear()?;
+        Ok(())
+    }
+
+    /// [`Draw`] the terminal interface by [`rendering`] the widgets.
+    ///
+    /// [`Draw`]: tui::Terminal::draw
+    /// [`rendering`]: crate::ui:render
+    pub fn draw(&mut self) -> Result<()> {
+        self.terminal.draw(|frame| ui(frame))?;
+        Ok(())
+    }
+
+    /// Resets the terminal interface.
+    ///
+    /// This function is also used for the panic hook to revert
+    /// the terminal properties if unexpected errors occur.
+    fn reset() -> Result<()> {
+        crossterm::terminal::disable_raw_mode()?;
+        crossterm::execute!(std::io::stderr(), LeaveAlternateScreen, DisableMouseCapture)?;
+        Ok(())
+    }
+
+    /// Exits the terminal interface.
+    ///
+    /// It disables the raw mode and reverts back the terminal properties.
+    pub fn exit(&mut self) -> Result<()> {
+        Self::reset()?;
+        self.terminal.show_cursor()?;
+        Ok(())
+    }
+}
+
+impl EventHandler {
+    /// Constructs a new instance of [`EventHandler`].
+    pub fn new(tick_rate: u64) -> Self {
+        let tick_rate = Duration::from_millis(tick_rate);
+        let (sender, receiver) = mpsc::channel();
+        let handler = {
+            let sender = sender.clone();
+            thread::spawn(move || {
+                let mut last_tick = Instant::now();
+                loop {
+                    let timeout = tick_rate
+                        .checked_sub(last_tick.elapsed())
+                        .unwrap_or(tick_rate);
+
+                    if event::poll(timeout).expect("no events available") {
+                        match event::read().expect("unable to read event") {
+                            CrosstermEvent::Key(e) => {
+                                if e.kind == event::KeyEventKind::Press {
+                                    sender.send(Event::Key(e))
+                                } else {
+                                    Ok(()) // ignore KeyEventKind::Release on windows
+                                }
+                            }
+                            CrosstermEvent::Mouse(e) => sender.send(Event::Mouse(e)),
+                            CrosstermEvent::Resize(w, h) => sender.send(Event::Resize(w, h)),
+                            _ => unimplemented!(),
+                        }
+                        .expect("failed to send terminal event")
+                    }
+
+                    if last_tick.elapsed() >= tick_rate {
+                        sender.send(Event::Tick).expect("failed to send tick event");
+                        last_tick = Instant::now();
+                    }
+                }
+            })
+        };
+        Self {
+            sender,
+            receiver,
+            handler,
+        }
+    }
+
+    /// Receive the next event from the handler thread.
+    ///
+    /// This function will always block the current thread if
+    /// there is no data available and it's possible for more data to be sent.
+    pub fn next(&self) -> Result<Event> {
+        Ok(self.receiver.recv()?)
+    }
 }
