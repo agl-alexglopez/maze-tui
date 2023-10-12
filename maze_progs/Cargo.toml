@@ -6,6 +6,7 @@ members = [
     "run_tui",
     "maze",
     "builders",
+    "key",
     "solvers",
     "painters",
     "print",

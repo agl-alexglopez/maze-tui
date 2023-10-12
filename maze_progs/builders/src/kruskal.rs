@@ -11,6 +11,7 @@ use std::collections::HashMap;
 
 pub fn generate_maze(maze: &mut maze::Maze) {
     build::fill_maze_with_walls(maze);
+    build::print_overlap_key(maze);
     let walls = load_shuffled_walls(maze);
     let ids = tag_cells(maze);
     let mut sets = disjoint::DisjointSet::new(ids.len());
@@ -56,6 +57,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls_animated(maze);
     build::flush_grid(maze);
+    build::print_overlap_key_animated(maze);
     let walls = load_shuffled_walls(maze);
     let ids = tag_cells(maze);
     let mut sets = disjoint::DisjointSet::new(ids.len());

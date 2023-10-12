@@ -20,6 +20,7 @@ const MIN_CHAMBER: i32 = 3;
 
 pub fn generate_maze(maze: &mut maze::Maze) {
     build::build_wall_outline(maze);
+    build::print_overlap_key(maze);
     let mut rng = thread_rng();
     let mut chamber_stack: Vec<Chamber> = Vec::from([Chamber {
         offset: maze::Point { row: 0, col: 0 },
@@ -91,6 +92,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::build_wall_outline(maze);
     build::flush_grid(maze);
+    build::print_overlap_key_animated(maze);
     let mut rng = thread_rng();
     let mut chamber_stack: Vec<Chamber> = Vec::from([Chamber {
         offset: maze::Point { row: 0, col: 0 },

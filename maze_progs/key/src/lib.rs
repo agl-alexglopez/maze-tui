@@ -4,13 +4,24 @@ pub struct ThreadColor {
     pub code: u8,
 }
 
+pub fn thread_color_block(color_index: usize) -> &'static str {
+    &THREAD_COLORS[color_index].block
+}
+
+pub fn thread_color_code(color_index: usize) -> u8 {
+    THREAD_COLORS[color_index].code
+}
+
+pub fn thread_color_binary(color_index: usize) -> &'static str {
+    &THREAD_COLORS[color_index].binary
+}
+
 // The first four colors are the thread primitives that mix to form the rest.
 pub const ANSI_RED: u8 = 1;
 pub const ANSI_GRN: u8 = 2;
 pub const ANSI_BLU: u8 = 4;
 pub const ANSI_PRP: u8 = 183;
 pub const ANSI_CYN: u8 = 14;
-pub const ANSI_BLOCK: &str = "█";
 pub const ANSI_RED_BLOCK: &str = "\x1b[38;5;1m█\x1b[0m";
 pub const ANSI_GRN_BLOCK: &str = "\x1b[38;5;2m█\x1b[0m";
 pub const ANSI_YEL_BLOCK: &str = "\x1b[38;5;3m█\x1b[0m";
@@ -26,7 +37,7 @@ pub const ANSI_GRN_BLU_PRP_BLOCK: &str = "\x1b[38;5;60m█\x1b[0m";
 pub const ANSI_RED_GRN_PRP_BLOCK: &str = "\x1b[38;5;105m█\x1b[0m";
 pub const ANSI_RED_BLU_PRP_BLOCK: &str = "\x1b[38;5;89m█\x1b[0m";
 pub const ANSI_DRK_BLU_MAG_BLOCK: &str = "\x1b[38;5;57m█\x1b[0m";
-pub const ANSI_START: &str = "\x1b[1m\x1b[38;5;87mS\x1b[0m";
+
 // Threads Overlaps. The zero thread is the zero index bit with a value of 1.
 // Each of the four threads has a one bit that represents them. When they
 // overlap during a solution their bits mix to form interesting colors.

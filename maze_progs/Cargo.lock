@@ -25,6 +25,7 @@ name = "builders"
 version = "0.1.0"
 dependencies = [
  "crossterm 0.26.1",
+ "key",
  "maze",
  "print",
  "rand",
@@ -145,6 +146,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
 dependencies = [
  "either",
+]
+
+[[package]]
+name = "key"
+version = "0.1.0"
+dependencies = [
+ "maze",
+ "print",
 ]
 
 [[package]]
@@ -422,7 +431,9 @@ checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 name = "solvers"
 version = "0.1.0"
 dependencies = [
+ "builders",
  "crossterm 0.26.1",
+ "key",
  "maze",
  "print",
  "rand",

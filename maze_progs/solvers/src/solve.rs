@@ -1,17 +1,16 @@
-use crate::key;
-
 use crossterm::{
     queue,
     style::{
         Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor,
     },
 };
+use key;
 use print::maze_panic;
 use rand::prelude::*;
 use std::io::{self};
 use std::sync::{Arc, Mutex};
-// Types available to all solvers.
 
+// Types available to all solvers.
 pub type ThreadPaint = u16;
 pub type ThreadCache = u16;
 pub type SolveSpeedUnit = u64;
@@ -130,12 +129,12 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
     let square = &maze[point.row as usize][point.col as usize];
     // We have some special printing for the finish square. Not here.
     if (square & FINISH_BIT) != 0 {
-        let av = key::THREAD_COLORS[((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize].code;
+        let ansi = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
         match queue!(
             io::stdout(),
             SetAttribute(Attribute::SlowBlink),
             SetAttribute(Attribute::Bold),
-            SetBackgroundColor(Color::AnsiValue(av)),
+            SetBackgroundColor(Color::AnsiValue(ansi)),
             SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
             Print("F".to_string()),
             ResetColor
@@ -146,12 +145,12 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
         return;
     }
     if (square & START_BIT) != 0 {
-        print!("{}", key::ANSI_START);
+        print!("{}", ANSI_START);
         return;
     }
     if (square & THREAD_MASK) != 0 {
         let thread_color: ThreadPaint = (square & THREAD_MASK) >> THREAD_TAG_OFFSET;
-        print!("{}", key::THREAD_COLORS[thread_color as usize].block);
+        print!("{}", key::thread_color_block(thread_color as usize));
         return;
     }
     if (square & maze::PATH_BIT) == 0 {
@@ -175,19 +174,6 @@ pub fn deluminate_maze(maze: &maze::Maze) {
     }
 }
 
-pub fn print_overlap_key(maze: &maze::Maze) {
-    for (i, elem) in key::THREAD_COLORS.iter().enumerate().skip(1) {
-        print::set_cursor_position(
-            maze::Point {
-                row: i as i32 - 1,
-                col: maze.col_size(),
-            },
-            maze.offset(),
-        );
-        print!("{}{}", elem.block, elem.binary);
-    }
-}
-
 // Private Module Function
 
 fn is_valid_start_or_finish(maze: &maze::Maze, choice: maze::Point) -> bool {
@@ -201,7 +187,7 @@ fn is_valid_start_or_finish(maze: &maze::Maze, choice: maze::Point) -> bool {
 }
 
 // Read Only Data Available to All Solvers
-
+pub const ANSI_START: &str = "\x1b[1m\x1b[38;5;87mS\x1b[0m";
 pub const START_BIT: ThreadPaint = 0b0100_0000_0000_0000;
 pub const FINISH_BIT: ThreadPaint = 0b1000_0000_0000_0000;
 pub const NUM_THREADS: usize = 4;

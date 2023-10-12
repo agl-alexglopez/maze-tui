@@ -1,3 +1,4 @@
+use key;
 use maze;
 use print;
 use print::maze_panic;
@@ -560,6 +561,95 @@ pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUn
     }
 }
 
+pub fn print_overlap_key(maze: &maze::Maze) {
+    let mut key_maze = maze::Maze::new(maze::MazeArgs {
+        odd_rows: THREAD_KEY_MAZE_ROWS,
+        odd_cols: THREAD_KEY_MAZE_COLS,
+        offset: maze::Offset {
+            add_rows: maze.offset().add_rows,
+            add_cols: maze.offset().add_cols + maze.col_size() + 1,
+        },
+        style: WALL_STYLE_COPY_TABLE[maze.style_index()],
+    });
+    build_wall_outline(&mut *key_maze);
+    for r in (2..(key_maze.row_size() - 1)).step_by(2) {
+        for c in 1..key_maze.col_size() {
+            build_wall_line(&mut *key_maze, maze::Point { row: r, col: c });
+        }
+    }
+    for c in (KEY_ENTRY_LEN..(key_maze.col_size() - 1)).step_by(KEY_ENTRY_LEN as usize) {
+        for r in 3..(key_maze.row_size() - 1) {
+            build_wall_line(&mut *key_maze, maze::Point { row: r, col: c });
+        }
+    }
+    print::set_cursor_position(
+        maze::Point {
+            row: 1,
+            col: (key_maze.col_size() / 2) - (KEY_TITLE.len() / 2) as i32,
+        },
+        key_maze.offset(),
+    );
+    print!("{}", KEY_TITLE);
+    let mut overlap_i = 1;
+    for r in (3..(key_maze.row_size() - 1)).step_by(2) {
+        for c in (2..key_maze.col_size()).step_by(KEY_ENTRY_LEN as usize) {
+            print::set_cursor_position(maze::Point { row: r, col: c }, key_maze.offset());
+            print!(
+                "{} {}",
+                key::thread_color_block(overlap_i),
+                key::thread_color_binary(overlap_i)
+            );
+            overlap_i += 1;
+        }
+    }
+}
+
+pub fn print_overlap_key_animated(maze: &maze::Maze) {
+    let mut key_maze = maze::Maze::new(maze::MazeArgs {
+        odd_rows: THREAD_KEY_MAZE_ROWS,
+        odd_cols: THREAD_KEY_MAZE_COLS,
+        offset: maze::Offset {
+            add_rows: maze.offset().add_rows,
+            add_cols: maze.offset().add_cols + maze.col_size() + 1,
+        },
+        style: WALL_STYLE_COPY_TABLE[maze.style_index()],
+    });
+    build_wall_outline(&mut *key_maze);
+    flush_grid(&*key_maze);
+    for r in (2..(key_maze.row_size() - 1)).step_by(2) {
+        for c in 1..key_maze.col_size() {
+            build_wall_line_animated(&mut *key_maze, maze::Point { row: r, col: c }, 250);
+        }
+    }
+    for c in (KEY_ENTRY_LEN..(key_maze.col_size() - 1)).step_by(KEY_ENTRY_LEN as usize) {
+        for r in 3..(key_maze.row_size() - 1) {
+            build_wall_line_animated(&mut *key_maze, maze::Point { row: r, col: c }, 250);
+        }
+    }
+    print::set_cursor_position(
+        maze::Point {
+            row: 1,
+            col: (key_maze.col_size() / 2) - (KEY_TITLE.len() / 2) as i32,
+        },
+        key_maze.offset(),
+    );
+    print!("{}", KEY_TITLE);
+    print::flush();
+    let mut overlap_i = 1;
+    for r in (3..(key_maze.row_size() - 1)).step_by(2) {
+        for c in (2..key_maze.col_size()).step_by(KEY_ENTRY_LEN as usize) {
+            print::set_cursor_position(maze::Point { row: r, col: c }, key_maze.offset());
+            print!(
+                "{} {}",
+                key::thread_color_block(overlap_i),
+                key::thread_color_binary(overlap_i)
+            );
+            print::flush();
+            overlap_i += 1;
+        }
+    }
+}
+
 // Terminal Printing Helpers
 
 pub fn flush_cursor_maze_coordinate(maze: &maze::Maze, p: maze::Point) {
@@ -591,3 +681,16 @@ pub fn flush_grid(maze: &maze::Maze) {
     }
     print::flush();
 }
+
+static KEY_ENTRY_LEN: i32 = 10;
+const THREAD_KEY_MAZE_ROWS: i32 = 6 * 2 + 1;
+const THREAD_KEY_MAZE_COLS: i32 = 10 * 3;
+static KEY_TITLE: &str = "Thread Color Scheme";
+static WALL_STYLE_COPY_TABLE: [maze::MazeStyle; 6] = [
+    maze::MazeStyle::Sharp,
+    maze::MazeStyle::Round,
+    maze::MazeStyle::Doubles,
+    maze::MazeStyle::Bold,
+    maze::MazeStyle::Contrast,
+    maze::MazeStyle::Spikes,
+];

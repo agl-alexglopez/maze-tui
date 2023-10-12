@@ -36,7 +36,6 @@ pub fn hunt(mut maze: maze::BoxMaze) {
     match monitor.lock() {
         Ok(print_lock) => {
             solve::print_paths(&print_lock.maze);
-            solve::print_overlap_key(&print_lock.maze);
         }
         Err(p) => print::maze_panic!("Solve thread panic! somehow: {}", p),
     };
@@ -73,7 +72,6 @@ pub fn gather(mut maze: maze::BoxMaze) {
     match monitor.lock() {
         Ok(print_lock) => {
             solve::print_paths(&print_lock.maze);
-            solve::print_overlap_key(&print_lock.maze);
         }
         Err(p) => print::maze_panic!("Solve thread panic! somehow: {}", p),
     };
@@ -122,14 +120,12 @@ pub fn corner(mut maze: maze::BoxMaze) {
     match monitor.lock() {
         Ok(print_lock) => {
             solve::print_paths(&print_lock.maze);
-            solve::print_overlap_key(&print_lock.maze);
         }
         Err(p) => print::maze_panic!("Solve thread panic!: {}", p),
     };
 }
 
 pub fn animate_hunt(mut maze: maze::BoxMaze, speed: speed::Speed) {
-    solve::print_overlap_key(&maze);
     let all_start: maze::Point = solve::pick_random_point(&maze);
     maze[all_start.row as usize][all_start.col as usize] |= solve::START_BIT;
     let finish: maze::Point = solve::pick_random_point(&maze);
@@ -160,8 +156,6 @@ pub fn animate_hunt(mut maze: maze::BoxMaze, speed: speed::Speed) {
 }
 
 pub fn animate_gather(mut maze: maze::BoxMaze, speed: speed::Speed) {
-    solve::print_overlap_key(&maze);
-
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let all_start: maze::Point = solve::pick_random_point(&maze);
     maze[all_start.row as usize][all_start.col as usize] |= solve::START_BIT;
@@ -195,7 +189,6 @@ pub fn animate_gather(mut maze: maze::BoxMaze, speed: speed::Speed) {
 }
 
 pub fn animate_corner(mut maze: maze::BoxMaze, speed: speed::Speed) {
-    solve::print_overlap_key(&maze);
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let mut corner_starts: [maze::Point; 4] = solve::set_corner_starts(&maze);
     for p in corner_starts {

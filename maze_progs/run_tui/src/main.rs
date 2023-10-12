@@ -15,10 +15,12 @@ use crossterm::event::{
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use painters::distance;
 use painters::runs;
+use ratatui::prelude::Constraint;
 use ratatui::widgets::Borders;
 use ratatui::{
+    layout::{Direction, Layout},
     prelude::{CrosstermBackend, Style, Terminal},
-    widgets::{Block, Padding, Row, Table},
+    widgets::{Block, Padding, Row},
 };
 
 use solvers::bfs;
@@ -28,8 +30,6 @@ use solvers::darkfloodfs;
 use solvers::darkrdfs;
 use solvers::dfs;
 use solvers::floodfs;
-use solvers::key::ANSI_BLOCK;
-use solvers::key::THREAD_COLORS;
 use solvers::rdfs;
 
 use std::collections::{HashMap, HashSet};
@@ -444,7 +444,10 @@ fn run() -> Result<()> {
             Event::Tick => {}
             Event::Key(key_event) => update(&mut run, key_event)?,
             Event::Mouse(_) => {}
-            Event::Resize(_, _) => {}
+            Event::Resize(cols, rows) => {
+                run.args.odd_rows = (rows / 2) as i32;
+                run.args.odd_cols = (cols / 2) as i32;
+            }
         };
     }
     tui.exit()?;
@@ -457,26 +460,12 @@ fn ui(run: &mut MazeRunner, f: &mut Frame<'_>) {
         .borders(Borders::ALL)
         .padding(Padding::new(1, 5, 5, 5));
     let inner_frame = frame_block.inner(f.size());
+    run.args.odd_rows = (f.size().height / 2) as i32;
+    run.args.odd_cols = (f.size().width / 2) as i32;
     run.args.offset = maze::Offset {
         add_rows: inner_frame.x as i32,
         add_cols: inner_frame.y as i32,
     };
-    let test = vec![vec!["Row1", "Row1", "Row1"], vec!["Row2", "Row2", "Row2"]];
-    let mut rows = Vec::<Vec<String>>::new();
-    for row in 1..(&THREAD_COLORS.len() / 3) {
-        let col = &THREAD_COLORS[row * 3..row * 3 + 3];
-        rows.push(
-            THREAD_COLORS[row * 3..row * 3 + 3]
-                .iter()
-                .map(|s| ANSI_BLOCK.to_string() + s.binary)
-                .collect(),
-        );
-    }
-
-    let style = Style::default();
-    let head = vec!["Header"];
-    let header = Row::new(head).style(style).height(1).bottom_margin(1);
-
     f.render_widget(frame_block, f.size());
 }
 

@@ -124,6 +124,10 @@ impl Maze {
         &WALL_STYLES
             [(self.wall_style_index * WALL_ROW)..(self.wall_style_index * WALL_ROW + WALL_ROW)]
     }
+
+    pub fn style_index(&self) -> usize {
+        self.wall_style_index
+    }
 }
 
 impl Index<usize> for Maze {

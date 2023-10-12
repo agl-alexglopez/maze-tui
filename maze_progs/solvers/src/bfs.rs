@@ -62,14 +62,12 @@ pub fn hunt(mut maze: maze::BoxMaze) {
                 lk.maze[p.0.row as usize][p.0.col as usize] |= p.1;
             }
             solve::print_paths(&lk.maze);
-            solve::print_overlap_key(&lk.maze);
         }
         Err(p) => print::maze_panic!("Thread panicked with the lock: {}", p),
     };
 }
 
 pub fn animate_hunt(mut maze: maze::BoxMaze, speed: speed::Speed) {
-    solve::print_overlap_key(&maze);
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let all_start: maze::Point = solve::pick_random_point(&maze);
     maze[all_start.row as usize][all_start.col as usize] |= solve::START_BIT;
@@ -145,14 +143,12 @@ pub fn gather(mut maze: maze::BoxMaze) {
     match monitor.lock() {
         Ok(lk) => {
             solve::print_paths(&lk.maze);
-            solve::print_overlap_key(&lk.maze);
         }
         Err(p) => print::maze_panic!("Thread panicked with the lock: {}", p),
     };
 }
 
 pub fn animate_gather(mut maze: maze::BoxMaze, speed: speed::Speed) {
-    solve::print_overlap_key(&maze);
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let all_start: maze::Point = solve::pick_random_point(&maze);
     maze[all_start.row as usize][all_start.col as usize] |= solve::START_BIT;
@@ -233,14 +229,12 @@ pub fn corner(mut maze: maze::BoxMaze) {
                 lk.maze[p.0.row as usize][p.0.col as usize] |= p.1;
             }
             solve::print_paths(&lk.maze);
-            solve::print_overlap_key(&lk.maze);
         }
         Err(p) => print::maze_panic!("Thread panicked with the lock: {}", p),
     };
 }
 
 pub fn animate_corner(mut maze: maze::BoxMaze, speed: speed::Speed) {
-    solve::print_overlap_key(&maze);
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let mut all_starts: [maze::Point; 4] = solve::set_corner_starts(&maze);
     for s in all_starts {

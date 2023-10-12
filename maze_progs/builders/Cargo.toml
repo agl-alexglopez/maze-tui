@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 speed = { path = "../speed" }
+key = { path = "../key" }
 maze = { path = "../maze" }
 print = { path = "../print" }
 rand = "0.8.5"

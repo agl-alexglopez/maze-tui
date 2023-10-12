@@ -1,15 +1,10 @@
 [package]
-name = "solvers"
+name = "key"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-speed = { path = "../speed" }
-key = { path = "../key" }
 maze = { path = "../maze" }
-builders = { path = "../builders" }
 print = { path = "../print" }
-crossterm = "0.26.1"
-rand = "0.8.5"
