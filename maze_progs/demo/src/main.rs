@@ -119,7 +119,13 @@ fn main() {
     invisible.hide();
     ctrlc::set_handler(move || {
         print::clear_screen();
-        print::set_cursor_position(maze::Point { row: 0, col: 0 });
+        print::set_cursor_position(
+            maze::Point { row: 0, col: 0 },
+            maze::Offset {
+                add_rows: 0,
+                add_cols: 0,
+            },
+        );
         print::unhide_cursor_on_process_exit();
         std::process::exit(0);
     })
@@ -161,13 +167,13 @@ fn main() {
             }
         }
 
-        print::set_cursor_position(maze::Point { row: 0, col: 0 });
+        print::set_cursor_position(maze::Point::default(), maze::Offset::default());
 
         solve_algo(maze, solve_speed);
         print!("Loading next maze...");
         print::flush();
         thread::sleep(time::Duration::from_secs(2));
-        print::set_cursor_position(maze::Point { row: 0, col: 0 });
+        print::set_cursor_position(maze::Point::default(), maze::Offset::default());
     }
 }
 

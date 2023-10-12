@@ -29,11 +29,8 @@ type BfsMonitor = Arc<Mutex<BfsSolver>>;
 // Public Solver Functions-------------------------------------------------------------------------
 
 pub fn animate_hunt(mut maze: maze::BoxMaze, speed: speed::Speed) {
-    solve::print_overlap_key(maze::Point {
-        row: maze.row_size(),
-        col: 0,
-    });
-    solve::deluminate_maze(maze.row_size(), maze.col_size());
+    solve::print_overlap_key(&maze);
+    solve::deluminate_maze(&maze);
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let all_start: maze::Point = solve::pick_random_point(&maze);
     maze[all_start.row as usize][all_start.col as usize] |= solve::START_BIT;
@@ -69,23 +66,14 @@ pub fn animate_hunt(mut maze: maze::BoxMaze, speed: speed::Speed) {
                 solve::flush_cursor_path_coordinate(&lk.maze, p.0);
                 thread::sleep(time::Duration::from_micros(animation));
             }
-            print::set_cursor_position(maze::Point {
-                row: lk.maze.row_size() + solve::OVERLAP_KEY_AND_MESSAGE_HEIGHT,
-                col: 0,
-            });
-            solve::print_hunt_solution_message(lk.win);
-            println!();
         }
         Err(p) => print::maze_panic!("Thread panicked with the lock: {}", p),
     };
 }
 
 pub fn animate_gather(mut maze: maze::BoxMaze, speed: speed::Speed) {
-    solve::print_overlap_key(maze::Point {
-        row: maze.row_size(),
-        col: 0,
-    });
-    solve::deluminate_maze(maze.row_size(), maze.col_size());
+    solve::print_overlap_key(&maze);
+    solve::deluminate_maze(&maze);
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let all_start: maze::Point = solve::pick_random_point(&maze);
     maze[all_start.row as usize][all_start.col as usize] |= solve::START_BIT;
@@ -124,23 +112,14 @@ pub fn animate_gather(mut maze: maze::BoxMaze, speed: speed::Speed) {
                 solve::flush_cursor_path_coordinate(&lk.maze, p.0);
                 thread::sleep(time::Duration::from_micros(animation));
             }
-            print::set_cursor_position(maze::Point {
-                row: lk.maze.row_size() + solve::OVERLAP_KEY_AND_MESSAGE_HEIGHT,
-                col: 0,
-            });
-            solve::print_gather_solution_message();
-            println!();
         }
         Err(p) => print::maze_panic!("Thread panicked with the lock: {}", p),
     };
 }
 
 pub fn animate_corner(mut maze: maze::BoxMaze, speed: speed::Speed) {
-    solve::print_overlap_key(maze::Point {
-        row: maze.row_size(),
-        col: 0,
-    });
-    solve::deluminate_maze(maze.row_size(), maze.col_size());
+    solve::print_overlap_key(&maze);
+    solve::deluminate_maze(&maze);
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let mut all_starts: [maze::Point; 4] = solve::set_corner_starts(&maze);
     for s in all_starts {
@@ -191,12 +170,6 @@ pub fn animate_corner(mut maze: maze::BoxMaze, speed: speed::Speed) {
                 solve::flush_cursor_path_coordinate(&lk.maze, p.0);
                 thread::sleep(time::Duration::from_micros(animation));
             }
-            print::set_cursor_position(maze::Point {
-                row: lk.maze.row_size() + solve::OVERLAP_KEY_AND_MESSAGE_HEIGHT,
-                col: 0,
-            });
-            solve::print_hunt_solution_message(lk.win);
-            println!();
         }
         Err(p) => print::maze_panic!("Thread panicked with the lock: {}", p),
     };

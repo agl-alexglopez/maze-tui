@@ -17,8 +17,8 @@ use painters::distance;
 use painters::runs;
 use ratatui::widgets::Borders;
 use ratatui::{
-    prelude::{CrosstermBackend, Terminal},
-    widgets::{Block, Padding},
+    prelude::{CrosstermBackend, Style, Terminal},
+    widgets::{Block, Padding, Row, Table},
 };
 
 use solvers::bfs;
@@ -28,6 +28,8 @@ use solvers::darkfloodfs;
 use solvers::darkrdfs;
 use solvers::dfs;
 use solvers::floodfs;
+use solvers::key::ANSI_BLOCK;
+use solvers::key::THREAD_COLORS;
 use solvers::rdfs;
 
 use std::collections::{HashMap, HashSet};
@@ -88,11 +90,12 @@ struct MazeRunner {
 }
 
 impl MazeRunner {
-    fn default() -> Self {
-        Self {
+    fn new() -> Box<Self> {
+        Box::new(Self {
             args: maze::MazeArgs {
                 odd_rows: 33,
                 odd_cols: 111,
+                offset: maze::Offset::default(),
                 style: maze::MazeStyle::Contrast,
             },
             build_view: ViewingMode::AnimatedPlayback,
@@ -106,12 +109,14 @@ impl MazeRunner {
             solve_speed: speed::Speed::Speed4,
             solve: (dfs::hunt, dfs::animate_hunt),
             do_quit: false,
-        }
+        })
     }
     fn quit(&mut self) {
         self.do_quit = true;
     }
 }
+
+type BoxMazeRunner = Box<MazeRunner>;
 
 struct LookupTables {
     arg_flags: HashSet<String>,
@@ -426,7 +431,7 @@ fn run() -> Result<()> {
             (String::from("7"), speed::Speed::Speed7),
         ]),
     };
-    let mut run = MazeRunner::default();
+    let mut run = MazeRunner::new();
     let backend = CrosstermBackend::new(std::io::stderr());
     let terminal = Terminal::new(backend)?;
     let events = EventHandler::new(250);
@@ -434,7 +439,7 @@ fn run() -> Result<()> {
     tui.enter()?;
 
     while !run.do_quit {
-        tui.draw()?;
+        tui.draw(&mut run)?;
         match tui.events.next()? {
             Event::Tick => {}
             Event::Key(key_event) => update(&mut run, key_event)?,
@@ -446,21 +451,39 @@ fn run() -> Result<()> {
     Ok(())
 }
 
-fn ui(f: &mut Frame<'_>) {
+fn ui(run: &mut MazeRunner, f: &mut Frame<'_>) {
     let frame_block = Block::default()
         .title("Maze Algorithms")
         .borders(Borders::ALL)
-        .padding(Padding::new(10, 10, 10, 10));
-    let inner_area = frame_block.inner(f.size());
-    let maze_block = Block::new().borders(Borders::ALL).title("Maze Frame?");
+        .padding(Padding::new(1, 5, 5, 5));
+    let inner_frame = frame_block.inner(f.size());
+    run.args.offset = maze::Offset {
+        add_rows: inner_frame.x as i32,
+        add_cols: inner_frame.y as i32,
+    };
+    let test = vec![vec!["Row1", "Row1", "Row1"], vec!["Row2", "Row2", "Row2"]];
+    let mut rows = Vec::<Vec<String>>::new();
+    for row in 1..(&THREAD_COLORS.len() / 3) {
+        let col = &THREAD_COLORS[row * 3..row * 3 + 3];
+        rows.push(
+            THREAD_COLORS[row * 3..row * 3 + 3]
+                .iter()
+                .map(|s| ANSI_BLOCK.to_string() + s.binary)
+                .collect(),
+        );
+    }
+
+    let style = Style::default();
+    let head = vec!["Header"];
+    let header = Row::new(head).style(style).height(1).bottom_margin(1);
+
     f.render_widget(frame_block, f.size());
-    f.render_widget(maze_block, inner_area)
 }
 
 fn update(run: &mut MazeRunner, key_event: KeyEvent) -> Result<()> {
     match key_event.code {
         event::KeyCode::Char('q') | event::KeyCode::Esc => run.quit(),
-        event::KeyCode::Char('r') => run_random::rand(run.args.odd_rows, run.args.odd_cols),
+        event::KeyCode::Char('r') => run_random::rand(run.args),
         _ => (),
     }
     Ok(())
@@ -495,9 +518,8 @@ impl Tui {
     /// [`Draw`] the terminal interface by [`rendering`] the widgets.
     ///
     /// [`Draw`]: tui::Terminal::draw
-    /// [`rendering`]: crate::ui:render
-    pub fn draw(&mut self) -> Result<()> {
-        self.terminal.draw(|frame| ui(frame))?;
+    pub fn draw(&mut self, mut run: &mut MazeRunner) -> Result<()> {
+        self.terminal.draw(|frame| ui(&mut run, frame))?;
         Ok(())
     }
 

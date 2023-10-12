@@ -48,7 +48,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
 pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls_animated(maze);
-    build::clear_and_flush_grid(maze);
+    build::flush_grid(maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
         row: 2 * (gen.gen_range(1..maze.row_size() - 2) / 2) + 1,

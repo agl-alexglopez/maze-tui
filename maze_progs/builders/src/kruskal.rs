@@ -55,7 +55,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
 pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls_animated(maze);
-    build::clear_and_flush_grid(maze);
+    build::flush_grid(maze);
     let walls = load_shuffled_walls(maze);
     let ids = tag_cells(maze);
     let mut sets = disjoint::DisjointSet::new(ids.len());

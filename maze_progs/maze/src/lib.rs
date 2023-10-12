@@ -47,10 +47,16 @@ use std::ops::{Index, IndexMut};
 pub type Square = u16;
 pub type WallLine = u16;
 
-#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
+#[derive(Default, Debug, PartialEq, Eq, Hash, Copy, Clone)]
 pub struct Point {
     pub row: i32,
     pub col: i32,
+}
+
+#[derive(Default, Debug, Clone, Copy)]
+pub struct Offset {
+    pub add_rows: i32,
+    pub add_cols: i32,
 }
 
 #[derive(Clone, Copy)]
@@ -67,6 +73,7 @@ pub enum MazeStyle {
 pub struct MazeArgs {
     pub odd_rows: i32,
     pub odd_cols: i32,
+    pub offset: Offset,
     pub style: MazeStyle,
 }
 
@@ -76,6 +83,7 @@ pub struct Maze {
     maze: Vec<Square>,
     maze_row_size: i32,
     maze_col_size: i32,
+    offset: Offset,
     wall_style_index: usize,
 }
 pub type BoxMaze = Box<Maze>;
@@ -95,12 +103,17 @@ impl Maze {
             maze: (vec![0; rows as usize * cols as usize]),
             maze_row_size: (rows),
             maze_col_size: (cols),
+            offset: args.offset,
             wall_style_index: (args.style as usize),
         })
     }
 
     pub fn row_size(&self) -> i32 {
         self.maze_row_size
+    }
+
+    pub fn offset(&self) -> Offset {
+        self.offset
     }
 
     pub fn col_size(&self) -> i32 {
@@ -134,6 +147,7 @@ impl Default for MazeArgs {
             odd_rows: DEFAULT_ROWS,
             odd_cols: DEFAULT_COLS,
             style: MazeStyle::Sharp,
+            offset: Offset::default(),
         }
     }
 }

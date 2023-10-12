@@ -170,10 +170,13 @@ pub fn animate_run_lengths(mut maze: maze::BoxMaze, speed: speed::Speed) {
     }
     match monitor.lock() {
         Ok(lk) => {
-            print::set_cursor_position(maze::Point {
-                row: lk.maze.row_size(),
-                col: lk.maze.col_size(),
-            });
+            print::set_cursor_position(
+                maze::Point {
+                    row: lk.maze.row_size(),
+                    col: lk.maze.col_size(),
+                },
+                lk.maze.offset(),
+            );
             println!();
         }
         Err(p) => print::maze_panic!("Thread panicked: {}", p),
@@ -197,7 +200,7 @@ fn painter(maze: maze::BoxMaze, map: &RunMap) {
                         ch: [dark, dark, dark],
                     };
                     color.ch[rand_color_choice] = bright;
-                    rgb::print_rgb(color, cur);
+                    rgb::print_rgb(color, cur, maze.offset());
                 }
                 None => {
                     print_square(&maze, cur);
@@ -226,7 +229,7 @@ fn painter_animated(monitor: &mut BfsMonitor, guide: ThreadGuide, animation: rgb
                         ch: [dark, dark, dark],
                     };
                     color.ch[guide.color_i] = bright;
-                    rgb::animate_rgb(color, cur);
+                    rgb::animate_rgb(color, cur, lk.maze.offset());
                     lk.maze[cur.row as usize][cur.col as usize] |= rgb::PAINT;
                     lk.count += 1;
                 }

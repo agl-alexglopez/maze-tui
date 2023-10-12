@@ -14,8 +14,8 @@ const R: usize = 0;
 const G: usize = 1;
 const B: usize = 2;
 
-pub fn print_rgb(rgb: Rgb, p: maze::Point) {
-    print::set_cursor_position(p);
+pub fn print_rgb(rgb: Rgb, p: maze::Point, offset: maze::Offset) {
+    print::set_cursor_position(p, offset);
     print!(
         "{}",
         RGB_ESCAPE.to_owned()
@@ -30,8 +30,8 @@ pub fn print_rgb(rgb: Rgb, p: maze::Point) {
     );
 }
 
-pub fn animate_rgb(rgb: Rgb, p: maze::Point) {
-    print::set_cursor_position(p);
+pub fn animate_rgb(rgb: Rgb, p: maze::Point, offset: maze::Offset) {
+    print::set_cursor_position(p, offset);
     print!(
         "{}",
         RGB_ESCAPE.to_owned()

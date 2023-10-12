@@ -272,7 +272,6 @@ pub fn fill_maze_with_walls(maze: &mut maze::Maze) {
 }
 
 pub fn fill_maze_with_walls_animated(maze: &mut maze::Maze) {
-    print::clear_screen();
     for r in 0..maze.row_size() {
         for c in 0..maze.col_size() {
             build_wall(maze, maze::Point { row: r, col: c });
@@ -570,7 +569,7 @@ pub fn flush_cursor_maze_coordinate(maze: &maze::Maze, p: maze::Point) {
 
 pub fn print_square(maze: &maze::Maze, p: maze::Point) {
     let square = &maze[p.row as usize][p.col as usize];
-    print::set_cursor_position(p);
+    print::set_cursor_position(p, maze.offset());
     if square & MARKERS_MASK != 0 {
         let mark = (square & MARKERS_MASK) >> MARKER_SHIFT;
         print!("{}", BACKTRACKING_SYMBOLS[mark as usize]);
@@ -583,8 +582,7 @@ pub fn print_square(maze: &maze::Maze, p: maze::Point) {
     }
 }
 
-pub fn clear_and_flush_grid(maze: &maze::Maze) {
-    print::clear_screen();
+pub fn flush_grid(maze: &maze::Maze) {
     for r in 0..maze.row_size() {
         for c in 0..maze.col_size() {
             print_square(maze, maze::Point { row: r, col: c });

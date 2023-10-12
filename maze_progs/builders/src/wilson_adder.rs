@@ -56,7 +56,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                     continue 'walking;
                 }
                 None => {
-                    build::clear_and_flush_grid(maze);
+                    build::flush_grid(maze);
                     return;
                 }
             }
@@ -67,7 +67,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
 pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::build_wall_outline(maze);
-    build::clear_and_flush_grid(maze);
+    build::flush_grid(maze);
     let mut rng = thread_rng();
     let mut cur = RandomWalk {
         prev_row_start: 2,

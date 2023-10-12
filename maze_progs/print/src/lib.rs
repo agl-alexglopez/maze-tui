@@ -46,9 +46,12 @@ pub fn clear_screen() {
 }
 
 // Queue the command so setting the cursor position does NOT forcefully flush for caller.
-pub fn set_cursor_position(p: maze::Point) {
+pub fn set_cursor_position(p: maze::Point, offset: maze::Offset) {
     stdout()
-        .queue(cursor::MoveTo((p.col) as u16, (p.row) as u16))
+        .queue(cursor::MoveTo(
+            (p.col + offset.add_cols) as u16,
+            (p.row + offset.add_rows) as u16,
+        ))
         .expect("Could not move cursor, terminal may be incompatible.");
 }
 

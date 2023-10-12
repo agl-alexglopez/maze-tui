@@ -27,14 +27,9 @@ use solvers::rdfs;
 type BuildAnimation = fn(&mut maze::Maze, speed::Speed);
 type SolveAnimation = fn(maze::BoxMaze, speed::Speed);
 
-pub fn rand(rows: i32, cols: i32) {
+pub fn rand(mut args: maze::MazeArgs) {
     let mut rng = thread_rng();
     let modification_probability = Bernoulli::new(0.2);
-    let mut args = maze::MazeArgs {
-        odd_rows: rows,
-        odd_cols: cols,
-        style: maze::MazeStyle::Contrast,
-    };
     match WALL_STYLES.choose(&mut rng) {
         Some(&style) => args.style = style,
         None => print::maze_panic!("Styles not set for loop, broken"),
@@ -50,11 +45,11 @@ pub fn rand(rows: i32, cols: i32) {
     };
     let build_algo = match BUILDERS.choose(&mut rng) {
         Some(&algo) => algo,
-        None => print::maze_panic!("Build algo array empty."),
+        None => print::maze_panic!("Build algorithm array empty."),
     };
     let solve_algo = match SOLVERS.choose(&mut rng) {
         Some(&algo) => algo,
-        None => print::maze_panic!("Build algo array empty."),
+        None => print::maze_panic!("Solve algorithm array empty."),
     };
     build_algo(&mut maze, build_speed);
     if modification_probability
@@ -68,7 +63,7 @@ pub fn rand(rows: i32, cols: i32) {
             None => print::maze_panic!("Empty modification table."),
         }
     }
-    print::set_cursor_position(maze::Point { row: 0, col: 0 });
+    print::set_cursor_position(maze::Point::default(), args.offset);
     solve_algo(maze, solve_speed);
 }
 

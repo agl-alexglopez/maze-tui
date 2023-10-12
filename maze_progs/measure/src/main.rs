@@ -1,5 +1,5 @@
 use builders::arena;
-use builders::build::clear_and_flush_grid;
+use builders::build::flush_grid;
 use builders::eller;
 use builders::grid;
 use builders::kruskal;
@@ -75,7 +75,7 @@ fn main() {
     invisible.hide();
     ctrlc::set_handler(move || {
         print::clear_screen();
-        print::set_cursor_position(maze::Point { row: 0, col: 0 });
+        print::set_cursor_position(maze::Point::default(), maze::Offset::default());
         print::unhide_cursor_on_process_exit();
         std::process::exit(0);
     })
@@ -250,7 +250,7 @@ fn main() {
     match measure.build_view {
         ViewingMode::StaticImage => {
             measure.build.0(&mut maze);
-            clear_and_flush_grid(&maze);
+            flush_grid(&maze);
             if let Some((static_mod, _)) = measure.modify {
                 static_mod(&mut maze)
             }
@@ -264,7 +264,7 @@ fn main() {
     }
 
     // Ensure a smooth transition from build to solve with no flashing.
-    print::set_cursor_position(maze::Point { row: 0, col: 0 });
+    print::set_cursor_position(maze::Point::default(), maze::Offset::default());
 
     match measure.paint_view {
         ViewingMode::StaticImage => measure.paint.0(maze),

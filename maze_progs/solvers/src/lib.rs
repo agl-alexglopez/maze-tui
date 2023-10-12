@@ -5,5 +5,6 @@ pub mod darkfloodfs;
 pub mod darkrdfs;
 pub mod dfs;
 pub mod floodfs;
+pub mod key;
 pub mod rdfs;
 pub(crate) mod solve;
