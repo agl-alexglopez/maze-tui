@@ -16,6 +16,14 @@ pub fn thread_color_binary(color_index: usize) -> &'static str {
     &THREAD_COLORS[color_index].binary
 }
 
+pub fn thread_color(color_index: usize) -> &'static ThreadColor {
+    &THREAD_COLORS[color_index]
+}
+
+pub fn num_colors() -> usize {
+    THREAD_COLORS.len()
+}
+
 // The first four colors are the thread primitives that mix to form the rest.
 pub const ANSI_RED: u8 = 1;
 pub const ANSI_GRN: u8 = 2;

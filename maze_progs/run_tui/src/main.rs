@@ -460,8 +460,8 @@ fn ui(run: &mut MazeRunner, f: &mut Frame<'_>) {
         .borders(Borders::ALL)
         .padding(Padding::new(1, 5, 5, 5));
     let inner_frame = frame_block.inner(f.size());
-    run.args.odd_rows = (f.size().height / 2) as i32;
-    run.args.odd_cols = (f.size().width / 2) as i32;
+    run.args.odd_rows = (inner_frame.height as f64 / 1.3) as i32;
+    run.args.odd_cols = (inner_frame.width - inner_frame.x) as i32;
     run.args.offset = maze::Offset {
         add_rows: inner_frame.x as i32,
         add_cols: inner_frame.y as i32,
