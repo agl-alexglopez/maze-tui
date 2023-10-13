@@ -67,13 +67,13 @@ pub fn rand(mut args: maze::MazeArgs) {
     solve_algo(maze, solve_speed);
 }
 
-const WALL_STYLES: [maze::MazeStyle; 3] = [
+const WALL_STYLES: [maze::MazeStyle; 6] = [
     maze::MazeStyle::Sharp,
     maze::MazeStyle::Round,
-    //maze::MazeStyle::Doubles,
+    maze::MazeStyle::Doubles,
     maze::MazeStyle::Bold,
-    //maze::MazeStyle::Contrast,
-    //maze::MazeStyle::Spikes,
+    maze::MazeStyle::Contrast,
+    maze::MazeStyle::Spikes,
 ];
 const BUILDERS: [BuildAnimation; 9] = [
     arena::animate_maze,

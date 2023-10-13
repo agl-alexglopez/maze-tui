@@ -258,7 +258,6 @@ fn hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
                 None => {
                     if (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT) != 0 {
                         lk.win.get_or_insert(guide.index);
-                        dfs.pop();
                         for p in dfs {
                             lk.maze[p.row as usize][p.col as usize] |= guide.paint;
                         }
@@ -307,8 +306,9 @@ fn animated_hunter(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide
                 Some(_) => return,
                 None => {
                     if (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT) != 0 {
+                        lk.maze[cur.row as usize][cur.col as usize] |= seen | guide.paint;
+                        solve::flush_cursor_path_coordinate(&lk.maze, cur);
                         lk.win.get_or_insert(guide.index);
-                        dfs.pop();
                         return;
                     }
                     lk.maze[cur.row as usize][cur.col as usize] |= seen | guide.paint;
@@ -366,7 +366,6 @@ fn gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGuide) {
                     && (lk.maze[cur.row as usize][cur.col as usize] & solve::CACHE_MASK) == 0
                 {
                     lk.maze[cur.row as usize][cur.col as usize] |= seen;
-                    dfs.pop();
                     for p in dfs {
                         lk.maze[p.row as usize][p.col as usize] |= guide.paint;
                     }
@@ -413,8 +412,8 @@ fn animated_gatherer(monitor: &mut solve::SolverMonitor, guide: solve::ThreadGui
                 if (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT) != 0
                     && (lk.maze[cur.row as usize][cur.col as usize] & solve::CACHE_MASK) == 0
                 {
-                    lk.maze[cur.row as usize][cur.col as usize] |= seen;
-                    dfs.pop();
+                    lk.maze[cur.row as usize][cur.col as usize] |= seen | guide.paint;
+                    solve::flush_cursor_path_coordinate(&lk.maze, cur);
                     return;
                 }
                 lk.maze[cur.row as usize][cur.col as usize] |= seen | guide.paint;

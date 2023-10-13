@@ -566,112 +566,31 @@ pub fn print_overlap_key(maze: &maze::Maze) {
         odd_rows: THREAD_KEY_MAZE_ROWS,
         odd_cols: THREAD_KEY_MAZE_COLS,
         offset: maze::Offset {
-            add_rows: maze.offset().add_rows,
-            add_cols: maze.offset().add_cols + maze.col_size() + 1,
+            add_rows: maze.offset().add_rows + maze.row_size(),
+            add_cols: maze.offset().add_cols,
         },
         style: WALL_STYLE_COPY_TABLE[maze.style_index()],
     });
-    build_wall_outline(&mut *key_maze);
-    for r in (2..(key_maze.row_size() - 1)).step_by(2) {
-        for c in 1..key_maze.col_size() {
-            build_wall_line(&mut *key_maze, maze::Point { row: r, col: c });
+    fill_maze_with_walls(&mut *key_maze);
+    let mut cur_print = 0;
+    for r in (1..key_maze.row_size() - 1).step_by(2) {
+        for c in (1..key_maze.col_size() - 1).step_by((KEY_ENTRY_LEN + 1) as usize) {
+            let cur_pos = maze::Point { row: r, col: c };
+            for cell in c..c + KEY_ENTRY_LEN {
+                build_path(&mut key_maze, maze::Point { row: r, col: cell });
+            }
+            print::set_cursor_position(cur_pos, key_maze.offset());
+            let print_from = key::thread_color(cur_print);
+            print!("{} {}", print_from.block, print_from.binary);
+            cur_print += 1;
         }
-    }
-    for c in (KEY_ENTRY_LEN..(key_maze.col_size() - 1)).step_by(KEY_ENTRY_LEN as usize) {
-        for r in 3..(key_maze.row_size() - 1) {
-            build_wall_line(&mut *key_maze, maze::Point { row: r, col: c });
-        }
-    }
-    print::set_cursor_position(
-        maze::Point {
-            row: 1,
-            col: (key_maze.col_size() / 2) - (KEY_TITLE.len() / 2) as i32,
-        },
-        key_maze.offset(),
-    );
-    print!("{}", KEY_TITLE);
-    let mut overlap_i = 1;
-    for r in (3..(key_maze.row_size() - 1)).step_by(2) {
-        for c in (2..key_maze.col_size()).step_by(KEY_ENTRY_LEN as usize) {
-            print::set_cursor_position(maze::Point { row: r, col: c }, key_maze.offset());
-            print!(
-                "{} {}",
-                key::thread_color_block(overlap_i),
-                key::thread_color_binary(overlap_i)
-            );
-            overlap_i += 1;
-        }
-    }
-}
-
-pub fn clear_remainder(mut maze: &mut maze::Maze, pos: maze::Point) {
-    for c in pos.col + KEY_ENTRY_LEN + 1..maze.col_size() {
-        build_path_animated(
-            &mut maze,
-            maze::Point {
-                row: pos.row,
-                col: c,
-            },
-            50,
-        );
-        build_path_animated(
-            &mut maze,
-            maze::Point {
-                row: pos.row - 1,
-                col: c,
-            },
-            50,
-        );
-        build_path_animated(
-            &mut maze,
-            maze::Point {
-                row: pos.row + 1,
-                col: c,
-            },
-            50,
-        );
-    }
-}
-
-pub fn clear_final_row(mut maze: &mut maze::Maze, mut pos: maze::Point) {
-    pos.col += KEY_ENTRY_LEN + 1;
-    for c in pos.col..maze.col_size() {
-        build_path_animated(
-            &mut maze,
-            maze::Point {
-                row: pos.row,
-                col: c,
-            },
-            50,
-        );
-        if maze.row_size() == 3 {
-            build_path_animated(
-                &mut maze,
-                maze::Point {
-                    row: pos.row - 1,
-                    col: c,
-                },
-                50,
-            );
-        }
-        build_path_animated(
-            &mut maze,
-            maze::Point {
-                row: pos.row + 1,
-                col: c,
-            },
-            50,
-        );
     }
 }
 
 pub fn print_overlap_key_animated(maze: &maze::Maze) {
     let mut key_maze = maze::Maze::new(maze::MazeArgs {
-        odd_rows: 2
-            * ((key::num_colors() as f64 * KEY_ENTRY_LEN as f64) / (maze.col_size() as f64)).ceil()
-                as i32
-            + 1,
-        odd_cols: maze.col_size(),
+        odd_rows: THREAD_KEY_MAZE_ROWS,
+        odd_cols: THREAD_KEY_MAZE_COLS,
         offset: maze::Offset {
             add_rows: maze.offset().add_rows + maze.row_size(),
             add_cols: maze.offset().add_cols,
@@ -680,29 +599,19 @@ pub fn print_overlap_key_animated(maze: &maze::Maze) {
     });
     fill_maze_with_walls(&mut *key_maze);
     flush_grid(&*key_maze);
-    let mut cur_print = 1;
-    let mut last_pos = maze::Point::default();
+    let mut cur_print = 0;
     for r in (1..key_maze.row_size() - 1).step_by(2) {
-        for c in (1..key_maze.col_size()).step_by((KEY_ENTRY_LEN + 1) as usize) {
-            if (c + KEY_ENTRY_LEN >= key_maze.col_size() - 1) || (cur_print >= key::num_colors()) {
-                continue;
-            }
+        for c in (1..key_maze.col_size() - 1).step_by((KEY_ENTRY_LEN + 1) as usize) {
             let cur_pos = maze::Point { row: r, col: c };
-            last_pos = cur_pos;
             for cell in c..c + KEY_ENTRY_LEN {
                 build_path_animated(&mut key_maze, maze::Point { row: r, col: cell }, 250);
             }
             print::set_cursor_position(cur_pos, key_maze.offset());
             let print_from = key::thread_color(cur_print);
             print!("{} {}", print_from.block, print_from.binary);
-            print::flush();
             cur_print += 1;
         }
-        if r + 2 < key_maze.row_size() - 1 {
-            clear_remainder(&mut key_maze, last_pos);
-        }
     }
-    clear_final_row(&mut key_maze, last_pos);
 }
 
 // Terminal Printing Helpers
@@ -737,10 +646,9 @@ pub fn flush_grid(maze: &maze::Maze) {
     print::flush();
 }
 
-static KEY_ENTRY_LEN: i32 = 8;
-const THREAD_KEY_MAZE_ROWS: i32 = 6 * 2 + 1;
-const THREAD_KEY_MAZE_COLS: i32 = 10 * 3;
-static KEY_TITLE: &str = "Thread Color Scheme";
+const KEY_ENTRY_LEN: i32 = 8;
+const THREAD_KEY_MAZE_ROWS: i32 = 2 * 2 + 1;
+const THREAD_KEY_MAZE_COLS: i32 = 8 * (KEY_ENTRY_LEN + 1) + 1;
 static WALL_STYLE_COPY_TABLE: [maze::MazeStyle; 6] = [
     maze::MazeStyle::Sharp,
     maze::MazeStyle::Round,

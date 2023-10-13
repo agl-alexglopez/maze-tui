@@ -51,7 +51,7 @@ pub const ANSI_DRK_BLU_MAG_BLOCK: &str = "\x1b[38;5;57m█\x1b[0m";
 // overlap during a solution their bits mix to form interesting colors.
 pub static THREAD_COLORS: [ThreadColor; 16] = [
     ThreadColor {
-        block: "?",
+        block: " ",
         binary: "0b0000",
         code: 0,
     },
