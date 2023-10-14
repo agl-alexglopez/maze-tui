@@ -128,12 +128,14 @@ fn run() -> Result<()> {
                     let builder_thread = thread::spawn(move || {
                         let mut maze = maze::Maze::new_channel(&this_run.args, worker);
                         this_run.build.1(&mut maze, this_run.build_speed);
+                        this_run.solve.1(maze, this_run.solve_speed);
                         match work_complete.send(true) {
                             Ok(_) => {}
                             Err(_) => maze_panic!("Worker sender disconnected."),
                         }
                     });
-                    while let Err(_) = main_loop.try_recv() {
+
+                    while main_loop.is_empty() {
                         match tui.events.next()? {
                             Event::Tick => {}
                             Event::Key(key_event) => match key_event.code {

@@ -126,10 +126,7 @@ impl Maze {
 
     pub fn exit(&self) -> bool {
         match &self.receiver {
-            Some(rec) => match rec.try_recv() {
-                Ok(_) => true,
-                Err(_) => false,
-            },
+            Some(rec) => rec.is_full(),
             None => false,
         }
     }
