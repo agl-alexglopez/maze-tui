@@ -1,7 +1,9 @@
 use crate::rgb;
 use builders::build::print_square;
+use crossterm::{execute, style::Print};
 use maze;
 use speed;
+use std::io::{self};
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
@@ -99,7 +101,10 @@ pub fn paint_run_lengths(mut maze: maze::BoxMaze) {
         }
     }
     painter(maze, &map);
-    println!();
+    match execute!(io::stdout(), Print('\n')) {
+        Ok(_) => {}
+        Err(_) => print::maze_panic!("Painter failed to print."),
+    }
 }
 
 pub fn animate_run_lengths(mut maze: maze::BoxMaze, speed: speed::Speed) {
@@ -177,7 +182,10 @@ pub fn animate_run_lengths(mut maze: maze::BoxMaze, speed: speed::Speed) {
                 },
                 lk.maze.offset(),
             );
-            println!();
+            match execute!(io::stdout(), Print('\n')) {
+                Ok(_) => {}
+                Err(_) => print::maze_panic!("Painter failed to print."),
+            }
         }
         Err(p) => print::maze_panic!("Thread panicked: {}", p),
     };
@@ -196,11 +204,9 @@ fn painter(maze: maze::BoxMaze, map: &RunMap) {
                     let intensity = (map.max - run) as f64 / map.max as f64;
                     let dark = (255f64 * intensity) as u8;
                     let bright = 128 + (127f64 * intensity) as u8;
-                    let mut color = rgb::Rgb {
-                        ch: [dark, dark, dark],
-                    };
-                    color.ch[rand_color_choice] = bright;
-                    rgb::print_rgb(color, cur, maze.offset());
+                    let mut channels: rgb::Rgb = [dark, dark, dark];
+                    channels[rand_color_choice] = bright;
+                    rgb::print_rgb(channels, cur, maze.offset());
                 }
                 None => {
                     print_square(&maze, cur);
@@ -208,7 +214,10 @@ fn painter(maze: maze::BoxMaze, map: &RunMap) {
             };
         }
     }
-    println!();
+    match execute!(io::stdout(), Print('\n')) {
+        Ok(_) => {}
+        Err(_) => print::maze_panic!("Painter failed to print."),
+    }
 }
 
 fn painter_animated(monitor: &mut BfsMonitor, guide: ThreadGuide, animation: rgb::SpeedUnit) {
@@ -225,11 +234,9 @@ fn painter_animated(monitor: &mut BfsMonitor, guide: ThreadGuide, animation: rgb
                     let intensity = (lk.map.max - run) as f64 / lk.map.max as f64;
                     let dark = (255f64 * intensity) as u8;
                     let bright = 128 + (127f64 * intensity) as u8;
-                    let mut color = rgb::Rgb {
-                        ch: [dark, dark, dark],
-                    };
-                    color.ch[guide.color_i] = bright;
-                    rgb::animate_rgb(color, cur, lk.maze.offset());
+                    let mut channels: rgb::Rgb = [dark, dark, dark];
+                    channels[guide.color_i] = bright;
+                    rgb::animate_rgb(channels, cur, lk.maze.offset());
                     lk.maze[cur.row as usize][cur.col as usize] |= rgb::PAINT;
                     lk.count += 1;
                 }

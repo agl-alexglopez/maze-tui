@@ -1,5 +1,5 @@
 use crossterm::{
-    queue,
+    execute, queue,
     style::{
         Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor,
     },
@@ -108,7 +108,10 @@ pub fn print_paths(maze: &maze::Maze) {
         for c in 0..maze.col_size() {
             print_point(maze, maze::Point { row: r, col: c });
         }
-        println!();
+        match queue!(io::stdout(), Print('\n'),) {
+            Ok(_) => {}
+            Err(_) => maze_panic!("Could not print newline."),
+        }
     }
     print::flush();
 }
@@ -121,11 +124,74 @@ pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         },
         maze.offset(),
     );
-    print_point(maze, point);
-    print::flush();
+    let square = &maze[point.row as usize][point.col as usize];
+    // We have some special printing for the finish square. Not here.
+    if (square & FINISH_BIT) != 0 {
+        let ansi = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+        match execute!(
+            io::stdout(),
+            SetAttribute(Attribute::SlowBlink),
+            SetAttribute(Attribute::Bold),
+            SetBackgroundColor(Color::AnsiValue(ansi)),
+            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            Print('F'),
+            ResetColor
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark Finish square"),
+        }
+    }
+    if (square & START_BIT) != 0 {
+        match execute!(
+            io::stdout(),
+            SetAttribute(Attribute::Bold),
+            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            Print('S'),
+            ResetColor
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark Start square."),
+        }
+    }
+    if (square & THREAD_MASK) != 0 {
+        let thread_color: key::ThreadColor =
+            key::thread_color(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+        match execute!(
+            io::stdout(),
+            SetForegroundColor(Color::AnsiValue(thread_color.ansi)),
+            Print(thread_color.block),
+            ResetColor,
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark thread color."),
+        }
+    }
+    if (square & maze::PATH_BIT) == 0 {
+        match execute!(
+            io::stdout(),
+            Print(maze.wall_style()[(square & maze::WALL_MASK) as usize]),
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not print wall."),
+        }
+    }
+    if (square & maze::PATH_BIT) != 0 {
+        match execute!(io::stdout(), Print(' '),) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not print path."),
+        }
+    }
+    maze_panic!("Uncategorized maze square! Check the bits.");
 }
 
 pub fn print_point(maze: &maze::Maze, point: maze::Point) {
+    print::set_cursor_position(
+        maze::Point {
+            row: point.row,
+            col: point.col,
+        },
+        maze.offset(),
+    );
     let square = &maze[point.row as usize][point.col as usize];
     // We have some special printing for the finish square. Not here.
     if (square & FINISH_BIT) != 0 {
@@ -136,32 +202,54 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
             SetAttribute(Attribute::Bold),
             SetBackgroundColor(Color::AnsiValue(ansi)),
             SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
-            Print("F".to_string()),
+            Print('F'),
             ResetColor
         ) {
-            Ok(_) => {}
+            Ok(_) => return,
             Err(_) => maze_panic!("Could not mark Finish square"),
         }
-        return;
     }
     if (square & START_BIT) != 0 {
-        print!("{}", ANSI_START);
-        return;
+        match queue!(
+            io::stdout(),
+            SetAttribute(Attribute::Bold),
+            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            Print('S'),
+            ResetColor
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark Start square."),
+        }
     }
     if (square & THREAD_MASK) != 0 {
-        let thread_color: ThreadPaint = (square & THREAD_MASK) >> THREAD_TAG_OFFSET;
-        print!("{}", key::thread_color_block(thread_color as usize));
-        return;
+        let thread_color: key::ThreadColor =
+            key::thread_color(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+        match queue!(
+            io::stdout(),
+            SetForegroundColor(Color::AnsiValue(thread_color.ansi)),
+            Print(thread_color.block),
+            ResetColor,
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark thread color."),
+        }
     }
     if (square & maze::PATH_BIT) == 0 {
-        print!("{}", maze.wall_style()[(square & maze::WALL_MASK) as usize]);
-        return;
+        match queue!(
+            io::stdout(),
+            Print(maze.wall_style()[(square & maze::WALL_MASK) as usize]),
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not print wall."),
+        }
     }
     if (square & maze::PATH_BIT) != 0 {
-        print!(" ");
-        return;
+        match queue!(io::stdout(), Print(' '),) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not print path."),
+        }
     }
-    print::maze_panic!("Uncategorized maze square! Check the bits.");
+    maze_panic!("Uncategorized maze square! Check the bits.");
 }
 
 pub fn deluminate_maze(maze: &maze::Maze) {
@@ -169,7 +257,10 @@ pub fn deluminate_maze(maze: &maze::Maze) {
         for c in 0..maze.col_size() {
             let p = maze::Point { row: r, col: c };
             print::set_cursor_position(p, maze.offset());
-            print!(" ");
+            match queue!(io::stdout(), Print(' '),) {
+                Ok(_) => {}
+                Err(_) => maze_panic!("Could not print path."),
+            }
         }
     }
 }
@@ -187,7 +278,6 @@ fn is_valid_start_or_finish(maze: &maze::Maze, choice: maze::Point) -> bool {
 }
 
 // Read Only Data Available to All Solvers
-pub const ANSI_START: &str = "\x1b[1m\x1b[38;5;87mS\x1b[0m";
 pub const START_BIT: ThreadPaint = 0b0100_0000_0000_0000;
 pub const FINISH_BIT: ThreadPaint = 0b1000_0000_0000_0000;
 pub const NUM_THREADS: usize = 4;
