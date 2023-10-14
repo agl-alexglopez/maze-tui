@@ -176,6 +176,11 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
             );
         }
 
+        match maze.exit() {
+            true => return,
+            false => {}
+        }
+
         for c in (1..maze.col_size() - 1).step_by(2) {
             sets_in_this_row
                 .entry(window.at(window.cur_row, c as usize))

@@ -59,6 +59,9 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     let mut cur: maze::Point = start;
     'branching: loop {
+        if maze.exit() {
+            return;
+        }
         random_direction_indices.shuffle(&mut gen);
         for &i in random_direction_indices.iter() {
             let direction = &build::GENERATE_DIRECTIONS[i];

@@ -5,26 +5,7 @@ use speed;
 
 use rand::prelude::*;
 use std::collections::{HashMap, VecDeque};
-use std::sync::{Arc, Mutex};
 use std::{thread, time};
-
-struct BfsSolver {
-    maze: maze::BoxMaze,
-    win: Option<usize>,
-    win_path: Vec<(maze::Point, solve::ThreadPaint)>,
-}
-
-impl BfsSolver {
-    fn new(boxed_maze: maze::BoxMaze) -> Arc<Mutex<Self>> {
-        Arc::new(Mutex::new(Self {
-            maze: boxed_maze,
-            win: None,
-            win_path: Vec::new(),
-        }))
-    }
-}
-
-type BfsMonitor = Arc<Mutex<BfsSolver>>;
 
 // Public Solver Functions-------------------------------------------------------------------------
 
@@ -36,7 +17,7 @@ pub fn animate_hunt(mut maze: maze::BoxMaze, speed: speed::Speed) {
     let finish: maze::Point = solve::pick_random_point(&maze);
     maze[finish.row as usize][finish.col as usize] |= solve::FINISH_BIT;
 
-    let monitor = BfsSolver::new(maze);
+    let monitor = solve::BfsSolver::new(maze);
     let mut handles = Vec::with_capacity(solve::NUM_THREADS);
     for (i_thread, &mask) in solve::THREAD_MASKS.iter().enumerate() {
         let mut monitor_clone = monitor.clone();
@@ -81,7 +62,7 @@ pub fn animate_gather(mut maze: maze::BoxMaze, speed: speed::Speed) {
         maze[finish.row as usize][finish.col as usize] |= solve::FINISH_BIT;
     }
 
-    let monitor = BfsSolver::new(maze);
+    let monitor = solve::BfsSolver::new(maze);
     let mut handles = Vec::with_capacity(solve::NUM_THREADS);
     for (i_thread, &mask) in solve::THREAD_MASKS.iter().enumerate() {
         let mut monitor_clone = monitor.clone();
@@ -138,7 +119,7 @@ pub fn animate_corner(mut maze: maze::BoxMaze, speed: speed::Speed) {
 
     all_starts.shuffle(&mut thread_rng());
 
-    let monitor = BfsSolver::new(maze);
+    let monitor = solve::BfsSolver::new(maze);
     let mut handles = Vec::with_capacity(solve::NUM_THREADS);
     for (i_thread, &mask) in solve::THREAD_MASKS.iter().enumerate() {
         let mut monitor_clone = monitor.clone();
@@ -174,7 +155,7 @@ pub fn animate_corner(mut maze: maze::BoxMaze, speed: speed::Speed) {
 
 // Dispatch Functions for each Thread--------------------------------------------------------------
 
-fn animated_hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
+fn animated_hunter(monitor: &mut solve::BfsMonitor, guide: solve::ThreadGuide) {
     let mut parents = HashMap::from([(guide.start, maze::Point { row: -1, col: -1 })]);
     let mut bfs: VecDeque<maze::Point> = VecDeque::from([guide.start]);
     while let Some(mut cur) = bfs.pop_front() {
@@ -226,7 +207,7 @@ fn animated_hunter(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
     }
 }
 
-fn animated_gatherer(monitor: &mut BfsMonitor, guide: solve::ThreadGuide) {
+fn animated_gatherer(monitor: &mut solve::BfsMonitor, guide: solve::ThreadGuide) {
     let mut parents = HashMap::from([(guide.start, maze::Point { row: -1, col: -1 })]);
     let seen_bit: solve::ThreadCache = guide.paint << 4;
     let mut bfs: VecDeque<maze::Point> = VecDeque::from([guide.start]);

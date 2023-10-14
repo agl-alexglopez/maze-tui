@@ -56,6 +56,10 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     }]);
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     while let Some(run) = dfs.last().cloned() {
+        match maze.exit() {
+            true => return,
+            false => {}
+        }
         random_direction_indices.shuffle(&mut rng);
         let mut branches = false;
         for &i in random_direction_indices.iter() {

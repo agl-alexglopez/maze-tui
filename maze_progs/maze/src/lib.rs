@@ -40,6 +40,7 @@
 // maze start bit--------||| |||| |||| ||||
 // maze goals bit-------|||| |||| |||| ||||
 //                    0b0000 0000 0000 0000
+use crossbeam_channel::Receiver;
 use std::ops::{Index, IndexMut};
 
 // Public Types
@@ -78,13 +79,14 @@ pub struct MazeArgs {
 }
 
 // Model a ROWxCOLUMN maze in a flat Vec. Implement tricky indexing in Index impls.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Maze {
     maze: Vec<Square>,
     maze_row_size: i32,
     maze_col_size: i32,
     offset: Offset,
     wall_style_index: usize,
+    receiver: Option<Receiver<bool>>,
 }
 pub type BoxMaze = Box<Maze>;
 
@@ -105,7 +107,31 @@ impl Maze {
             maze_col_size: (cols),
             offset: args.offset,
             wall_style_index: (args.style as usize),
+            receiver: None,
         })
+    }
+
+    pub fn new_channel(args: &MazeArgs, rec: Receiver<bool>) -> Box<Self> {
+        let rows = args.odd_rows + 1 - (args.odd_rows % 2);
+        let cols = args.odd_cols + 1 - (args.odd_cols % 2);
+        Box::new(Self {
+            maze: (vec![0; rows as usize * cols as usize]),
+            maze_row_size: (rows),
+            maze_col_size: (cols),
+            offset: args.offset,
+            wall_style_index: (args.style as usize),
+            receiver: Some(rec),
+        })
+    }
+
+    pub fn exit(&self) -> bool {
+        match &self.receiver {
+            Some(rec) => match rec.try_recv() {
+                Ok(_) => true,
+                Err(_) => false,
+            },
+            None => false,
+        }
     }
 
     pub fn row_size(&self) -> i32 {

@@ -1,9 +1,11 @@
 mod run_random;
 mod tables;
+use crossbeam_channel::bounded;
 use crossterm::event::{
     self, DisableMouseCapture, EnableMouseCapture, Event as CrosstermEvent, KeyEvent, MouseEvent,
 };
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
+use print::maze_panic;
 use ratatui::prelude::Constraint;
 use ratatui::widgets::Borders;
 use ratatui::{
@@ -12,7 +14,7 @@ use ratatui::{
     widgets::{Block, Padding, Row},
 };
 use std::{
-    sync::mpsc,
+    sync::{mpsc, Arc, Mutex},
     thread,
     time::{Duration, Instant},
 };
@@ -50,11 +52,13 @@ struct FlagArg<'a, 'b> {
     arg: &'b str,
 }
 
+#[derive(Clone, Copy)]
 enum ViewingMode {
     StaticImage,
     AnimatedPlayback,
 }
 
+#[derive(Clone, Copy)]
 struct MazeRunner {
     args: maze::MazeArgs,
     build_view: ViewingMode,
@@ -94,8 +98,6 @@ impl MazeRunner {
     }
 }
 
-type BoxMazeRunner = Box<MazeRunner>;
-
 fn main() -> Result<()> {
     let status = run();
     status?;
@@ -103,7 +105,6 @@ fn main() -> Result<()> {
 }
 
 fn run() -> Result<()> {
-    let mut terminal = Terminal::new(CrosstermBackend::new(std::io::stderr()))?;
     let tables = tables::load_function_tables();
     let mut run = MazeRunner::new();
     let backend = CrosstermBackend::new(std::io::stderr());
@@ -116,7 +117,49 @@ fn run() -> Result<()> {
         tui.draw(&mut run)?;
         match tui.events.next()? {
             Event::Tick => {}
-            Event::Key(key_event) => update(&mut run, key_event)?,
+            Event::Key(key_event) => match key_event.code {
+                event::KeyCode::Char('q') | event::KeyCode::Esc => {
+                    run.quit();
+                }
+                event::KeyCode::Char('r') => {
+                    let (impatient_user, worker) = bounded::<bool>(1);
+                    let (work_complete, main_loop) = bounded::<bool>(1);
+                    let this_run = run.clone();
+                    let builder_thread = thread::spawn(move || {
+                        let mut maze = maze::Maze::new_channel(&this_run.args, worker);
+                        this_run.build.1(&mut maze, this_run.build_speed);
+                        match work_complete.send(true) {
+                            Ok(_) => {}
+                            Err(_) => maze_panic!("Worker sender disconnected."),
+                        }
+                    });
+                    while let Err(_) = main_loop.try_recv() {
+                        match tui.events.next()? {
+                            Event::Tick => {}
+                            Event::Key(key_event) => match key_event.code {
+                                event::KeyCode::Char('q') | event::KeyCode::Esc => {
+                                    match impatient_user.send(true) {
+                                        Ok(_) => break,
+                                        Err(_) => maze_panic!("User couldn't exit."),
+                                    }
+                                }
+                                _ => {}
+                            },
+                            Event::Resize(cols, rows) => {
+                                run.args.odd_rows = (rows / 2) as i32;
+                                run.args.odd_cols = (cols / 2) as i32;
+                                match impatient_user.send(true) {
+                                    Ok(_) => break,
+                                    Err(_) => maze_panic!("User couldn't resize."),
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    builder_thread.join().unwrap();
+                }
+                _ => {}
+            },
             Event::Mouse(_) => {}
             Event::Resize(cols, rows) => {
                 run.args.odd_rows = (rows / 2) as i32;
@@ -141,15 +184,6 @@ fn ui(run: &mut MazeRunner, f: &mut Frame<'_>) {
         add_cols: inner_frame.y as i32,
     };
     f.render_widget(frame_block, f.size());
-}
-
-fn update(run: &mut MazeRunner, key_event: KeyEvent) -> Result<()> {
-    match key_event.code {
-        event::KeyCode::Char('q') | event::KeyCode::Esc => run.quit(),
-        event::KeyCode::Char('r') => run_random::rand(run.args),
-        _ => (),
-    }
-    Ok(())
 }
 
 impl Tui {

@@ -18,8 +18,12 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     build::flush_grid(maze);
     build::print_overlap_key_animated(maze);
     for r in 1..maze.row_size() - 1 {
+        match maze.exit() {
+            true => return,
+            false => {}
+        }
         for c in 1..maze.col_size() - 1 {
-            build::carve_path_walls_animated(maze, maze::Point { row: r, col: c }, animation);
+            build::carve_path_walls_animated(maze, maze::Point { row: r, col: c }, animation)
         }
     }
 }

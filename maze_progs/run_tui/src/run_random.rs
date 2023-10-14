@@ -75,16 +75,16 @@ const WALL_STYLES: [maze::MazeStyle; 6] = [
     maze::MazeStyle::Contrast,
     maze::MazeStyle::Spikes,
 ];
-const BUILDERS: [BuildAnimation; 9] = [
+const BUILDERS: [BuildAnimation; 1] = [
     arena::animate_maze,
-    recursive_backtracker::animate_maze,
-    recursive_subdivision::animate_maze,
-    prim::animate_maze,
-    kruskal::animate_maze,
-    eller::animate_maze,
-    wilson_carver::animate_maze,
-    wilson_adder::animate_maze,
-    grid::animate_maze,
+    // recursive_backtracker::animate_maze,
+    // recursive_subdivision::animate_maze,
+    // prim::animate_maze,
+    // kruskal::animate_maze,
+    // eller::animate_maze,
+    // wilson_carver::animate_maze,
+    // wilson_adder::animate_maze,
+    // grid::animate_maze,
 ];
 const MODIFICATIONS: [BuildAnimation; 2] = [modify::add_cross_animated, modify::add_x_animated];
 const SOLVERS: [SolveAnimation; 26] = [

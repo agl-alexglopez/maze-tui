@@ -36,6 +36,23 @@ impl Solver {
     }
 }
 
+pub struct BfsSolver {
+    pub maze: maze::BoxMaze,
+    pub win: Option<usize>,
+    pub win_path: Vec<(maze::Point, ThreadPaint)>,
+}
+
+impl BfsSolver {
+    pub fn new(boxed_maze: maze::BoxMaze) -> Arc<Mutex<Self>> {
+        Arc::new(Mutex::new(Self {
+            maze: boxed_maze,
+            win: None,
+            win_path: Vec::new(),
+        }))
+    }
+}
+
+pub type BfsMonitor = Arc<Mutex<BfsSolver>>;
 pub type SolverMonitor = Arc<Mutex<Solver>>;
 
 // Public Module Functions
