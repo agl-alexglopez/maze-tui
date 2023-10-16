@@ -40,10 +40,10 @@ impl error::Error for Quit {}
 pub fn rand(mut args: maze::MazeArgs) {
     let mut rng = thread_rng();
     let modification_probability = Bernoulli::new(0.2);
-    match tables::WALL_STYLES.choose(&mut rng) {
-        Some(&style) => args.style = style.1,
+    args.style = match tables::WALL_STYLES.choose(&mut rng) {
+        Some(&style) => style.1,
         None => print::maze_panic!("Styles not set for loop, broken"),
-    }
+    };
     let mut maze = maze::Maze::new(args);
     let build_speed = match tables::SPEEDS.choose(&mut rng) {
         Some(&speed) => speed.1,
@@ -76,9 +76,9 @@ pub fn rand(mut args: maze::MazeArgs) {
     solve_algo(maze, solve_speed);
 }
 
-pub fn run_with_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui::Result<bool> {
+pub fn run_with_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui::Result<()> {
     let (impatient_user, worker) = bounded::<bool>(1);
-    let (finished_worker, supervisor) = bounded::<bool>(1);
+    let (finished_worker, patient_user) = bounded::<bool>(1);
     let mut should_quit = false;
     let builder_thread = thread::spawn(move || {
         let mut maze = maze::Maze::new_channel(&this_run.args, worker);
@@ -90,7 +90,7 @@ pub fn run_with_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui:
         }
     });
 
-    while supervisor.is_empty() {
+    while patient_user.is_empty() {
         match tui.events.next()? {
             tui::Event::Key(key_event) => match key_event.code {
                 event::KeyCode::Char('q') | event::KeyCode::Esc => {
@@ -117,6 +117,6 @@ pub fn run_with_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui:
     builder_thread.join().unwrap();
     match should_quit {
         true => Err(Box::new(Quit::new())),
-        false => Ok(false),
+        false => Ok(()),
     }
 }

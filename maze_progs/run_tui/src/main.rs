@@ -19,6 +19,7 @@ fn run() -> tui::Result<()> {
     let mut tui = tui::Tui::new(terminal, events);
     tui.enter()?;
     let mut quit = false;
+    tui.splash()?;
 
     while !quit {
         tui.draw(&mut run)?;
@@ -28,18 +29,22 @@ fn run() -> tui::Result<()> {
                 event::KeyCode::Char('q') | event::KeyCode::Esc => {
                     quit = true;
                 }
-                event::KeyCode::Char('r') => match run::run_with_channels(*run, &mut tui) {
-                    Err(_) => {
-                        tui.terminal.clear()?;
+                event::KeyCode::Char('r') => {
+                    tui.terminal.clear()?;
+                    match run::run_with_channels(*run, &mut tui) {
+                        Err(_) => {
+                            tui.terminal.clear()?;
+                            tui.splash()?;
+                        }
+                        Ok(_) => {}
                     }
-                    Ok(_) => {}
-                },
+                }
                 _ => {}
             },
             tui::Event::Mouse(_) => {}
-            tui::Event::Resize(cols, rows) => {
-                run.args.odd_rows = (rows / 2) as i32;
-                run.args.odd_cols = (cols / 2) as i32;
+            tui::Event::Resize(_, _) => {
+                tui.terminal.clear()?;
+                tui.splash()?;
             }
         };
     }

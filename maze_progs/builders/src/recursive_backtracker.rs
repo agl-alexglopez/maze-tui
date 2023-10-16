@@ -10,7 +10,6 @@ const BACKTRACK_DELAY: build::SpeedUnit = 8;
 
 pub fn generate_maze(maze: &mut maze::Maze) {
     build::fill_maze_with_walls(maze);
-    build::print_overlap_key(maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
         row: 2 * (gen.gen_range(1..maze.row_size() - 2) / 2) + 1,
@@ -41,6 +40,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
         cur.col += backtracking.col;
 
         if cur == start {
+            build::flush_grid(maze);
             return;
         }
     }
@@ -50,7 +50,6 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(maze);
     build::flush_grid(maze);
-    build::print_overlap_key_animated(maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
         row: 2 * (gen.gen_range(1..maze.row_size() - 2) / 2) + 1,

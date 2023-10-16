@@ -588,65 +588,15 @@ pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUn
 }
 
 pub fn print_overlap_key(maze: &maze::Maze) {
-    let mut key_maze = maze::Maze::new(maze::MazeArgs {
-        odd_rows: THREAD_KEY_MAZE_ROWS,
-        odd_cols: THREAD_KEY_MAZE_COLS,
-        offset: maze::Offset {
-            add_rows: maze.offset().add_rows + maze.row_size(),
-            add_cols: maze.offset().add_cols,
-        },
-        style: WALL_STYLE_COPY_TABLE[maze.style_index()],
-    });
-    fill_maze_with_walls(&mut *key_maze);
+    let offset = maze::Offset {
+        add_rows: maze.offset().add_rows + maze.row_size(),
+        add_cols: maze.offset().add_cols,
+    };
     let mut cur_print = 0;
-    for r in (1..key_maze.row_size() - 1).step_by(2) {
-        for c in (1..key_maze.col_size() - 1).step_by((KEY_ENTRY_LEN + 1) as usize) {
+    for r in 0..THREAD_KEY_MAZE_ROWS {
+        for c in (0..THREAD_KEY_MAZE_COLS).step_by((KEY_ENTRY_LEN) as usize) {
             let cur_pos = maze::Point { row: r, col: c };
-            for cell in c..c + KEY_ENTRY_LEN {
-                build_path(&mut key_maze, maze::Point { row: r, col: cell });
-            }
-            print::set_cursor_position(cur_pos, key_maze.offset());
-            let thread_info = key::thread_color(cur_print);
-            queue!(
-                io::stdout(),
-                SetForegroundColor(Color::AnsiValue(thread_info.ansi)),
-                Print(format!("{}{:04b}", thread_info.block, cur_print)),
-                ResetColor,
-            )
-            .expect("Could not execute print_overlap_key_command");
-            cur_print += 1;
-        }
-    }
-    print::set_cursor_position(maze::Point { row: 1, col: 1 }, key_maze.offset());
-    execute!(
-        io::stdout(),
-        SetForegroundColor(Color::Grey),
-        Print(format!(" {:04b}", 0)),
-        ResetColor,
-    )
-    .expect("Could not execute print_overlap_key_command");
-}
-
-pub fn print_overlap_key_animated(maze: &maze::Maze) {
-    let mut key_maze = maze::Maze::new(maze::MazeArgs {
-        odd_rows: THREAD_KEY_MAZE_ROWS,
-        odd_cols: THREAD_KEY_MAZE_COLS,
-        offset: maze::Offset {
-            add_rows: maze.offset().add_rows + maze.row_size(),
-            add_cols: maze.offset().add_cols,
-        },
-        style: WALL_STYLE_COPY_TABLE[maze.style_index()],
-    });
-    fill_maze_with_walls(&mut *key_maze);
-    flush_grid(&*key_maze);
-    let mut cur_print = 0;
-    for r in (1..key_maze.row_size() - 1).step_by(2) {
-        for c in (1..key_maze.col_size() - 1).step_by((KEY_ENTRY_LEN + 1) as usize) {
-            let cur_pos = maze::Point { row: r, col: c };
-            for cell in c..c + KEY_ENTRY_LEN {
-                build_path_animated(&mut key_maze, maze::Point { row: r, col: cell }, 250);
-            }
-            print::set_cursor_position(cur_pos, key_maze.offset());
+            print::set_cursor_position(cur_pos, offset);
             let thread_info = key::thread_color(cur_print);
             execute!(
                 io::stdout(),
@@ -658,7 +608,38 @@ pub fn print_overlap_key_animated(maze: &maze::Maze) {
             cur_print += 1;
         }
     }
-    print::set_cursor_position(maze::Point { row: 1, col: 1 }, key_maze.offset());
+    print::set_cursor_position(maze::Point { row: 0, col: 0 }, offset);
+    execute!(
+        io::stdout(),
+        SetForegroundColor(Color::Grey),
+        Print(format!(" {:04b}", 0)),
+        ResetColor,
+    )
+    .expect("Could not execute print_overlap_key_command");
+}
+
+pub fn print_overlap_key_animated(maze: &maze::Maze) {
+    let offset = maze::Offset {
+        add_rows: maze.offset().add_rows + maze.row_size(),
+        add_cols: maze.offset().add_cols,
+    };
+    let mut cur_print = 0;
+    for r in 0..THREAD_KEY_MAZE_ROWS {
+        for c in (0..THREAD_KEY_MAZE_COLS).step_by((KEY_ENTRY_LEN) as usize) {
+            let cur_pos = maze::Point { row: r, col: c };
+            print::set_cursor_position(cur_pos, offset);
+            let thread_info = key::thread_color(cur_print);
+            execute!(
+                io::stdout(),
+                SetForegroundColor(Color::AnsiValue(thread_info.ansi)),
+                Print(format!("{}{:04b}", thread_info.block, cur_print)),
+                ResetColor,
+            )
+            .expect("Could not execute print_overlap_key_command");
+            cur_print += 1;
+        }
+    }
+    print::set_cursor_position(maze::Point { row: 0, col: 0 }, offset);
     execute!(
         io::stdout(),
         SetForegroundColor(Color::Grey),
@@ -738,8 +719,8 @@ pub fn flush_grid(maze: &maze::Maze) {
 }
 
 const KEY_ENTRY_LEN: i32 = 5;
-const THREAD_KEY_MAZE_ROWS: i32 = 2 * 2 + 1;
-const THREAD_KEY_MAZE_COLS: i32 = 8 * (KEY_ENTRY_LEN + 1) + 1;
+const THREAD_KEY_MAZE_ROWS: i32 = 2;
+const THREAD_KEY_MAZE_COLS: i32 = 8 * KEY_ENTRY_LEN;
 static WALL_STYLE_COPY_TABLE: [maze::MazeStyle; 6] = [
     maze::MazeStyle::Sharp,
     maze::MazeStyle::Round,

@@ -1,14 +1,17 @@
 use crate::args;
+use crate::tables;
 
 use crossbeam_channel::{self, unbounded};
 use crossterm::event::{
     self, DisableMouseCapture, EnableMouseCapture, Event as CrosstermEvent, KeyEvent, MouseEvent,
 };
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
+use rand::{seq::SliceRandom, thread_rng};
 use ratatui::{
-    layout::{Direction, Layout},
-    prelude::{CrosstermBackend, Style, Terminal},
-    widgets::{Block, Borders, Padding, Row},
+    layout::{Constraint, Direction, Layout},
+    prelude::{Color, CrosstermBackend},
+    style::Style,
+    widgets::{Block, Borders, Padding},
 };
 
 use std::{
@@ -93,6 +96,11 @@ impl Tui {
         self.terminal.show_cursor()?;
         Ok(())
     }
+
+    pub fn splash(&mut self) -> Result<()> {
+        self.terminal.draw(|frame| ui_splash(frame))?;
+        Ok(())
+    }
 }
 
 impl EventHandler {
@@ -149,16 +157,60 @@ impl EventHandler {
 }
 
 fn ui(run: &mut args::MazeRunner, f: &mut Frame<'_>) {
-    let frame_block = Block::default()
-        .title("Maze Algorithms")
-        .borders(Borders::ALL)
-        .padding(Padding::new(1, 5, 5, 5));
+    let frame_block = Block::default().padding(Padding::new(1, 1, 1, 1));
     let inner_frame = frame_block.inner(f.size());
-    run.args.odd_rows = (inner_frame.height as f64 / 1.3) as i32;
-    run.args.odd_cols = (inner_frame.width - inner_frame.x) as i32;
+    run.args.odd_rows = (inner_frame.height as f64 / 2.0) as i32;
+    run.args.odd_cols = inner_frame.width as i32;
     run.args.offset = maze::Offset {
-        add_rows: inner_frame.x as i32,
-        add_cols: inner_frame.y as i32,
+        add_rows: inner_frame.y as i32,
+        add_cols: inner_frame.x as i32,
     };
     f.render_widget(frame_block, f.size());
+}
+
+fn ui_splash(f: &mut Frame<'_>) {
+    let overall_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Percentage(90), Constraint::Percentage(10)])
+        .split(f.size());
+    let frame_block = Block::default().padding(Padding::new(1, 1, 1, 1));
+    let mut background_maze = args::MazeRunner::new();
+    let mut rng = thread_rng();
+    background_maze.args.style = match tables::WALL_STYLES.choose(&mut rng) {
+        Some(&style) => style.1,
+        None => print::maze_panic!("Styles not found."),
+    };
+    background_maze.build.0 = builders::wilson_adder::generate_maze;
+    let inner = frame_block.inner(f.size());
+    background_maze.args.odd_rows = inner.height as i32;
+    background_maze.args.odd_cols = inner.width as i32;
+    background_maze.args.offset = maze::Offset {
+        add_rows: inner.y as i32,
+        add_cols: inner.x as i32,
+    };
+    let popup_layout_v = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - 50) / 2),
+            Constraint::Percentage(50),
+            Constraint::Percentage((100 - 50) / 2),
+        ])
+        .split(overall_layout[0]);
+    let popup_layout_h = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - 50) / 2),
+            Constraint::Percentage(50),
+            Constraint::Percentage((100 - 50) / 2),
+        ])
+        .split(popup_layout_v[1])[1];
+
+    let popup_block = Block::default()
+        .borders(Borders::ALL)
+        .border_style(Style::new().bg(Color::Yellow).fg(Color::Yellow))
+        .style(Style::default().bg(Color::Black));
+    f.render_widget(frame_block, overall_layout[0]);
+    let mut bg_maze = maze::Maze::new(background_maze.args);
+    background_maze.build.0(&mut bg_maze);
+    f.render_widget(popup_block, popup_layout_h);
 }
