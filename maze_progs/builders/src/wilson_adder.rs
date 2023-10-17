@@ -56,7 +56,6 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                     continue 'walking;
                 }
                 None => {
-                    build::flush_grid(maze);
                     return;
                 }
             }
@@ -80,6 +79,9 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     };
     let mut indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     'walking: loop {
+        if maze.exit() {
+            return;
+        }
         maze[cur.walk.row as usize][cur.walk.col as usize] |= WALK_BIT;
         indices.shuffle(&mut rng);
         'choosing_step: for &i in indices.iter() {

@@ -40,7 +40,6 @@ pub fn generate_maze(maze: &mut maze::Maze) {
         cur.col += backtracking.col;
 
         if cur == start {
-            build::flush_grid(maze);
             return;
         }
     }

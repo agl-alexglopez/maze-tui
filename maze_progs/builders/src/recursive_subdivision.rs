@@ -20,7 +20,6 @@ const MIN_CHAMBER: i32 = 3;
 
 pub fn generate_maze(maze: &mut maze::Maze) {
     build::build_wall_outline(maze);
-    build::print_overlap_key(maze);
     let mut rng = thread_rng();
     let mut chamber_stack: Vec<Chamber> = Vec::from([Chamber {
         offset: maze::Point { row: 0, col: 0 },
@@ -100,6 +99,9 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         w: maze.col_size(),
     }]);
     while let Some(chamber) = chamber_stack.pop() {
+        if maze.exit() {
+            return;
+        }
         if chamber.h >= chamber.w && chamber.w > MIN_CHAMBER {
             let divide = random_even_div(&mut rng, chamber.h);
             let passage = rand_odd_pass(&mut rng, chamber.w);

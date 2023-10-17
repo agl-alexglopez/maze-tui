@@ -36,7 +36,6 @@ impl Ord for PriorityPoint {
 
 pub fn generate_maze(maze: &mut maze::Maze) {
     build::fill_maze_with_walls(maze);
-    build::print_overlap_key(maze);
     let mut rng = thread_rng();
     let weight_range = Uniform::from(1..=100);
     let start = PriorityPoint {
@@ -102,6 +101,9 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     let mut lookup_weights: HashMap<maze::Point, u8> = HashMap::from([(start.p, start.priority)]);
     let mut pq = BinaryHeap::from([start]);
     while let Some(&cur) = pq.peek() {
+        if maze.exit() {
+            return;
+        }
         let mut max_neighbor: Option<PriorityPoint> = None;
         let mut max_weight = 0;
         for dir in &build::GENERATE_DIRECTIONS {

@@ -710,7 +710,7 @@ pub fn flush_grid(maze: &maze::Maze) {
         for c in 0..maze.col_size() {
             print_square(maze, maze::Point { row: r, col: c });
         }
-        match queue!(io::stdout(), Print(' ')) {
+        match queue!(io::stdout(), Print('\n')) {
             Ok(_) => {}
             Err(_) => maze_panic!("Couldn't print square."),
         };
@@ -721,11 +721,3 @@ pub fn flush_grid(maze: &maze::Maze) {
 const KEY_ENTRY_LEN: i32 = 5;
 const THREAD_KEY_MAZE_ROWS: i32 = 2;
 const THREAD_KEY_MAZE_COLS: i32 = 8 * KEY_ENTRY_LEN;
-static WALL_STYLE_COPY_TABLE: [maze::MazeStyle; 6] = [
-    maze::MazeStyle::Sharp,
-    maze::MazeStyle::Round,
-    maze::MazeStyle::Doubles,
-    maze::MazeStyle::Bold,
-    maze::MazeStyle::Contrast,
-    maze::MazeStyle::Spikes,
-];

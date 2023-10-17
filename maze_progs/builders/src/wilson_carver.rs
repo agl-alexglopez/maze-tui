@@ -26,7 +26,6 @@ struct RandomWalk {
 
 pub fn generate_maze(maze: &mut maze::Maze) {
     build::fill_maze_with_walls(maze);
-    build::print_overlap_key(maze);
     let mut rng = thread_rng();
     let start = maze::Point {
         row: 2 * (rng.gen_range(2..maze.row_size() - 1) / 2) + 1,
@@ -60,7 +59,6 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                     continue 'walking;
                 }
                 None => {
-                    build::flush_grid(maze);
                     return;
                 }
             }
@@ -90,6 +88,9 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     maze[cur.walk.row as usize][cur.walk.col as usize] &= !build::MARKERS_MASK;
     let mut indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     'walking: loop {
+        if maze.exit() {
+            return;
+        }
         maze[cur.walk.row as usize][cur.walk.col as usize] |= WALK_BIT;
         indices.shuffle(&mut rng);
         'choosing_step: for &i in indices.iter() {

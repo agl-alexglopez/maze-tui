@@ -400,6 +400,7 @@ dependencies = [
  "ratatui",
  "solvers",
  "speed",
+ "tui-textarea",
 ]
 
 [[package]]
@@ -504,6 +505,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "tui-textarea"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ddd5d2aea3541baccf9c298ecace702201e0fbf348e80bd8811acb4f62b5952"
+dependencies = [
+ "crossterm 0.27.0",
+ "ratatui",
 ]
 
 [[package]]

@@ -5,18 +5,12 @@ use crossbeam_channel::bounded;
 use crossterm::event::{
     self, DisableMouseCapture, EnableMouseCapture, Event as CrosstermEvent, KeyEvent, MouseEvent,
 };
+use maze;
 use print;
-use rand::{
-    distributions::{Bernoulli, Distribution},
-    seq::SliceRandom,
-    thread_rng,
-};
+use rand::{distributions::Bernoulli, distributions::Distribution, seq::SliceRandom, thread_rng};
 use std::error;
 use std::fmt;
-use std::{
-    sync::{Arc, Mutex},
-    thread,
-};
+use std::thread;
 
 #[derive(Debug)]
 pub struct Quit {
@@ -37,52 +31,18 @@ impl fmt::Display for Quit {
 
 impl error::Error for Quit {}
 
-pub fn rand(mut args: maze::MazeArgs) {
-    let mut rng = thread_rng();
-    let modification_probability = Bernoulli::new(0.2);
-    args.style = match tables::WALL_STYLES.choose(&mut rng) {
-        Some(&style) => style.1,
-        None => print::maze_panic!("Styles not set for loop, broken"),
-    };
-    let mut maze = maze::Maze::new(args);
-    let build_speed = match tables::SPEEDS.choose(&mut rng) {
-        Some(&speed) => speed.1,
-        None => print::maze_panic!("Build speed array empty."),
-    };
-    let solve_speed = match tables::SPEEDS.choose(&mut rng) {
-        Some(&speed) => speed.1,
-        None => print::maze_panic!("Solve speed array empty."),
-    };
-    let build_algo = match tables::BUILDERS.choose(&mut rng) {
-        Some(&algo) => algo.1 .1,
-        None => print::maze_panic!("Build algorithm array empty."),
-    };
-    let solve_algo = match tables::SOLVERS.choose(&mut rng) {
-        Some(&algo) => algo.1 .1,
-        None => print::maze_panic!("Solve algorithm array empty."),
-    };
-    build_algo(&mut maze, build_speed);
-    if modification_probability
-        .expect("Bernoulli innefective")
-        .sample(&mut rng)
-    {
-        match tables::MODIFICATIONS.choose(&mut rng) {
-            Some(modder) => {
-                modder.1 .1(&mut maze, build_speed);
-            }
-            None => print::maze_panic!("Empty modification table."),
-        }
-    }
-    solve_algo(maze, solve_speed);
-}
-
-pub fn run_with_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui::Result<()> {
+pub fn rand_with_channels(tui: &mut tui::Tui) -> tui::Result<()> {
+    let this_run = set_random_args(tui);
     let (impatient_user, worker) = bounded::<bool>(1);
     let (finished_worker, patient_user) = bounded::<bool>(1);
     let mut should_quit = false;
-    let builder_thread = thread::spawn(move || {
+    let worker_thread = thread::spawn(move || {
         let mut maze = maze::Maze::new_channel(&this_run.args, worker);
         this_run.build.1(&mut maze, this_run.build_speed);
+        match this_run.modify {
+            Some(m) => m.1(&mut maze, this_run.build_speed),
+            None => {}
+        }
         this_run.solve.1(maze, this_run.solve_speed);
         match finished_worker.send(true) {
             Ok(_) => {}
@@ -92,31 +52,65 @@ pub fn run_with_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui:
 
     while patient_user.is_empty() {
         match tui.events.next()? {
-            tui::Event::Key(key_event) => match key_event.code {
-                event::KeyCode::Char('q') | event::KeyCode::Esc => {
-                    match impatient_user.send(true) {
-                        Ok(_) => {
-                            should_quit = true;
-                            break;
-                        }
-                        Err(_) => print::maze_panic!("User couldn't exit."),
-                    }
-                }
-                _ => {}
-            },
-            tui::Event::Resize(_, _) => match impatient_user.send(true) {
+            tui::Event::Key(_) | tui::Event::Resize(_, _) => match impatient_user.send(true) {
                 Ok(_) => {
                     should_quit = true;
                     break;
                 }
-                Err(_) => print::maze_panic!("User couldn't resize."),
+                Err(_) => return Err(Box::new(Quit::new())),
             },
             _ => {}
         }
     }
-    builder_thread.join().unwrap();
-    match should_quit {
-        true => Err(Box::new(Quit::new())),
-        false => Ok(()),
+    worker_thread.join().unwrap();
+    if !should_quit {
+        'looking_at_maze: loop {
+            match tui.events.next()? {
+                tui::Event::Key(_) | tui::Event::Resize(_, _) => break 'looking_at_maze,
+                _ => {}
+            }
+        }
     }
+    Ok(())
+}
+
+fn set_random_args(tui: &mut tui::Tui) -> args::MazeRunner {
+    let mut rng = thread_rng();
+    let mut this_run = args::MazeRunner::new();
+    let dimensions = tui.inner_dimensions();
+    this_run.args.odd_rows = (dimensions.rows as f64 / 2.0) as i32;
+    this_run.args.odd_cols = dimensions.cols;
+    this_run.args.offset = dimensions.offset;
+    let modification_probability = Bernoulli::new(0.2);
+    this_run.args.style = match tables::WALL_STYLES.choose(&mut rng) {
+        Some(&style) => style.1,
+        None => print::maze_panic!("Styles not set for loop, broken"),
+    };
+    this_run.build_speed = match tables::SPEEDS.choose(&mut rng) {
+        Some(&speed) => speed.1,
+        None => print::maze_panic!("Build speed array empty."),
+    };
+    this_run.solve_speed = match tables::SPEEDS.choose(&mut rng) {
+        Some(&speed) => speed.1,
+        None => print::maze_panic!("Solve speed array empty."),
+    };
+    this_run.build = match tables::BUILDERS.choose(&mut rng) {
+        Some(&algo) => algo.1,
+        None => print::maze_panic!("Build algorithm array empty."),
+    };
+    this_run.solve = match tables::SOLVERS.choose(&mut rng) {
+        Some(&algo) => algo.1,
+        None => print::maze_panic!("Solve algorithm array empty."),
+    };
+    this_run.modify = None;
+    if modification_probability
+        .expect("Bernoulli innefective")
+        .sample(&mut rng)
+    {
+        this_run.modify = match tables::MODIFICATIONS.choose(&mut rng) {
+            Some(&m) => Some(m.1),
+            None => print::maze_panic!("Modification table empty."),
+        }
+    }
+    this_run
 }

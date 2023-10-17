@@ -1,18 +1,23 @@
 use crate::args;
 use crate::tables;
 
+use builders::build;
 use crossbeam_channel::{self, unbounded};
 use crossterm::event::{
     self, DisableMouseCapture, EnableMouseCapture, Event as CrosstermEvent, KeyEvent, MouseEvent,
 };
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use rand::{seq::SliceRandom, thread_rng};
+use ratatui::prelude::Alignment;
+use ratatui::widgets::ScrollDirection;
+use ratatui::widgets::ScrollbarState;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     prelude::{Color, CrosstermBackend},
     style::Style,
-    widgets::{Block, Borders, Padding},
+    widgets::{Block, Borders, Padding, Paragraph, Scrollbar, ScrollbarOrientation},
 };
+use tui_textarea::{Input, Key, TextArea};
 
 use std::{
     thread,
@@ -37,6 +42,15 @@ pub struct EventHandler {
 pub struct Tui {
     pub terminal: CrosstermTerminal,
     pub events: EventHandler,
+    pub instructions_scroll_state: ScrollbarState,
+    pub vertical_scroll: usize,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Dimension {
+    pub rows: i32,
+    pub cols: i32,
+    pub offset: maze::Offset,
 }
 
 pub type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<std::io::Stderr>>;
@@ -47,7 +61,12 @@ pub type Result<T> = std::result::Result<T, Err>;
 impl Tui {
     /// Constructs a new instance of [`Tui`].
     pub fn new(terminal: CrosstermTerminal, events: EventHandler) -> Self {
-        Self { terminal, events }
+        Self {
+            terminal,
+            events,
+            instructions_scroll_state: ScrollbarState::default(),
+            vertical_scroll: 0,
+        }
     }
 
     /// Initializes the terminal interface.
@@ -70,12 +89,21 @@ impl Tui {
         Ok(())
     }
 
-    /// [`Draw`] the terminal interface by [`rendering`] the widgets.
-    ///
-    /// [`Draw`]: tui::Terminal::draw
-    pub fn draw(&mut self, mut run: &mut args::MazeRunner) -> Result<()> {
-        self.terminal.draw(|frame| ui(&mut run, frame))?;
-        Ok(())
+    pub fn inner_dimensions(&mut self) -> Dimension {
+        let f = self.terminal.get_frame();
+        let overall_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![Constraint::Percentage(90), Constraint::Percentage(10)])
+            .split(f.size());
+        let upper_portion = overall_layout[0];
+        Dimension {
+            rows: (upper_portion.height - 1) as i32,
+            cols: (upper_portion.width - 1) as i32,
+            offset: maze::Offset {
+                add_rows: upper_portion.y as i32,
+                add_cols: upper_portion.x as i32,
+            },
+        }
     }
 
     /// Resets the terminal interface.
@@ -97,9 +125,37 @@ impl Tui {
         Ok(())
     }
 
-    pub fn splash(&mut self) -> Result<()> {
-        self.terminal.draw(|frame| ui_splash(frame))?;
+    pub fn home(&mut self) -> Result<()> {
+        self.terminal.draw(|frame| {
+            ui_home(
+                &mut self.vertical_scroll,
+                &mut self.instructions_scroll_state,
+                frame,
+            )
+        })?;
         Ok(())
+    }
+
+    pub fn background_maze(&mut self) -> Result<()> {
+        self.terminal.draw(|frame| ui_bg_maze(frame))?;
+        Ok(())
+    }
+
+    pub fn scroll(&mut self, dir: ScrollDirection) {
+        match dir {
+            ScrollDirection::Forward => {
+                self.vertical_scroll = self.vertical_scroll.saturating_add(1);
+                self.instructions_scroll_state = self
+                    .instructions_scroll_state
+                    .position(self.vertical_scroll as u16);
+            }
+            ScrollDirection::Backward => {
+                self.vertical_scroll = self.vertical_scroll.saturating_sub(1);
+                self.instructions_scroll_state = self
+                    .instructions_scroll_state
+                    .position(self.vertical_scroll as u16);
+            }
+        }
     }
 }
 
@@ -156,23 +212,7 @@ impl EventHandler {
     }
 }
 
-fn ui(run: &mut args::MazeRunner, f: &mut Frame<'_>) {
-    let frame_block = Block::default().padding(Padding::new(1, 1, 1, 1));
-    let inner_frame = frame_block.inner(f.size());
-    run.args.odd_rows = (inner_frame.height as f64 / 2.0) as i32;
-    run.args.odd_cols = inner_frame.width as i32;
-    run.args.offset = maze::Offset {
-        add_rows: inner_frame.y as i32,
-        add_cols: inner_frame.x as i32,
-    };
-    f.render_widget(frame_block, f.size());
-}
-
-fn ui_splash(f: &mut Frame<'_>) {
-    let overall_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Percentage(90), Constraint::Percentage(10)])
-        .split(f.size());
+fn ui_bg_maze(f: &mut Frame<'_>) {
     let frame_block = Block::default().padding(Padding::new(1, 1, 1, 1));
     let mut background_maze = args::MazeRunner::new();
     let mut rng = thread_rng();
@@ -180,7 +220,7 @@ fn ui_splash(f: &mut Frame<'_>) {
         Some(&style) => style.1,
         None => print::maze_panic!("Styles not found."),
     };
-    background_maze.build.0 = builders::wilson_adder::generate_maze;
+    background_maze.build.0 = builders::recursive_backtracker::generate_maze;
     let inner = frame_block.inner(f.size());
     background_maze.args.odd_rows = inner.height as i32;
     background_maze.args.odd_cols = inner.width as i32;
@@ -188,29 +228,147 @@ fn ui_splash(f: &mut Frame<'_>) {
         add_rows: inner.y as i32,
         add_cols: inner.x as i32,
     };
+    let mut bg_maze = maze::Maze::new(background_maze.args);
+    background_maze.build.0(&mut bg_maze);
+    build::flush_grid(&bg_maze);
+}
+
+fn ui_home(scroll: &mut usize, scroll_state: &mut ScrollbarState, f: &mut Frame<'_>) {
+    let overall_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Percentage(70), Constraint::Percentage(30)])
+        .split(f.size());
+    let frame_block = Block::default().padding(Padding::new(1, 1, 1, 1));
     let popup_layout_v = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Percentage((100 - 50) / 2),
-            Constraint::Percentage(50),
-            Constraint::Percentage((100 - 50) / 2),
+            Constraint::Percentage((100 - 80) / 2),
+            Constraint::Percentage(80),
+            Constraint::Percentage((100 - 80) / 2),
         ])
         .split(overall_layout[0]);
     let popup_layout_h = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
             Constraint::Percentage((100 - 50) / 2),
-            Constraint::Percentage(50),
+            Constraint::Min(70),
             Constraint::Percentage((100 - 50) / 2),
         ])
         .split(popup_layout_v[1])[1];
-
-    let popup_block = Block::default()
-        .borders(Borders::ALL)
-        .border_style(Style::new().bg(Color::Yellow).fg(Color::Yellow))
-        .style(Style::default().bg(Color::Black));
+    let popup_instructions = Paragraph::new(INSTRUCTIONS)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::new().fg(Color::Yellow))
+                .style(Style::default().bg(Color::Black)),
+        )
+        .scroll((*scroll as u16, 0));
     f.render_widget(frame_block, overall_layout[0]);
-    let mut bg_maze = maze::Maze::new(background_maze.args);
-    background_maze.build.0(&mut bg_maze);
-    f.render_widget(popup_block, popup_layout_h);
+    f.render_widget(popup_instructions, popup_layout_h);
+    //scroll_state.content_length(INSTRUCTIONS.lines().count() as u16);
+    f.render_stateful_widget(
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::VerticalRight)
+            .begin_symbol(Some("↑"))
+            .end_symbol(Some("↓")),
+        popup_layout_h,
+        scroll_state,
+    );
+    let text_v = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - 15) / 2),
+            Constraint::Min(3),
+            Constraint::Percentage((100 - 15) / 2),
+        ])
+        .split(overall_layout[1]);
+    let text_h = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - 80) / 2),
+            Constraint::Percentage(80),
+            Constraint::Percentage((100 - 80) / 2),
+        ])
+        .split(text_v[1])[1];
+    let text_block = Block::default()
+        .borders(Borders::ALL)
+        .border_style(Style::new().fg(Color::Yellow))
+        .style(Style::default().bg(Color::Black));
+    let mut text_box = TextArea::default();
+    let default_text = DEFAULT_TEXT.replace(&['\n', '\r'], " ");
+    text_box.set_placeholder_text(default_text);
+    text_box.set_block(text_block);
+    text_box.set_alignment(Alignment::Center);
+    let tb = text_box.widget();
+    f.render_widget(tb, text_h);
 }
+
+static DEFAULT_TEXT: &'static str = "Enter Flags Here";
+static INSTRUCTIONS: &'static str = "
+███╗   ███╗ █████╗ ███████╗███████╗    ████████╗██╗   ██╗██╗
+████╗ ████║██╔══██╗╚══███╔╝██╔════╝    ╚══██╔══╝██║   ██║██║
+██╔████╔██║███████║  ███╔╝ █████╗         ██║   ██║   ██║██║
+██║╚██╔╝██║██╔══██║ ███╔╝  ██╔══╝         ██║   ██║   ██║██║
+██║ ╚═╝ ██║██║  ██║███████╗███████╗       ██║   ╚██████╔╝██║
+╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝       ╚═╝    ╚═════╝ ╚═╝
+
+- Use flags, followed by arguments, in any order
+- Press <Enter> to confirm your flag choices.
+
+(scroll with ↓↑, exit with <q> or <esc>)
+
+-b Builder flag. Set maze building algorithm.
+    - rdfs - Randomized Depth First Search.
+    - kruskal - Randomized Kruskal's algorithm.
+    - prim - Randomized Prim's algorithm.
+    - eller - Randomized Eller's algorithm.
+    - wilson - Loop-Erased Random Path Carver.
+    - wilson-walls - Loop-Erased Random Wall Adder.
+    - fractal - Randomized recursive subdivision.
+    - grid - A random grid pattern.
+    - arena - Open floor with no walls.
+-m Modification flag. Add shortcuts to the maze.
+    - cross - Add crossroads through the center.
+    - x - Add an x of crossing paths through center.
+-s Solver flag. Set maze solving algorithm.
+    - dfs-hunt - Depth First Search
+    - dfs-gather - Depth First Search
+    - dfs-corners - Depth First Search
+    - floodfs-hunt - Depth First Search
+    - floodfs-gather - Depth First Search
+    - floodfs-corners - Depth First Search
+    - rdfs-hunt - Randomized Depth First Search
+    - rdfs-gather - Randomized Depth First Search
+    - rdfs-corners - Randomized Depth First Search
+    - bfs-hunt - Breadth First Search
+    - bfs-gather - Breadth First Search
+    - bfs-corners - Breadth First Search
+    - dark[algorithm]-[game] - A mystery...
+-d Draw flag. Set the line style for the maze.
+    - sharp - The default straight lines.
+    - round - Rounded corners.
+    - doubles - Sharp double lines.
+    - bold - Thicker straight lines.
+    - contrast - Full block width and height walls.
+    - spikes - Connected lines with spikes.
+-sa Solver Animation flag. Watch the maze solution.
+    - Any number 1-7. Speed increases with number.
+-ba Builder Animation flag. Watch the maze build.
+    - Any number 1-7. Speed increases with number.
+
+- Cancel any animation by pressing any key.
+- Zoom out/in with <Ctrl-[-/+]>
+- If any flags are omitted, defaults are used.
+- No arguments will create a random maze.
+
+Examples:
+
+-r 51 -c 111 -b rdfs -s bfs-hunt
+-c 111 -s bfs-gather
+-s bfs-corners -d round -b fractal
+-s dfs-hunt -ba 4 -sa 5 -b wilson-walls -m x
+-h
+
+Enjoy!
+
+";

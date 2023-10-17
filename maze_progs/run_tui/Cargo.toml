@@ -14,6 +14,7 @@ print = { path = "../print" }
 speed = { path = "../speed" }
 crossterm = "0.27"
 ratatui = "0.23"
+tui-textarea = { version = "*", features = ["ratatui-crossterm"], default-features = false }
 rand = "0.8.5"
 ctrlc = "3.4.0"
 crossbeam-channel = "0.5"

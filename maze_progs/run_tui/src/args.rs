@@ -24,8 +24,8 @@ pub struct MazeRunner {
 }
 
 impl MazeRunner {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
+    pub fn new() -> Self {
+        Self {
             args: maze::MazeArgs {
                 odd_rows: 33,
                 odd_cols: 111,
@@ -42,7 +42,7 @@ impl MazeRunner {
             solve_view: ViewingMode::AnimatedPlayback,
             solve_speed: speed::Speed::Speed4,
             solve: (tables::dfs::hunt, tables::dfs::animate_hunt),
-        })
+        }
     }
 
     pub fn set_arg(&mut self, args: &FlagArg) -> Result<(), String> {

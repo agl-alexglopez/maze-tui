@@ -79,7 +79,6 @@ impl SlidingSetWindow {
 
 pub fn generate_maze(maze: &mut maze::Maze) {
     build::fill_maze_with_walls(maze);
-    build::print_overlap_key(maze);
     let mut rng = thread_rng();
     let coin = Bernoulli::new(0.66);
     let mut window = SlidingSetWindow::new(maze);
@@ -176,9 +175,8 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
             );
         }
 
-        match maze.exit() {
-            true => return,
-            false => {}
+        if maze.exit() {
+            return;
         }
 
         for c in (1..maze.col_size() - 1).step_by(2) {
