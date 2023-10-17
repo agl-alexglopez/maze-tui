@@ -267,6 +267,7 @@ fn ui_home(scroll: &mut usize, scroll_state: &mut ScrollbarState, f: &mut Frame<
                 .border_style(Style::new().fg(Color::Yellow))
                 .style(Style::default().bg(Color::Black)),
         )
+        .alignment(Alignment::Center)
         .scroll((*scroll as u16, 0));
     f.render_widget(frame_block, overall_layout[0]);
     f.render_widget(popup_instructions, popup_layout_h);
@@ -322,51 +323,56 @@ static INSTRUCTIONS: &'static str = "
 
 (scroll with ↓↑, exit with <q> or <esc>)
 
--b Builder flag. Set maze building algorithm.
-    - rdfs - Randomized Depth First Search.
-    - kruskal - Randomized Kruskal's algorithm.
-    - prim - Randomized Prim's algorithm.
-    - eller - Randomized Eller's algorithm.
-    - wilson - Loop-Erased Random Path Carver.
-    - wilson-walls - Loop-Erased Random Wall Adder.
-    - fractal - Randomized recursive subdivision.
-    - grid - A random grid pattern.
-    - arena - Open floor with no walls.
--m Modification flag. Add shortcuts to the maze.
-    - cross - Add crossroads through the center.
-    - x - Add an x of crossing paths through center.
--s Solver flag. Set maze solving algorithm.
-    - dfs-hunt - Depth First Search
-    - dfs-gather - Depth First Search
-    - dfs-corners - Depth First Search
-    - floodfs-hunt - Depth First Search
-    - floodfs-gather - Depth First Search
-    - floodfs-corners - Depth First Search
-    - rdfs-hunt - Randomized Depth First Search
-    - rdfs-gather - Randomized Depth First Search
-    - rdfs-corners - Randomized Depth First Search
-    - bfs-hunt - Breadth First Search
-    - bfs-gather - Breadth First Search
-    - bfs-corners - Breadth First Search
-    - dark[algorithm]-[game] - A mystery...
--d Draw flag. Set the line style for the maze.
-    - sharp - The default straight lines.
-    - round - Rounded corners.
-    - doubles - Sharp double lines.
-    - bold - Thicker straight lines.
-    - contrast - Full block width and height walls.
-    - spikes - Connected lines with spikes.
--sa Solver Animation flag. Watch the maze solution.
-    - Any number 1-7. Speed increases with number.
--ba Builder Animation flag. Watch the maze build.
-    - Any number 1-7. Speed increases with number.
+BUILDER FLAG[-b] Set maze building algorithm.
+    rdfs - Randomized Depth First Search.
+    kruskal - Randomized Kruskal's algorithm.
+    prim - Randomized Prim's algorithm.
+    eller - Randomized Eller's algorithm.
+    wilson - Loop-Erased Random Path Carver.
+    wilson-walls - Loop-Erased Random Wall Adder.
+    fractal - Randomized recursive subdivision.
+    grid - A random grid pattern.
+    arena - Open floor with no walls.
 
-- Cancel any animation by pressing any key.
-- Zoom out/in with <Ctrl-[-/+]>
-- If any flags are omitted, defaults are used.
-- No arguments will create a random maze.
+MODIFICATION FLAG[-m] Add shortcuts to the maze.
+    cross - Add crossroads through the center.
+    x - Add an x of crossing paths through center.
 
-Examples:
+SOLVER FLAG[-s] Set maze solving algorithm.
+    dfs-hunt - Depth First Search
+    dfs-gather - Depth First Search
+    dfs-corners - Depth First Search
+    floodfs-hunt - Depth First Search
+    floodfs-gather - Depth First Search
+    floodfs-corners - Depth First Search
+    rdfs-hunt - Randomized Depth First Search
+    rdfs-gather - Randomized Depth First Search
+    rdfs-corners - Randomized Depth First Search
+    bfs-hunt - Breadth First Search
+    bfs-gather - Breadth First Search
+    bfs-corners - Breadth First Search
+    dark[algorithm]-[game] - A mystery...
+
+DRAW FLAG[-d] Set the line style for the maze.
+    sharp - The default straight lines.
+    round - Rounded corners.
+    doubles - Sharp double lines.
+    bold - Thicker straight lines.
+    contrast - Full block width and height walls.
+    spikes - Connected lines with spikes.
+
+SOLVER ANIMATION FLAG[-sa] Watch the maze solution.
+    Any number 1-7. Speed increases with number.
+
+BUILDER ANIMATION FLAG[-ba] Watch the maze build.
+    Any number 1-7. Speed increases with number.
+
+Cancel any animation by pressing any key.
+Zoom out/in with <Ctrl-[-/+]>
+If any flags are omitted, defaults are used.
+No arguments will create a random maze.
+
+EXAMPLES:
 
 -r 51 -c 111 -b rdfs -s bfs-hunt
 -c 111 -s bfs-gather
