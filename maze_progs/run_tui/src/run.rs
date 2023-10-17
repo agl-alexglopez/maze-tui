@@ -76,7 +76,7 @@ fn set_random_args(tui: &mut tui::Tui) -> args::MazeRunner {
     let mut rng = thread_rng();
     let mut this_run = args::MazeRunner::new();
     let dimensions = tui.inner_dimensions();
-    this_run.args.odd_rows = (dimensions.rows as f64 / 2.0) as i32;
+    this_run.args.odd_rows = (dimensions.rows as f64 / 1.3) as i32;
     this_run.args.odd_cols = dimensions.cols;
     this_run.args.offset = dimensions.offset;
     let modification_probability = Bernoulli::new(0.2);

@@ -195,7 +195,6 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
         maze.offset(),
     );
     let square = &maze[point.row as usize][point.col as usize];
-    // We have some special printing for the finish square. Not here.
     if (square & FINISH_BIT) != 0 {
         let ansi = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
         match queue!(

@@ -341,7 +341,9 @@ fn hunter(monitor: solve::SolverMonitor, guide: solve::ThreadGuide) {
             if (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT) != 0 {
                 lk.win.get_or_insert(guide.index);
                 for p in dfs {
-                    lk.maze[p.row as usize][p.col as usize] |= guide.paint;
+                    if (lk.maze[p.row as usize][p.col as usize] & solve::FINISH_BIT) == 0 {
+                        lk.maze[p.row as usize][p.col as usize] |= guide.paint;
+                    }
                 }
                 return;
             }
@@ -445,7 +447,9 @@ fn gatherer(monitor: solve::SolverMonitor, guide: solve::ThreadGuide) {
             {
                 lk.maze[cur.row as usize][cur.col as usize] |= seen;
                 for p in dfs {
-                    lk.maze[p.row as usize][p.col as usize] |= guide.paint;
+                    if (lk.maze[p.row as usize][p.col as usize] & solve::FINISH_BIT) == 0 {
+                        lk.maze[p.row as usize][p.col as usize] |= guide.paint;
+                    }
                 }
                 return;
             }
