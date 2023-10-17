@@ -2,12 +2,10 @@ use crate::args;
 use crate::tables;
 use crate::tui;
 use crossbeam_channel::bounded;
-use crossterm::event::{
-    self, DisableMouseCapture, EnableMouseCapture, Event as CrosstermEvent, KeyEvent, MouseEvent,
-};
 use maze;
 use print;
 use rand::{distributions::Bernoulli, distributions::Distribution, seq::SliceRandom, thread_rng};
+use solvers::solve;
 use std::error;
 use std::fmt;
 use std::thread;
@@ -43,7 +41,7 @@ pub fn rand_with_channels(tui: &mut tui::Tui) -> tui::Result<()> {
             Some(m) => m.1(&mut maze, this_run.build_speed),
             None => {}
         }
-        this_run.solve.1(maze, this_run.solve_speed);
+        this_run.solve.1(solve::Solver::new(maze), this_run.solve_speed);
         match finished_worker.send(true) {
             Ok(_) => {}
             Err(_) => print::maze_panic!("Worker sender disconnected."),

@@ -17,6 +17,7 @@ use ratatui::{
     style::Style,
     widgets::{Block, Borders, Padding, Paragraph, Scrollbar, ScrollbarOrientation},
 };
+use solvers::solve;
 use tui_textarea::{Input, Key, TextArea};
 
 use std::{
@@ -230,7 +231,11 @@ fn ui_bg_maze(f: &mut Frame<'_>) {
     };
     let mut bg_maze = maze::Maze::new(background_maze.args);
     background_maze.build.0(&mut bg_maze);
-    build::flush_grid(&bg_maze);
+    let monitor = solve::Solver::new(bg_maze);
+    background_maze.solve.0(monitor.clone());
+    if let Ok(lk) = monitor.clone().lock() {
+        solve::print_paths(&lk.maze);
+    }
 }
 
 fn ui_home(scroll: &mut usize, scroll_state: &mut ScrollbarState, f: &mut Frame<'_>) {

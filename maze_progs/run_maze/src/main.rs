@@ -18,12 +18,16 @@ use solvers::darkrdfs;
 use solvers::dfs;
 use solvers::floodfs;
 use solvers::rdfs;
+use solvers::solve;
 
 use std::collections::{HashMap, HashSet};
 use std::env;
 
 type BuildFunction = (fn(&mut maze::Maze), fn(&mut maze::Maze, speed::Speed));
-type SolveFunction = (fn(maze::BoxMaze), fn(maze::BoxMaze, speed::Speed));
+type SolveFunction = (
+    fn(solve::SolverMonitor),
+    fn(solve::SolverMonitor, speed::Speed),
+);
 
 struct FlagArg<'a, 'b> {
     flag: &'a str,
@@ -182,169 +186,169 @@ fn main() {
             (
                 String::from("dfs-hunt"),
                 (
-                    dfs::hunt as fn(maze::BoxMaze),
-                    dfs::animate_hunt as fn(maze::BoxMaze, speed::Speed),
+                    dfs::hunt as fn(solve::SolverMonitor),
+                    dfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("dfs-gather"),
                 (
-                    dfs::gather as fn(maze::BoxMaze),
-                    dfs::animate_gather as fn(maze::BoxMaze, speed::Speed),
+                    dfs::gather as fn(solve::SolverMonitor),
+                    dfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("dfs-corners"),
                 (
-                    dfs::corner as fn(maze::BoxMaze),
-                    dfs::animate_corner as fn(maze::BoxMaze, speed::Speed),
+                    dfs::corner as fn(solve::SolverMonitor),
+                    dfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("bfs-hunt"),
                 (
-                    bfs::hunt as fn(maze::BoxMaze),
-                    bfs::animate_hunt as fn(maze::BoxMaze, speed::Speed),
+                    bfs::hunt as fn(solve::SolverMonitor),
+                    bfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("bfs-gather"),
                 (
-                    bfs::gather as fn(maze::BoxMaze),
-                    bfs::animate_gather as fn(maze::BoxMaze, speed::Speed),
+                    bfs::gather as fn(solve::SolverMonitor),
+                    bfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("bfs-corners"),
                 (
-                    bfs::corner as fn(maze::BoxMaze),
-                    bfs::animate_corner as fn(maze::BoxMaze, speed::Speed),
+                    bfs::corner as fn(solve::SolverMonitor),
+                    bfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("floodfs-hunt"),
                 (
-                    floodfs::hunt as fn(maze::BoxMaze),
-                    floodfs::animate_hunt as fn(maze::BoxMaze, speed::Speed),
+                    floodfs::hunt as fn(solve::SolverMonitor),
+                    floodfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("floodfs-gather"),
                 (
-                    floodfs::gather as fn(maze::BoxMaze),
-                    floodfs::animate_gather as fn(maze::BoxMaze, speed::Speed),
+                    floodfs::gather as fn(solve::SolverMonitor),
+                    floodfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("floodfs-corners"),
                 (
-                    floodfs::corner as fn(maze::BoxMaze),
-                    floodfs::animate_corner as fn(maze::BoxMaze, speed::Speed),
+                    floodfs::corner as fn(solve::SolverMonitor),
+                    floodfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("rdfs-hunt"),
                 (
-                    rdfs::hunt as fn(maze::BoxMaze),
-                    rdfs::animate_hunt as fn(maze::BoxMaze, speed::Speed),
+                    rdfs::hunt as fn(solve::SolverMonitor),
+                    rdfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("rdfs-gather"),
                 (
-                    rdfs::gather as fn(maze::BoxMaze),
-                    rdfs::animate_gather as fn(maze::BoxMaze, speed::Speed),
+                    rdfs::gather as fn(solve::SolverMonitor),
+                    rdfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("rdfs-corners"),
                 (
-                    rdfs::corner as fn(maze::BoxMaze),
-                    rdfs::animate_corner as fn(maze::BoxMaze, speed::Speed),
+                    rdfs::corner as fn(solve::SolverMonitor),
+                    rdfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("darkdfs-hunt"),
                 (
-                    dfs::hunt as fn(maze::BoxMaze),
-                    darkdfs::animate_hunt as fn(maze::BoxMaze, speed::Speed),
+                    dfs::hunt as fn(solve::SolverMonitor),
+                    darkdfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("darkdfs-gather"),
                 (
-                    dfs::gather as fn(maze::BoxMaze),
-                    darkdfs::animate_gather as fn(maze::BoxMaze, speed::Speed),
+                    dfs::gather as fn(solve::SolverMonitor),
+                    darkdfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("darkdfs-corners"),
                 (
-                    dfs::corner as fn(maze::BoxMaze),
-                    darkdfs::animate_corner as fn(maze::BoxMaze, speed::Speed),
+                    dfs::corner as fn(solve::SolverMonitor),
+                    darkdfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("darkfloodfs-hunt"),
                 (
-                    floodfs::hunt as fn(maze::BoxMaze),
-                    darkfloodfs::animate_hunt as fn(maze::BoxMaze, speed::Speed),
+                    floodfs::hunt as fn(solve::SolverMonitor),
+                    darkfloodfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("darkfloodfs-gather"),
                 (
-                    floodfs::gather as fn(maze::BoxMaze),
-                    darkfloodfs::animate_gather as fn(maze::BoxMaze, speed::Speed),
+                    floodfs::gather as fn(solve::SolverMonitor),
+                    darkfloodfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("darkfloodfs-corners"),
                 (
-                    floodfs::corner as fn(maze::BoxMaze),
-                    darkfloodfs::animate_corner as fn(maze::BoxMaze, speed::Speed),
+                    floodfs::corner as fn(solve::SolverMonitor),
+                    darkfloodfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("darkrdfs-hunt"),
                 (
-                    rdfs::hunt as fn(maze::BoxMaze),
-                    darkrdfs::animate_hunt as fn(maze::BoxMaze, speed::Speed),
+                    rdfs::hunt as fn(solve::SolverMonitor),
+                    darkrdfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("darkrdfs-gather"),
                 (
-                    rdfs::gather as fn(maze::BoxMaze),
-                    darkrdfs::animate_gather as fn(maze::BoxMaze, speed::Speed),
+                    rdfs::gather as fn(solve::SolverMonitor),
+                    darkrdfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("darkrdfs-corners"),
                 (
-                    rdfs::corner as fn(maze::BoxMaze),
-                    darkrdfs::animate_corner as fn(maze::BoxMaze, speed::Speed),
+                    rdfs::corner as fn(solve::SolverMonitor),
+                    darkrdfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("darkbfs-hunt"),
                 (
-                    bfs::hunt as fn(maze::BoxMaze),
-                    darkbfs::animate_hunt as fn(maze::BoxMaze, speed::Speed),
+                    bfs::hunt as fn(solve::SolverMonitor),
+                    darkbfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("darkbfs-gather"),
                 (
-                    bfs::gather as fn(maze::BoxMaze),
-                    darkbfs::animate_gather as fn(maze::BoxMaze, speed::Speed),
+                    bfs::gather as fn(solve::SolverMonitor),
+                    darkbfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("darkbfs-corners"),
                 (
-                    bfs::corner as fn(maze::BoxMaze),
-                    darkbfs::animate_corner as fn(maze::BoxMaze, speed::Speed),
+                    bfs::corner as fn(solve::SolverMonitor),
+                    darkbfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
         ]),
@@ -424,10 +428,11 @@ fn main() {
 
     // Ensure a smooth transition from build to solve with no flashing.
     print::set_cursor_position(maze::Point::default(), maze::Offset::default());
+    let monitor = solve::Solver::new(maze);
 
     match run.solve_view {
-        ViewingMode::StaticImage => run.solve.0(maze),
-        ViewingMode::AnimatedPlayback => run.solve.1(maze, run.solve_speed),
+        ViewingMode::StaticImage => run.solve.0(monitor),
+        ViewingMode::AnimatedPlayback => run.solve.1(monitor, run.solve_speed),
     }
 }
 

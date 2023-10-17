@@ -18,9 +18,13 @@ pub use solvers::darkrdfs;
 pub use solvers::dfs;
 pub use solvers::floodfs;
 pub use solvers::rdfs;
+pub use solvers::solve;
 
 pub type BuildFunction = (fn(&mut maze::Maze), fn(&mut maze::Maze, speed::Speed));
-pub type SolveFunction = (fn(maze::BoxMaze), fn(maze::BoxMaze, speed::Speed));
+pub type SolveFunction = (
+    fn(solve::SolverMonitor),
+    fn(solve::SolverMonitor, speed::Speed),
+);
 
 pub fn search_table<T>(arg: &str, table: &[(&'static str, T)]) -> Option<T>
 where
@@ -73,7 +77,7 @@ pub const MODIFICATIONS: [(&'static str, BuildFunction); 2] = [
     ("cross", (modify::add_cross, modify::add_cross_animated)),
     ("x", (modify::add_x, modify::add_x_animated)),
 ];
-pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
+pub const SOLVERS: [(&'static str, SolveFunction); 24] = [
     ("dfs-hunt", (dfs::hunt, dfs::animate_hunt)),
     ("dfs-gather", (dfs::gather, dfs::animate_gather)),
     ("dfs-corner", (dfs::corner, dfs::animate_corner)),
@@ -106,14 +110,6 @@ pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
     (
         "darkfloodfs-corner",
         (floodfs::corner, darkfloodfs::animate_corner),
-    ),
-    ("runs", (runs::paint_run_lengths, runs::animate_run_lengths)),
-    (
-        "distance",
-        (
-            distance::paint_distance_from_center,
-            distance::animate_distance_from_center,
-        ),
     ),
 ];
 pub const SPEEDS: [(&'static str, speed::Speed); 7] = [

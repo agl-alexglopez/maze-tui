@@ -88,40 +88,38 @@ pub struct Maze {
     wall_style_index: usize,
     receiver: Option<Receiver<bool>>,
 }
-pub type BoxMaze = Box<Maze>;
 
 // Core Maze Object Implementation
 
 // A maze in this program is intended to be shared both mutably and immutably.
 // A maze only provides building blocks and some convenience read-only data.
 // Builders and solvers use the visitor pattern to operate on and extend
-// what they wish on the maze. A BoxMaze allows borrows during its scope.
-// This is necessary for the multithreading in the solver functions.
+// what they wish on the maze.
 impl Maze {
-    pub fn new(args: MazeArgs) -> Box<Self> {
+    pub fn new(args: MazeArgs) -> Self {
         let rows = args.odd_rows + 1 - (args.odd_rows % 2);
         let cols = args.odd_cols + 1 - (args.odd_cols % 2);
-        Box::new(Self {
+        Self {
             maze: (vec![0; rows as usize * cols as usize]),
             maze_row_size: (rows),
             maze_col_size: (cols),
             offset: args.offset,
             wall_style_index: (args.style as usize),
             receiver: None,
-        })
+        }
     }
 
-    pub fn new_channel(args: &MazeArgs, rec: Receiver<bool>) -> Box<Self> {
+    pub fn new_channel(args: &MazeArgs, rec: Receiver<bool>) -> Self {
         let rows = args.odd_rows + 1 - (args.odd_rows % 2);
         let cols = args.odd_cols + 1 - (args.odd_cols % 2);
-        Box::new(Self {
+        Self {
             maze: (vec![0; rows as usize * cols as usize]),
             maze_row_size: (rows),
             maze_col_size: (cols),
             offset: args.offset,
             wall_style_index: (args.style as usize),
             receiver: Some(rec),
-        })
+        }
     }
 
     pub fn exit(&self) -> bool {

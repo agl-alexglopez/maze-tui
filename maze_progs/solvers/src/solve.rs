@@ -23,27 +23,13 @@ pub struct ThreadGuide {
 }
 
 pub struct Solver {
-    pub maze: maze::BoxMaze,
-    pub win: Option<usize>,
-}
-
-impl Solver {
-    pub fn new(boxed_maze: maze::BoxMaze) -> Arc<Mutex<Self>> {
-        Arc::new(Mutex::new(Self {
-            maze: boxed_maze,
-            win: None,
-        }))
-    }
-}
-
-pub struct BfsSolver {
-    pub maze: maze::BoxMaze,
+    pub maze: maze::Maze,
     pub win: Option<usize>,
     pub win_path: Vec<(maze::Point, ThreadPaint)>,
 }
 
-impl BfsSolver {
-    pub fn new(boxed_maze: maze::BoxMaze) -> Arc<Mutex<Self>> {
+impl Solver {
+    pub fn new(boxed_maze: maze::Maze) -> Arc<Mutex<Self>> {
         Arc::new(Mutex::new(Self {
             maze: boxed_maze,
             win: None,
@@ -52,7 +38,6 @@ impl BfsSolver {
     }
 }
 
-pub type BfsMonitor = Arc<Mutex<BfsSolver>>;
 pub type SolverMonitor = Arc<Mutex<Solver>>;
 
 // Public Module Functions
