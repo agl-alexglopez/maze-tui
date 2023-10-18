@@ -67,6 +67,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::build_wall_outline(maze);
     build::flush_grid(maze);
+    build::print_overlap_key_animated(maze);
     let mut rng = thread_rng();
     let mut cur = RandomWalk {
         prev_row_start: 2,

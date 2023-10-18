@@ -2,19 +2,17 @@ use crate::args;
 use crate::run;
 use crate::tables;
 
-use builders::build;
 use crossbeam_channel::{self, unbounded};
-use crossterm::event::{
-    self, DisableMouseCapture, EnableMouseCapture, Event, KeyEvent, MouseEvent,
-};
+use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use rand::{seq::SliceRandom, thread_rng};
 use ratatui::prelude::Alignment;
 use ratatui::widgets::ScrollDirection;
 use ratatui::widgets::ScrollbarState;
+use ratatui::widgets::Wrap;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
-    prelude::{Color, CrosstermBackend},
+    prelude::{Color, CrosstermBackend, Modifier},
     style::Style,
     widgets::{Block, Borders, Padding, Paragraph, Scrollbar, ScrollbarOrientation},
 };
@@ -26,12 +24,20 @@ use std::{
     time::{Duration, Instant},
 };
 
+pub static PLACEHOLDER: &'static str = "Start Typing to Enter Command";
+
 pub type CtEvent = crossterm::event::Event;
 
 #[derive(Debug)]
+pub enum Pack {
+    Tick,
+    Ev(CtEvent),
+}
+
+#[derive(Debug)]
 pub struct EventHandler {
-    pub sender: crossbeam_channel::Sender<CtEvent>,
-    pub receiver: crossbeam_channel::Receiver<CtEvent>,
+    pub sender: crossbeam_channel::Sender<Pack>,
+    pub receiver: crossbeam_channel::Receiver<Pack>,
     pub handler: thread::JoinHandle<()>,
 }
 
@@ -155,10 +161,26 @@ impl Tui {
         }
     }
 
+    pub fn error_popup(&mut self, msg: String) -> Result<()> {
+        self.background_maze()?;
+        self.terminal.draw(|f| ui_err(&msg, f))?;
+        'reading_message: loop {
+            match self.events.next()? {
+                Pack::Ev(CtEvent::Key(_)) | Pack::Ev(CtEvent::Resize(_, _)) => {
+                    break 'reading_message;
+                }
+                _ => {}
+            }
+        }
+        self.background_maze()?;
+        Ok(())
+    }
+
     pub fn run(&mut self) -> Result<()> {
         let mut cmd_prompt = TextArea::default();
         cmd_prompt.set_cursor_line_style(Style::default());
-        cmd_prompt.set_placeholder_text("Enter Commands Here");
+        cmd_prompt.set_placeholder_text(PLACEHOLDER);
+        cmd_prompt.set_placeholder_style(Style::default().fg(Color::LightYellow));
         let text_block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::new().fg(Color::Yellow))
@@ -169,29 +191,31 @@ impl Tui {
         'render: loop {
             self.home(&mut cmd_prompt)?;
             match self.events.next()? {
-                CtEvent::Resize(_, _) => {
-                    self.background_maze()?;
-                }
-                ev => {
-                    match ev.into() {
-                        Input { key: Key::Esc, .. } => break 'render,
-                        Input { key: Key::Down, .. } => self.scroll(ScrollDirection::Forward),
-                        Input { key: Key::Up, .. } => self.scroll(ScrollDirection::Backward),
-                        Input {
-                            key: Key::Enter, ..
-                        } => {
-                            self.terminal.clear()?;
-                            //run::run_command(cmd_prompt.lines()[0].to_string(), self)?;
-                            run::rand_with_channels(self)?;
-                            self.terminal.clear()?;
-                            self.background_maze()?;
+                Pack::Tick => {}
+                Pack::Ev(ev) => match ev {
+                    CtEvent::Resize(_, _) => {
+                        self.background_maze()?;
+                    }
+                    e => {
+                        match e.into() {
+                            Input { key: Key::Esc, .. } => break 'render,
+                            Input { key: Key::Down, .. } => self.scroll(ScrollDirection::Forward),
+                            Input { key: Key::Up, .. } => self.scroll(ScrollDirection::Backward),
+                            Input {
+                                key: Key::Enter, ..
+                            } => {
+                                run::run_command(&cmd_prompt.lines()[0], self)?;
+                                //run::rand_with_channels(self)?;
+                                self.terminal.clear()?;
+                                self.background_maze()?;
+                            }
+                            input => {
+                                // TextArea::input returns if the input modified its text
+                                let _ = cmd_prompt.input(input);
+                            }
                         }
-                        input => {
-                            // TextArea::input returns if the input modified its text
-                            let _ = cmd_prompt.input(input);
-                        }
-                    };
-                }
+                    }
+                },
             }
         }
         Ok(())
@@ -205,14 +229,21 @@ impl EventHandler {
         let (sender, receiver) = unbounded();
         let handler = {
             let sender = sender.clone();
-            thread::spawn(move || loop {
-                let timeout = tick_rate
-                    .checked_sub(Instant::now().elapsed())
-                    .unwrap_or(tick_rate);
+            thread::spawn(move || {
+                let mut last_tick = Instant::now();
+                loop {
+                    let timeout = tick_rate
+                        .checked_sub(Instant::now().elapsed())
+                        .unwrap_or(tick_rate);
 
-                if event::poll(timeout).expect("no events available") {
-                    let package = event::read().expect("unable to read event");
-                    sender.send(package).expect("couldn't send.");
+                    if event::poll(timeout).expect("no events available") {
+                        let package = event::read().expect("unable to read event");
+                        sender.send(Pack::Ev(package)).expect("couldn't send.");
+                    }
+                    if last_tick.elapsed() >= tick_rate {
+                        sender.send(Pack::Tick).expect("failed to send tick event");
+                        last_tick = Instant::now();
+                    }
                 }
             })
         };
@@ -227,7 +258,7 @@ impl EventHandler {
     ///
     /// This function will always block the current thread if
     /// there is no data available and it's possible for more data to be sent.
-    pub fn next(&self) -> Result<CtEvent> {
+    pub fn next(&self) -> Result<Pack> {
         Ok(self.receiver.recv()?)
     }
 }
@@ -325,7 +356,40 @@ fn ui_home(
     f.render_widget(tb, text_h);
 }
 
-static DEFAULT_TEXT: &'static str = "Enter Flags Here";
+fn ui_err(msg: &str, f: &mut Frame<'_>) {
+    let popup_layout_v = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - 15) / 2),
+            Constraint::Min(4),
+            Constraint::Percentage((100 - 15) / 2),
+        ])
+        .split(f.size());
+    let popup_layout_h = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - 30) / 2),
+            Constraint::Percentage(30),
+            Constraint::Percentage((100 - 30) / 2),
+        ])
+        .split(popup_layout_v[1])[1];
+    let popup_instructions = Paragraph::new(msg)
+        .wrap(Wrap { trim: true })
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::new().fg(Color::Black).bg(Color::Red))
+                .style(
+                    Style::default()
+                        .bg(Color::Black)
+                        .fg(Color::Red)
+                        .add_modifier(Modifier::BOLD),
+                ),
+        )
+        .alignment(Alignment::Center);
+    f.render_widget(popup_instructions, popup_layout_h);
+}
+
 static INSTRUCTIONS: &'static str = "
 ███╗   ███╗ █████╗ ███████╗███████╗    ████████╗██╗   ██╗██╗
 ████╗ ████║██╔══██╗╚══███╔╝██╔════╝    ╚══██╔══╝██║   ██║██║
@@ -369,7 +433,7 @@ SOLVER FLAG[-s] Set maze solving algorithm.
     [bfs-corners] - Breadth First Search
     [dark[algorithm]-[game]] - A mystery...
 
-DRAW FLAG[-d] Set the line style for the maze.
+WALL FLAG[-w] Set the wall style for the maze.
     [sharp] - The default straight lines.
     [round] - Rounded corners.
     [doubles] - Sharp double lines.
@@ -394,8 +458,6 @@ EXAMPLES:
 -s bfs-gather -b prim
 -s bfs-corners -d round -b fractal
 -s dfs-hunt -ba 4 -sa 5 -b wilson-walls -m x
--h
 
 Enjoy!
-
 ";

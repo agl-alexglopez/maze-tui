@@ -36,6 +36,15 @@ where
         .map(|(_, t)| t.clone())
 }
 
+pub const FLAGS: [(&'static str, &'static str); 6] = [
+    ("-b", "-b"),
+    ("-m", "-m"),
+    ("-s", "-s"),
+    ("-w", "-w"),
+    ("-sa", "-sa"),
+    ("-ba", "-ba"),
+];
+
 pub const WALL_STYLES: [(&'static str, maze::MazeStyle); 6] = [
     ("sharp", (maze::MazeStyle::Sharp)),
     ("round", (maze::MazeStyle::Round)),

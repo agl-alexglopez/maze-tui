@@ -21,6 +21,9 @@ pub fn add_cross_animated(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     for r in 0..maze.row_size() {
         for c in 0..maze.col_size() {
+            if maze.exit() {
+                return;
+            }
             if (r == maze.row_size() / 2 && c > 1 && c < maze.col_size() - 2)
                 || (c == maze.col_size() / 2 && r > 1 && r < maze.row_size() - 2)
             {
@@ -46,6 +49,9 @@ pub fn add_x_animated(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
     for r in 1..maze.row_size() - 1 {
         for c in 1..maze.col_size() - 1 {
+            if maze.exit() {
+                return;
+            }
             add_positive_slope_animated(maze, maze::Point { row: r, col: c }, animation);
             add_negative_slope_animated(maze, maze::Point { row: r, col: c }, animation);
         }
