@@ -29,6 +29,10 @@ impl fmt::Display for Quit {
 
 impl error::Error for Quit {}
 
+pub fn run_command(cmd: String, tui: &mut tui::Tui) -> tui::Result<()> {
+    Ok(())
+}
+
 pub fn rand_with_channels(tui: &mut tui::Tui) -> tui::Result<()> {
     let this_run = set_random_args(tui);
     let (impatient_user, worker) = bounded::<bool>(1);
@@ -50,7 +54,7 @@ pub fn rand_with_channels(tui: &mut tui::Tui) -> tui::Result<()> {
 
     while patient_user.is_empty() {
         match tui.events.next()? {
-            tui::Event::Key(_) | tui::Event::Resize(_, _) => match impatient_user.send(true) {
+            tui::CtEvent::Key(_) | tui::CtEvent::Resize(_, _) => match impatient_user.send(true) {
                 Ok(_) => {
                     should_quit = true;
                     break;
@@ -64,7 +68,7 @@ pub fn rand_with_channels(tui: &mut tui::Tui) -> tui::Result<()> {
     if !should_quit {
         'looking_at_maze: loop {
             match tui.events.next()? {
-                tui::Event::Key(_) | tui::Event::Resize(_, _) => break 'looking_at_maze,
+                tui::CtEvent::Key(_) | tui::CtEvent::Resize(_, _) => break 'looking_at_maze,
                 _ => {}
             }
         }

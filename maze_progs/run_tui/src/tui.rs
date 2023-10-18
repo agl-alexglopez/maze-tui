@@ -1,10 +1,11 @@
 use crate::args;
+use crate::run;
 use crate::tables;
 
 use builders::build;
 use crossbeam_channel::{self, unbounded};
 use crossterm::event::{
-    self, DisableMouseCapture, EnableMouseCapture, Event as CrosstermEvent, KeyEvent, MouseEvent,
+    self, DisableMouseCapture, EnableMouseCapture, Event, KeyEvent, MouseEvent,
 };
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use rand::{seq::SliceRandom, thread_rng};
@@ -25,18 +26,12 @@ use std::{
     time::{Duration, Instant},
 };
 
-#[derive(Clone, Copy, Debug)]
-pub enum Event {
-    Tick,
-    Key(KeyEvent),
-    Mouse(MouseEvent),
-    Resize(u16, u16),
-}
+pub type CtEvent = crossterm::event::Event;
 
 #[derive(Debug)]
 pub struct EventHandler {
-    pub sender: crossbeam_channel::Sender<Event>,
-    pub receiver: crossbeam_channel::Receiver<Event>,
+    pub sender: crossbeam_channel::Sender<CtEvent>,
+    pub receiver: crossbeam_channel::Receiver<CtEvent>,
     pub handler: thread::JoinHandle<()>,
 }
 
@@ -126,9 +121,10 @@ impl Tui {
         Ok(())
     }
 
-    pub fn home(&mut self) -> Result<()> {
+    pub fn home(&mut self, cmd: &mut TextArea) -> Result<()> {
         self.terminal.draw(|frame| {
             ui_home(
+                cmd,
                 &mut self.vertical_scroll,
                 &mut self.instructions_scroll_state,
                 frame,
@@ -158,6 +154,48 @@ impl Tui {
             }
         }
     }
+
+    pub fn run(&mut self) -> Result<()> {
+        let mut cmd_prompt = TextArea::default();
+        cmd_prompt.set_cursor_line_style(Style::default());
+        cmd_prompt.set_placeholder_text("Enter Commands Here");
+        let text_block = Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::new().fg(Color::Yellow))
+            .style(Style::default().bg(Color::Black));
+        cmd_prompt.set_block(text_block);
+        cmd_prompt.set_alignment(Alignment::Center);
+        self.background_maze()?;
+        'render: loop {
+            self.home(&mut cmd_prompt)?;
+            match self.events.next()? {
+                CtEvent::Resize(_, _) => {
+                    self.background_maze()?;
+                }
+                ev => {
+                    match ev.into() {
+                        Input { key: Key::Esc, .. } => break 'render,
+                        Input { key: Key::Down, .. } => self.scroll(ScrollDirection::Forward),
+                        Input { key: Key::Up, .. } => self.scroll(ScrollDirection::Backward),
+                        Input {
+                            key: Key::Enter, ..
+                        } => {
+                            self.terminal.clear()?;
+                            //run::run_command(cmd_prompt.lines()[0].to_string(), self)?;
+                            run::rand_with_channels(self)?;
+                            self.terminal.clear()?;
+                            self.background_maze()?;
+                        }
+                        input => {
+                            // TextArea::input returns if the input modified its text
+                            let _ = cmd_prompt.input(input);
+                        }
+                    };
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 impl EventHandler {
@@ -167,33 +205,14 @@ impl EventHandler {
         let (sender, receiver) = unbounded();
         let handler = {
             let sender = sender.clone();
-            thread::spawn(move || {
-                let mut last_tick = Instant::now();
-                loop {
-                    let timeout = tick_rate
-                        .checked_sub(last_tick.elapsed())
-                        .unwrap_or(tick_rate);
+            thread::spawn(move || loop {
+                let timeout = tick_rate
+                    .checked_sub(Instant::now().elapsed())
+                    .unwrap_or(tick_rate);
 
-                    if event::poll(timeout).expect("no events available") {
-                        match event::read().expect("unable to read event") {
-                            CrosstermEvent::Key(e) => {
-                                if e.kind == event::KeyEventKind::Press {
-                                    sender.send(Event::Key(e))
-                                } else {
-                                    Ok(()) // ignore KeyEventKind::Release on windows
-                                }
-                            }
-                            CrosstermEvent::Mouse(e) => sender.send(Event::Mouse(e)),
-                            CrosstermEvent::Resize(w, h) => sender.send(Event::Resize(w, h)),
-                            _ => unimplemented!(),
-                        }
-                        .expect("failed to send terminal event")
-                    }
-
-                    if last_tick.elapsed() >= tick_rate {
-                        sender.send(Event::Tick).expect("failed to send tick event");
-                        last_tick = Instant::now();
-                    }
+                if event::poll(timeout).expect("no events available") {
+                    let package = event::read().expect("unable to read event");
+                    sender.send(package).expect("couldn't send.");
                 }
             })
         };
@@ -208,7 +227,7 @@ impl EventHandler {
     ///
     /// This function will always block the current thread if
     /// there is no data available and it's possible for more data to be sent.
-    pub fn next(&self) -> Result<Event> {
+    pub fn next(&self) -> Result<CtEvent> {
         Ok(self.receiver.recv()?)
     }
 }
@@ -238,7 +257,12 @@ fn ui_bg_maze(f: &mut Frame<'_>) {
     }
 }
 
-fn ui_home(scroll: &mut usize, scroll_state: &mut ScrollbarState, f: &mut Frame<'_>) {
+fn ui_home(
+    cmd: &mut TextArea,
+    scroll: &mut usize,
+    scroll_state: &mut ScrollbarState,
+    f: &mut Frame<'_>,
+) {
     let overall_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Percentage(70), Constraint::Percentage(30)])
@@ -297,16 +321,7 @@ fn ui_home(scroll: &mut usize, scroll_state: &mut ScrollbarState, f: &mut Frame<
             Constraint::Percentage((100 - 50) / 2),
         ])
         .split(text_v[1])[1];
-    let text_block = Block::default()
-        .borders(Borders::ALL)
-        .border_style(Style::new().fg(Color::Yellow))
-        .style(Style::default().bg(Color::Black));
-    let mut text_box = TextArea::default();
-    let default_text = DEFAULT_TEXT.replace(&['\n', '\r'], " ");
-    text_box.set_placeholder_text(default_text);
-    text_box.set_block(text_block);
-    text_box.set_alignment(Alignment::Center);
-    let tb = text_box.widget();
+    let tb = cmd.widget();
     f.render_widget(tb, text_h);
 }
 
@@ -320,9 +335,9 @@ static INSTRUCTIONS: &'static str = "
 ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝       ╚═╝    ╚═════╝ ╚═╝
 
 - Use flags, followed by arguments, in any order
-- Press <Enter> to confirm your flag choices.
+- Press <ENTER> to confirm your flag choices.
 
-(scroll with ↓↑, exit with <q> or <esc>)
+(scroll with <↓>/<↑>, exit with <ESC>)
 
 BUILDER FLAG[-b] Set maze building algorithm.
     [rdfs] - Randomized Depth First Search.
@@ -369,9 +384,9 @@ BUILDER ANIMATION FLAG[-ba] Watch the maze build.
     [1-7] - Speed increases with number.
 
 Cancel any animation by pressing any key.
-Zoom out/in with <Ctrl-[-/+]>
+Zoom out/in with <Ctrl-[-]>/<Ctrl-[+]>
 If any flags are omitted, defaults are used.
-No arguments will create a random maze.
+An empty command line will create a random maze.
 
 EXAMPLES:
 
