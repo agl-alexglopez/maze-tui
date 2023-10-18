@@ -1,4 +1,3 @@
-use crate::args;
 use crate::tables;
 use crate::tui;
 use builders::build;
@@ -50,7 +49,7 @@ pub fn rand_with_channels(tui: &mut tui::Tui) -> tui::Result<()> {
     Ok(())
 }
 
-fn run_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui::Result<()> {
+fn run_channels(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<()> {
     tui.terminal.clear()?;
     let (impatient_user, worker) = bounded::<bool>(1);
     let (finished_worker, patient_user) = bounded::<bool>(1);
@@ -60,7 +59,7 @@ fn run_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui::Result<(
     let worker_thread = thread::spawn(move || {
         if let Ok(mut lk) = mc.lock() {
             match this_run.build_view {
-                args::ViewingMode::StaticImage => {
+                tables::ViewingMode::StaticImage => {
                     build::print_overlap_key(&lk.maze);
                     this_run.build.0(&mut lk.maze);
                     build::flush_grid(&lk.maze);
@@ -68,7 +67,7 @@ fn run_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui::Result<(
                         static_mod(&mut lk.maze);
                     }
                 }
-                args::ViewingMode::AnimatedPlayback => {
+                tables::ViewingMode::AnimatedPlayback => {
                     this_run.build.1(&mut lk.maze, this_run.build_speed);
                     if let Some((_, animated_mod)) = this_run.modify {
                         animated_mod(&mut lk.maze, this_run.build_speed);
@@ -77,8 +76,8 @@ fn run_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui::Result<(
             }
         }
         match this_run.solve_view {
-            args::ViewingMode::StaticImage => this_run.solve.0(mc),
-            args::ViewingMode::AnimatedPlayback => this_run.solve.1(mc, this_run.solve_speed),
+            tables::ViewingMode::StaticImage => this_run.solve.0(mc),
+            tables::ViewingMode::AnimatedPlayback => this_run.solve.1(mc, this_run.solve_speed),
         }
         match finished_worker.send(true) {
             Ok(_) => {}
@@ -143,8 +142,8 @@ fn run_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui::Result<(
     Ok(())
 }
 
-fn set_command_args(tui: &mut tui::Tui, cmd: &String) -> Result<args::MazeRunner, Quit> {
-    let mut run = args::MazeRunner::new();
+fn set_command_args(tui: &mut tui::Tui, cmd: &String) -> Result<tables::MazeRunner, Quit> {
+    let mut run = tables::MazeRunner::new();
     let dimensions = tui.inner_dimensions();
     run.args.odd_rows = (dimensions.rows as f64 / 1.2) as i32;
     run.args.odd_cols = dimensions.cols;
@@ -155,7 +154,7 @@ fn set_command_args(tui: &mut tui::Tui, cmd: &String) -> Result<args::MazeRunner
         if process_current {
             match set_arg(
                 &mut run,
-                &args::FlagArg {
+                &tables::FlagArg {
                     flag: prev_flag,
                     arg: &a,
                 },
@@ -192,7 +191,7 @@ fn set_command_args(tui: &mut tui::Tui, cmd: &String) -> Result<args::MazeRunner
     Ok(run)
 }
 
-fn set_arg(run: &mut args::MazeRunner, args: &args::FlagArg) -> Result<(), String> {
+fn set_arg(run: &mut tables::MazeRunner, args: &tables::FlagArg) -> Result<(), String> {
     match args.flag {
         "-b" => tables::search_table(args.arg, &tables::BUILDERS)
             .map(|func_pair| run.build = func_pair)
@@ -209,7 +208,7 @@ fn set_arg(run: &mut args::MazeRunner, args: &args::FlagArg) -> Result<(), Strin
         "-ba" => match tables::search_table(args.arg, &tables::SPEEDS) {
             Some(speed) => {
                 run.build_speed = speed;
-                run.build_view = args::ViewingMode::AnimatedPlayback;
+                run.build_view = tables::ViewingMode::AnimatedPlayback;
                 Ok(())
             }
             None => Err(err_string(args)),
@@ -217,7 +216,7 @@ fn set_arg(run: &mut args::MazeRunner, args: &args::FlagArg) -> Result<(), Strin
         "-sa" => match tables::search_table(args.arg, &tables::SPEEDS) {
             Some(speed) => {
                 run.solve_speed = speed;
-                run.solve_view = args::ViewingMode::AnimatedPlayback;
+                run.solve_view = tables::ViewingMode::AnimatedPlayback;
                 Ok(())
             }
             None => Err(err_string(args)),
@@ -226,12 +225,12 @@ fn set_arg(run: &mut args::MazeRunner, args: &args::FlagArg) -> Result<(), Strin
     }
 }
 
-fn set_random_args(tui: &mut tui::Tui) -> args::MazeRunner {
+fn set_random_args(tui: &mut tui::Tui) -> tables::MazeRunner {
     let mut rng = thread_rng();
-    let mut this_run = args::MazeRunner::new();
+    let mut this_run = tables::MazeRunner::new();
     let dimensions = tui.inner_dimensions();
-    this_run.build_view = args::ViewingMode::AnimatedPlayback;
-    this_run.solve_view = args::ViewingMode::AnimatedPlayback;
+    this_run.build_view = tables::ViewingMode::AnimatedPlayback;
+    this_run.solve_view = tables::ViewingMode::AnimatedPlayback;
     this_run.args.odd_rows = (dimensions.rows as f64 / 1.3) as i32;
     this_run.args.odd_cols = dimensions.cols;
     this_run.args.offset = dimensions.offset;
@@ -269,7 +268,7 @@ fn set_random_args(tui: &mut tui::Tui) -> args::MazeRunner {
     this_run
 }
 
-pub fn err_string(args: &args::FlagArg) -> String {
+pub fn err_string(args: &tables::FlagArg) -> String {
     String::from(format!(
         "Invalid Flag[{}] Arg[{}] combo.\nPress any key to continue.",
         args.flag, args.arg

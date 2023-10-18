@@ -67,12 +67,11 @@ pub fn paint_run_lengths(maze: &mut maze::Maze) {
 }
 
 pub fn animate_run_lengths(monitor: rgb::PainterMonitor, speed: speed::Speed) {
-    let mut start = maze::Point::default();
     let mut map = rgb::MaxMap::default();
-    if let Ok(mut lk) = monitor.lock() {
+    let start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         let row_mid = lk.maze.row_size() / 2;
         let col_mid = lk.maze.col_size() / 2;
-        start = maze::Point {
+        let start = maze::Point {
             row: row_mid + 1 - (row_mid % 2),
             col: col_mid + 1 - (col_mid % 2),
         };
@@ -112,9 +111,10 @@ pub fn animate_run_lengths(monitor: rgb::PainterMonitor, speed: speed::Speed) {
                 });
             }
         }
+        start
     } else {
         print::maze_panic!("Thread panic.");
-    }
+    };
 
     match monitor.lock() {
         Ok(mut lk) => lk.map = map,

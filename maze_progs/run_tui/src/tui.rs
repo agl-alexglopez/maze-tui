@@ -1,4 +1,3 @@
-use crate::args;
 use crate::run;
 use crate::tables;
 
@@ -30,6 +29,10 @@ use std::{
 pub static PLACEHOLDER: &'static str = "Type Command or Press <ENTER> for Random";
 
 pub type CtEvent = crossterm::event::Event;
+pub type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<std::io::Stderr>>;
+pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stderr>>;
+pub type Err = Box<dyn std::error::Error>;
+pub type Result<T> = std::result::Result<T, Err>;
 
 // Event is a crowded name so we'll call it a pack.
 #[derive(Debug)]
@@ -63,11 +66,6 @@ pub struct Scroller {
     pub state: ScrollbarState,
     pub pos: usize,
 }
-
-pub type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<std::io::Stderr>>;
-pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stderr>>;
-pub type Err = Box<dyn std::error::Error>;
-pub type Result<T> = std::result::Result<T, Err>;
 
 impl Scroller {
     pub fn default() -> Self {
@@ -292,7 +290,7 @@ impl EventHandler {
 
 fn ui_bg_maze(f: &mut Frame<'_>) {
     let frame_block = Block::default().padding(Padding::new(1, 1, 1, 1));
-    let mut background_maze = args::MazeRunner::new();
+    let mut background_maze = tables::MazeRunner::new();
     let mut rng = thread_rng();
     background_maze.args.style = match tables::WALL_STYLES.choose(&mut rng) {
         Some(&style) => style.1,

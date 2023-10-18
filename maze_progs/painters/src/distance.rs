@@ -46,16 +46,14 @@ pub fn paint_distance_from_center(maze: &mut maze::Maze) {
 }
 
 pub fn animate_distance_from_center(monitor: rgb::PainterMonitor, speed: speed::Speed) {
-    let mut start = maze::Point::default();
     let mut map = rgb::MaxMap::default();
-    if let Ok(mut lk) = monitor.lock() {
+    let start = if let Ok(mut lk) = monitor.lock() {
         let row_mid = lk.maze.row_size() / 2;
         let col_mid = lk.maze.col_size() / 2;
-        start = maze::Point {
+        let start = maze::Point {
             row: row_mid + 1 - (row_mid % 2),
             col: col_mid + 1 - (col_mid % 2),
         };
-        map.distances.insert(start, 0);
         let mut bfs = VecDeque::from([(start, 0u64)]);
         lk.maze[start.row as usize][start.col as usize] |= rgb::MEASURE;
         while let Some(cur) = bfs.pop_front() {
@@ -77,9 +75,10 @@ pub fn animate_distance_from_center(monitor: rgb::PainterMonitor, speed: speed::
                 bfs.push_back((next, cur.1 + 1));
             }
         }
+        start
     } else {
         print::maze_panic!("Thread panic.");
-    }
+    };
 
     match monitor.lock() {
         Ok(mut lk) => lk.map = map,

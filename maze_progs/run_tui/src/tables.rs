@@ -26,6 +26,52 @@ pub type SolveFunction = (
     fn(solve::SolverMonitor, speed::Speed),
 );
 
+pub struct FlagArg<'a, 'b> {
+    pub flag: &'a str,
+    pub arg: &'b str,
+}
+
+#[derive(Clone, Copy)]
+pub enum ViewingMode {
+    StaticImage,
+    AnimatedPlayback,
+}
+
+#[derive(Clone, Copy)]
+pub struct MazeRunner {
+    pub args: maze::MazeArgs,
+    pub build_view: ViewingMode,
+    pub build_speed: speed::Speed,
+    pub build: BuildFunction,
+    pub modify: Option<BuildFunction>,
+    pub solve_view: ViewingMode,
+    pub solve_speed: speed::Speed,
+    pub solve: SolveFunction,
+}
+
+impl MazeRunner {
+    pub fn new() -> Self {
+        Self {
+            args: maze::MazeArgs {
+                odd_rows: 33,
+                odd_cols: 111,
+                offset: maze::Offset::default(),
+                style: maze::MazeStyle::Sharp,
+            },
+            build_view: ViewingMode::StaticImage,
+            build_speed: speed::Speed::Speed4,
+            build: (
+                recursive_backtracker::generate_maze,
+                recursive_backtracker::animate_maze,
+            ),
+            modify: None,
+            solve_view: ViewingMode::StaticImage,
+            solve_speed: speed::Speed::Speed4,
+            solve: (dfs::hunt, dfs::animate_hunt),
+        }
+    }
+}
+
 pub fn search_table<T>(arg: &str, table: &[(&'static str, T)]) -> Option<T>
 where
     T: Clone,

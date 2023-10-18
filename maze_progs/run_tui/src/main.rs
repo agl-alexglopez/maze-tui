@@ -1,4 +1,3 @@
-mod args;
 mod run;
 mod tables;
 mod tui;
