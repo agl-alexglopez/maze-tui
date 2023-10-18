@@ -9,6 +9,7 @@ use rand::distributions::Bernoulli;
 use rand::prelude::Distribution;
 use rand::{seq::SliceRandom, thread_rng};
 use ratatui::prelude::Alignment;
+use ratatui::widgets::Clear;
 use ratatui::widgets::ScrollDirection;
 use ratatui::widgets::ScrollbarState;
 use ratatui::widgets::Wrap;
@@ -30,6 +31,7 @@ pub static PLACEHOLDER: &'static str = "Type Command or Press <ENTER> for Random
 
 pub type CtEvent = crossterm::event::Event;
 
+// Event is a crowded name so we'll call it a pack.
 #[derive(Debug)]
 pub enum Pack {
     Tick,
@@ -171,7 +173,6 @@ impl Tui {
     }
 
     pub fn error_popup(&mut self, msg: String) -> Result<()> {
-        self.background_maze()?;
         self.terminal.draw(|f| ui_err(&msg, f))?;
         'reading_message: loop {
             match self.events.next()? {
@@ -181,7 +182,16 @@ impl Tui {
                 _ => {}
             }
         }
-        self.background_maze()?;
+        Ok(())
+    }
+
+    pub fn info_popup(&mut self, scroll: &mut Scroller, msg: &str) -> Result<()> {
+        self.terminal.draw(|f| ui_info(msg, scroll, f))?;
+        Ok(())
+    }
+
+    pub fn info_prompt(&mut self) -> Result<()> {
+        self.terminal.draw(|f| ui_info_prompt(f))?;
         Ok(())
     }
 
@@ -209,12 +219,13 @@ impl Tui {
                         Input { key: Key::Up, .. } => self.scroll(ScrollDirection::Backward),
                         Input {
                             key: Key::Enter, ..
-                        } => {
-                            run::run_command(&cmd_prompt.lines()[0], self)?;
-                            //run::rand_with_channels(self)?;
-                            self.terminal.clear()?;
-                            self.background_maze()?;
-                        }
+                        } => match run::run_command(&cmd_prompt.lines()[0], self) {
+                            Ok(_) => {
+                                self.terminal.clear()?;
+                                self.background_maze()?;
+                            }
+                            _ => {}
+                        },
                         input => {
                             // TextArea::input returns if the input modified its text
                             let _ = cmd_prompt.input(input);
@@ -401,12 +412,12 @@ fn ui_info_prompt(f: &mut Frame<'_>) {
     let popup_layout_h = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage((100 - 15) / 2),
-            Constraint::Min(15),
-            Constraint::Percentage((100 - 15) / 2),
+            Constraint::Percentage((100 - 50) / 2),
+            Constraint::Percentage(50),
+            Constraint::Percentage((100 - 50) / 2),
         ])
         .split(popup_layout_v[1])[1];
-    let popup_instructions = Paragraph::new("Toggle [i] for more [i]nformation.")
+    let popup_instructions = Paragraph::new("Toggle <i> for more <i>nformation.")
         .block(
             Block::default()
                 .borders(Borders::ALL)
@@ -419,6 +430,49 @@ fn ui_info_prompt(f: &mut Frame<'_>) {
 }
 
 fn ui_info(msg: &str, scroll: &mut Scroller, f: &mut Frame<'_>) {
+    let overall_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Percentage(65)])
+        .split(f.size());
+    let popup_layout_v = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - 90) / 2),
+            Constraint::Percentage(90),
+            Constraint::Percentage((100 - 80) / 2),
+        ])
+        .split(overall_layout[0]);
+    let popup_layout_h = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - 80) / 2),
+            Constraint::Percentage(80),
+            Constraint::Percentage((100 - 80) / 2),
+        ])
+        .split(popup_layout_v[1])[1];
+    let popup_instructions = Paragraph::new(msg)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::new().fg(Color::Yellow))
+                .style(Style::default().bg(Color::Black)),
+        )
+        .wrap(Wrap { trim: true })
+        .scroll((scroll.pos as u16, 0));
+    f.render_widget(popup_instructions, popup_layout_h);
+    // I can scroll but the scrollbar does not appear?
+    f.render_stateful_widget(
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::VerticalRight)
+            .thumb_symbol("█")
+            .begin_symbol(Some("↑"))
+            .end_symbol(Some("↓")),
+        popup_layout_v[0],
+        &mut scroll.state,
+    );
+}
+
+fn ui_err(msg: &str, f: &mut Frame<'_>) {
     let overall_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Percentage(70), Constraint::Percentage(30)])
@@ -439,31 +493,37 @@ fn ui_info(msg: &str, scroll: &mut Scroller, f: &mut Frame<'_>) {
             Constraint::Percentage((100 - 50) / 2),
         ])
         .split(popup_layout_v[1])[1];
-    let popup_instructions = Paragraph::new(msg)
+    let popup_instructions = Paragraph::new(INSTRUCTIONS)
         .block(
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::new().fg(Color::Yellow))
                 .style(Style::default().bg(Color::Black)),
         )
-        .wrap(Wrap { trim: true })
-        .alignment(Alignment::Center)
-        .scroll((scroll.pos as u16, 0));
+        .alignment(Alignment::Center);
     f.render_widget(popup_instructions, popup_layout_h);
-    // I can scroll but the scrollbar does not appear?
-    f.render_stateful_widget(
-        Scrollbar::default()
-            .orientation(ScrollbarOrientation::VerticalRight)
-            .thumb_symbol("█")
-            .begin_symbol(Some("↑"))
-            .end_symbol(Some("↓")),
-        popup_layout_v[0],
-        &mut scroll.state,
-    );
-}
-
-fn ui_err(msg: &str, f: &mut Frame<'_>) {
-    let popup_layout_v = Layout::default()
+    let text_v = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - 15) / 2),
+            Constraint::Min(3),
+            Constraint::Percentage((100 - 15) / 2),
+        ])
+        .split(overall_layout[1]);
+    let text_h = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - 50) / 2),
+            Constraint::Min(70),
+            Constraint::Percentage((100 - 50) / 2),
+        ])
+        .split(text_v[1])[1];
+    let text_block = Block::default()
+        .borders(Borders::ALL)
+        .border_style(Style::new().fg(Color::Yellow))
+        .style(Style::default().bg(Color::Black));
+    f.render_widget(text_block, text_h);
+    let err_layout_v = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Percentage((100 - 15) / 2),
@@ -471,15 +531,15 @@ fn ui_err(msg: &str, f: &mut Frame<'_>) {
             Constraint::Percentage((100 - 15) / 2),
         ])
         .split(f.size());
-    let popup_layout_h = Layout::default()
+    let err_layout_h = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
             Constraint::Percentage((100 - 30) / 2),
             Constraint::Percentage(30),
             Constraint::Percentage((100 - 30) / 2),
         ])
-        .split(popup_layout_v[1])[1];
-    let popup_instructions = Paragraph::new(msg)
+        .split(err_layout_v[1])[1];
+    let err_instructions = Paragraph::new(msg)
         .wrap(Wrap { trim: true })
         .block(
             Block::default()
@@ -493,77 +553,8 @@ fn ui_err(msg: &str, f: &mut Frame<'_>) {
                 ),
         )
         .alignment(Alignment::Center);
-    f.render_widget(popup_instructions, popup_layout_h);
+    f.render_widget(Clear, err_layout_h);
+    f.render_widget(err_instructions, err_layout_h);
 }
 
-static INSTRUCTIONS: &'static str = "
-███╗   ███╗ █████╗ ███████╗███████╗    ████████╗██╗   ██╗██╗
-████╗ ████║██╔══██╗╚══███╔╝██╔════╝    ╚══██╔══╝██║   ██║██║
-██╔████╔██║███████║  ███╔╝ █████╗         ██║   ██║   ██║██║
-██║╚██╔╝██║██╔══██║ ███╔╝  ██╔══╝         ██║   ██║   ██║██║
-██║ ╚═╝ ██║██║  ██║███████╗███████╗       ██║   ╚██████╔╝██║
-╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝       ╚═╝    ╚═════╝ ╚═╝
-
-- Use flags, followed by arguments, in any order
-- Press <ENTER> to confirm your flag choices.
-
-(scroll with <↓>/<↑>, exit with <ESC>)
-
-BUILDER FLAG[-b] Set maze building algorithm.
-    [rdfs] - Randomized Depth First Search.
-    [kruskal] - Randomized Kruskal's algorithm.
-    [prim] - Randomized Prim's algorithm.
-    [eller] - Randomized Eller's algorithm.
-    [wilson] - Loop-Erased Random Path Carver.
-    [wilso]n-walls - Loop-Erased Random Wall Adder.
-    [fractal] - Randomized recursive subdivision.
-    [grid] - A random grid pattern.
-    [arena] - Open floor with no walls.
-
-MODIFICATION FLAG[-m] Add shortcuts to the maze.
-    [cross]- Add crossroads through the center.
-    [x]- Add an x of crossing paths through center.
-
-SOLVER FLAG[-s] Set maze solving algorithm.
-    [dfs-hunt] - Depth First Search
-    [dfs-gather] - Depth First Search
-    [dfs-corners] - Depth First Search
-    [floodfs-hunt] - Depth First Search
-    [floodfs-gather] - Depth First Search
-    [floodfs-corners] - Depth First Search
-    [rdfs-hunt] - Randomized Depth First Search
-    [rdfs-gather] - Randomized Depth First Search
-    [rdfs-corners] - Randomized Depth First Search
-    [bfs-hunt] - Breadth First Search
-    [bfs-gather] - Breadth First Search
-    [bfs-corners] - Breadth First Search
-    [dark[algorithm]-[game]] - A mystery...
-
-WALL FLAG[-w] Set the wall style for the maze.
-    [sharp] - The default straight lines.
-    [round] - Rounded corners.
-    [doubles] - Sharp double lines.
-    [bold] - Thicker straight lines.
-    [contrast] - Full block width and height walls.
-    [spikes] - Connected lines with spikes.
-
-SOLVER ANIMATION FLAG[-sa] Watch the maze solution.
-    [1-7] - Speed increases with number.
-
-BUILDER ANIMATION FLAG[-ba] Watch the maze build.
-    [1-7] - Speed increases with number.
-
-Cancel any animation by pressing any key.
-Zoom out/in with <Ctrl-[-]>/<Ctrl-[+]>
-If any flags are omitted, defaults are used.
-An empty command line will create a random maze.
-
-EXAMPLES:
-
--b rdfs -s bfs-hunt
--s bfs-gather -b prim
--s bfs-corners -d round -b fractal
--s dfs-hunt -ba 4 -sa 5 -b wilson-walls -m x
-
-Enjoy!
-";
+static INSTRUCTIONS: &'static str = include_str!("../../res/instructions.txt");

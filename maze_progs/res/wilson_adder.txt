@@ -1,0 +1,55 @@
+│ __   __  ___   __    ___        ________   ______    _____  ___   
+│|"  |/  \|  "| |" \  |"  |      /"       ) /    " \  (\"   \|"  \  
+│|'  /    \:  | ||  | ||  |     (:   \___/ // ____  \ |.\\   \    | 
+│|: /'        | |:  | |:  |      \___  \  /  /    ) :)|: \.   \\  | 
+│ \//  /\'    | |.  |  \  |___    __/  \\(: (____/ // |.  \    \. | 
+│ /   /  \\   | /\  |\( \_|:  \  /" \   :)\        /  |    \    \ | 
+│|___/    \___|(__\_|_)\_______)(_______/  \"_____/    \___|\____\) 
+│      __       ________   ________    _______   _______   
+│     /""\     |"      "\ |"      "\  /"     "| /"      \  
+│    /    \    (.  ___  :)(.  ___  :)(: ______)|:        | 
+│   /' /\  \   |: \   ) |||: \   ) || \/    |  |_____/   ) 
+│  //  __'  \  (| (___\ ||(| (___\ || // ___)_  //      /  
+│ /   /  \\  \ |:       :)|:       :)(:      "||:  __   \  
+│(___/    \___)(________/ (________/  \_______)|__|  \___) 
+                                                         
+(scroll with <↓>/<↑>, toggle info <i>)
+
+While the previous version of Wilson's algorithm is like trying to find a needle in a haystack, we can flip this concept and be the needle surrounded by a haystack. Instead of starting the random walk by trying to find one path point in the maze and then carve a path out when we find it, we can become the walls of the maze. We then surround ourselves with the perimeter walls of the maze and it becomes trivial to find a maze wall. The algorithm is identical. While it is possible it could take a while for a random walk to find a wall at first, in practice this algorithm is extremely fast. I have not done time tests yet, but I am sure that it is much faster than the other version of Wilson's algorithm and can compete with any algorithm.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+pick a random wall square somewhere within perimeter boundaries.
+
+pick a random WALK point for a random walk
+
+create a cell called PREVIOUS that starts as nil.
+
+while we have selected a starting wall piece for a random walk
+
+┈┈┈┈for each neighbor NEXT in random order
+
+┈┈┈┈┈┈┈┈if the NEXT != PREVIOUS and is in bounds
+
+┈┈┈┈┈┈┈┈┈┈┈┈select NEXT for consideration
+
+┈┈┈┈┈┈┈┈┈┈┈┈if NEXT is part of our own walk
+
+┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈erase the loop we have formed using backtracking
+
+┈┈┈┈┈┈┈┈┈┈┈┈else if NEXT is part of the maze
+
+┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈join our walk to the maze walls using backtracking to build wall piece.
+
+┈┈┈┈┈┈┈┈┈┈┈┈else
+
+┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈mark NEXT with the direction it needs for backtracking
+
+┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈PREVIOUS = WALK
+
+┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈WALK = NEXT
+
+┈┈┈┈┈┈┈┈continue outer while loop
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+

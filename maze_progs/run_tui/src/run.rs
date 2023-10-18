@@ -1,7 +1,9 @@
 use crate::args;
 use crate::tables;
 use crate::tui;
+use builders::build;
 use crossbeam_channel::bounded;
+use crossterm::event::KeyCode;
 use maze;
 use print;
 use rand::{distributions::Bernoulli, distributions::Distribution, seq::SliceRandom, thread_rng};
@@ -38,7 +40,7 @@ pub fn run_command(cmd: &String, tui: &mut tui::Tui) -> tui::Result<()> {
         Ok(run) => {
             run_channels(run, tui)?;
         }
-        Err(_) => {}
+        Err(_) => return Err(Box::new(Quit::new())),
     };
     Ok(())
 }
@@ -53,14 +55,31 @@ fn run_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui::Result<(
     let (impatient_user, worker) = bounded::<bool>(1);
     let (finished_worker, patient_user) = bounded::<bool>(1);
     let mut should_quit = false;
+    let maze = solve::Solver::new(maze::Maze::new_channel(&this_run.args, worker));
+    let mc = maze.clone();
     let worker_thread = thread::spawn(move || {
-        let mut maze = maze::Maze::new_channel(&this_run.args, worker);
-        this_run.build.1(&mut maze, this_run.build_speed);
-        match this_run.modify {
-            Some(m) => m.1(&mut maze, this_run.build_speed),
-            None => {}
+        if let Ok(mut lk) = mc.lock() {
+            match this_run.build_view {
+                args::ViewingMode::StaticImage => {
+                    build::print_overlap_key(&lk.maze);
+                    this_run.build.0(&mut lk.maze);
+                    build::flush_grid(&lk.maze);
+                    if let Some((static_mod, _)) = this_run.modify {
+                        static_mod(&mut lk.maze);
+                    }
+                }
+                args::ViewingMode::AnimatedPlayback => {
+                    this_run.build.1(&mut lk.maze, this_run.build_speed);
+                    if let Some((_, animated_mod)) = this_run.modify {
+                        animated_mod(&mut lk.maze, this_run.build_speed);
+                    }
+                }
+            }
         }
-        this_run.solve.1(solve::Solver::new(maze), this_run.solve_speed);
+        match this_run.solve_view {
+            args::ViewingMode::StaticImage => this_run.solve.0(mc),
+            args::ViewingMode::AnimatedPlayback => this_run.solve.1(mc, this_run.solve_speed),
+        }
         match finished_worker.send(true) {
             Ok(_) => {}
             Err(_) => print::maze_panic!("Worker sender disconnected."),
@@ -81,11 +100,42 @@ fn run_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui::Result<(
     }
     worker_thread.join().unwrap();
     if !should_quit {
+        tui.info_prompt()?;
+        let mut scroll = tui::Scroller::default();
+        let mut info_popup = false;
+        let description = load_desc(&this_run.build);
         'looking_at_maze: loop {
+            if info_popup {
+                tui.info_popup(&mut scroll, &description)?;
+            }
             match tui.events.next()? {
-                tui::Pack::Press(_) | tui::Pack::Resize(_, _) => {
-                    break 'looking_at_maze;
-                }
+                tui::Pack::Press(ke) => match ke.code {
+                    KeyCode::Char('i') => {
+                        if info_popup {
+                            if let Ok(lk) = maze.lock() {
+                                tui.terminal.clear()?;
+                                solve::print_paths(&lk.maze);
+                                build::print_overlap_key(&lk.maze);
+                                tui.info_prompt()?;
+                            }
+                            info_popup = false;
+                        } else {
+                            info_popup = true;
+                        }
+                    }
+                    KeyCode::Down => {
+                        if info_popup {
+                            scroll.scroll(ratatui::widgets::ScrollDirection::Forward);
+                        }
+                    }
+                    KeyCode::Up => {
+                        if info_popup {
+                            scroll.scroll(ratatui::widgets::ScrollDirection::Backward);
+                        }
+                    }
+                    _ => break 'looking_at_maze,
+                },
+                tui::Pack::Resize(_, _) => break 'looking_at_maze,
                 _ => {}
             }
         }
@@ -96,7 +146,7 @@ fn run_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui::Result<(
 fn set_command_args(tui: &mut tui::Tui, cmd: &String) -> Result<args::MazeRunner, Quit> {
     let mut run = args::MazeRunner::new();
     let dimensions = tui.inner_dimensions();
-    run.args.odd_rows = (dimensions.rows as f64 / 1.3) as i32;
+    run.args.odd_rows = (dimensions.rows as f64 / 1.2) as i32;
     run.args.odd_cols = dimensions.cols;
     run.args.offset = dimensions.offset;
     let mut prev_flag: &str = "";
@@ -180,6 +230,8 @@ fn set_random_args(tui: &mut tui::Tui) -> args::MazeRunner {
     let mut rng = thread_rng();
     let mut this_run = args::MazeRunner::new();
     let dimensions = tui.inner_dimensions();
+    this_run.build_view = args::ViewingMode::AnimatedPlayback;
+    this_run.solve_view = args::ViewingMode::AnimatedPlayback;
     this_run.args.odd_rows = (dimensions.rows as f64 / 1.3) as i32;
     this_run.args.odd_cols = dimensions.cols;
     this_run.args.offset = dimensions.offset;
@@ -223,3 +275,70 @@ pub fn err_string(args: &args::FlagArg) -> String {
         args.flag, args.arg
     ))
 }
+
+pub fn load_desc(cur_builder: &tables::BuildFunction) -> &'static str {
+    match DESCRIPTIONS.iter().find(|(func, _)| func == cur_builder) {
+        Some(&(_, desc)) => &desc,
+        None => "Coming Soon!",
+    }
+}
+
+pub static DESCRIPTIONS: [(tables::BuildFunction, &'static str); 9] = [
+    (
+        (
+            builders::arena::generate_maze,
+            builders::arena::animate_maze,
+        ),
+        include_str!("../../res/arena.txt"),
+    ),
+    (
+        (
+            builders::eller::generate_maze,
+            builders::eller::animate_maze,
+        ),
+        include_str!("../../res/eller.txt"),
+    ),
+    (
+        (builders::grid::generate_maze, builders::grid::animate_maze),
+        include_str!("../../res/grid.txt"),
+    ),
+    (
+        (
+            builders::kruskal::generate_maze,
+            builders::kruskal::animate_maze,
+        ),
+        include_str!("../../res/kruskal.txt"),
+    ),
+    (
+        (builders::prim::generate_maze, builders::prim::animate_maze),
+        include_str!("../../res/prim.txt"),
+    ),
+    (
+        (
+            builders::recursive_backtracker::generate_maze,
+            builders::recursive_backtracker::animate_maze,
+        ),
+        include_str!("../../res/recursive_backtracker.txt"),
+    ),
+    (
+        (
+            builders::recursive_subdivision::generate_maze,
+            builders::recursive_subdivision::animate_maze,
+        ),
+        include_str!("../../res/recursive_subdivision.txt"),
+    ),
+    (
+        (
+            builders::wilson_adder::generate_maze,
+            builders::wilson_adder::animate_maze,
+        ),
+        include_str!("../../res/wilson_adder.txt"),
+    ),
+    (
+        (
+            builders::wilson_carver::generate_maze,
+            builders::wilson_carver::animate_maze,
+        ),
+        include_str!("../../res/wilson_carver.txt"),
+    ),
+];

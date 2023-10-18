@@ -1,0 +1,49 @@
+│     ___           ___                      _____    
+│    /  /\         /  /\        ___         /  /::\   
+│   /  /:/_       /  /::\      /  /\       /  /:/\:\  
+│  /  /:/ /\     /  /:/\:\    /  /:/      /  /:/  \:\ 
+│ /  /:/_/::\   /  /:/~/:/   /__/::\     /__/:/ \__\:|
+│/__/:/__\/\:\ /__/:/ /:/___ \__\/\:\__  \  \:\ /  /:/
+│\  \:\ /~~/:/ \  \:\/:::::/    \  \:\/\  \  \:\  /:/ 
+│ \  \:\  /:/   \  \::/~~~~      \__\::/   \  \:\/:/  
+│  \  \:\/:/     \  \:\          /__/:/     \  \::/   
+│   \  \::/       \  \:\         \__\/       \__\/    
+│    \__\/         \__\/                              
+
+(scroll with <↓>/<↑>, toggle info <i>)
+
+This algorithm is my own addition to the repository because I wanted something chaotic for the solving threads to race through. This algorithm is a modified recursive depth first search. It works as follows.
+
+Keep in mind that this is not a perfect maze.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+mark a random starting point and push it onto a stack
+
+set LIMIT to be the maximum length to travel in one direction
+
+while the stack is not empty
+
+┈┈┈┈mark the CURRENT square as visited
+
+┈┈┈┈for every neighboring square divided by a wall in random order
+
+┈┈┈┈┈┈┈┈if the neighbor NEXT is valid and not seen
+
+┈┈┈┈┈┈┈┈┈┈┈┈while run is less than LIMIT and CURRENT is valid
+
+┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈break wall between CURRENT and NEXT
+
+┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈mark NEXT as visited
+
+┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈push next onto the stack
+
+┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈CURRENT becomes NEXT
+
+┈┈┈┈┈┈┈┈┈┈┈┈continue outer loop
+
+┈┈┈┈if no neighbor was found
+
+┈┈┈┈┈┈┈┈pop from the stack
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

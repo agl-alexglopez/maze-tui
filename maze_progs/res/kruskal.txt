@@ -1,0 +1,35 @@
+│ ___  __    ________  ___  ___  ________  ___  __    ________  ___          
+│|\  \|\  \ |\   __  \|\  \|\  \|\   ____\|\  \|\  \ |\   __  \|\  \         
+│\ \  \/  /|\ \  \|\  \ \  \\\  \ \  \___|\ \  \/  /|\ \  \|\  \ \  \        
+│ \ \   ___  \ \   _  _\ \  \\\  \ \_____  \ \   ___  \ \   __  \ \  \       
+│  \ \  \\ \  \ \  \\  \\ \  \\\  \|____|\  \ \  \\ \  \ \  \ \  \ \  \____  
+│   \ \__\\ \__\ \__\\ _\\ \_______\____\_\  \ \__\\ \__\ \__\ \__\ \_______\
+│    \|__| \|__|\|__|\|__|\|_______|\_________\|__| \|__|\|__|\|__|\|_______|
+│                                  \|_________|
+
+(scroll with <↓>/<↑>, toggle info <i>)
+
+I lump Kruskal, Prim, and Eller together as quite similar but their visual animations are different. Kruskal reasons about the cells and walls in a maze in terms of Disjoint Sets. The algorithm goes something like this.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+load all square into a disjoint set as single unique sets
+
+shuffle all the walls in the maze randomly
+
+for every wall in the maze
+
+┈┈┈┈if the current wall seperates a square above and below
+
+┈┈┈┈┈┈┈┈if a disjoint set union find by rank merges these squares
+
+┈┈┈┈┈┈┈┈┈┈┈┈break the wall between these squares and join them
+
+┈┈┈┈else if the current wall seperates a square left and right
+
+┈┈┈┈┈┈┈┈if a disjoint set union find by rank merges these squares
+
+┈┈┈┈┈┈┈┈┈┈┈┈break the wall between these squares and join them
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+

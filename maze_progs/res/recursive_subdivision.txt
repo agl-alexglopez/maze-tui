@@ -1,0 +1,52 @@
+│ ______   _______ _______ __   __ ______   _______ ___ __   __ _______ 
+│|    _ | |       |       |  | |  |    _ | |       |   |  | |  |       |
+│|   | || |    ___|       |  | |  |   | || |  _____|   |  |_|  |    ___|
+│|   |_||_|   |___|       |  |_|  |   |_||_| |_____|   |       |   |___ 
+│|    __  |    ___|      _|       |    __  |_____  |   |       |    ___|
+│|   |  | |   |___|     |_|       |   |  | |_____| |   ||     ||   |___ 
+│|___|  |_|_______|_______|_______|___|  |_|_______|___| |___| |_______|
+│ _______ __   __ _______ ______  ___ __   __ ___ _______ ___ _______ __    _ 
+│|       |  | |  |  _    |      ||   |  | |  |   |       |   |       |  |  | |
+│|  _____|  | |  | |_|   |  _    |   |  |_|  |   |  _____|   |   _   |   |_| |
+│| |_____|  |_|  |       | | |   |   |       |   | |_____|   |  | |  |       |
+│|_____  |       |  _   || |_|   |   |       |   |_____  |   |  |_|  |  _    |
+│ _____| |       | |_|   |       |   ||     ||   |_____| |   |       | | |   |
+│|_______|_______|_______|______||___| |___| |___|_______|___|_______|_|  |__|
+
+(scroll with <↓>/<↑>, toggle info <i>)
+
+This algorithm technically produces fractals due to the recursive nature of the technique. It is a recursive algorithm, but my implementation uses an explicit stack rather than recursive function calls. Note that I describe pushing chambers or mazes onto a stack. However, in reality the implementation only needs to push the coordinates of the corner of a chamber, its height, and its width onto a stack, not all the cells. This starts with a maze of all paths and we draw walls.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+push the entire maze onto a stack of chambers
+
+while the stack of chambers is not empty
+
+┈┈┈┈if chamber height > chamber width and width meets min requirement
+
+┈┈┈┈┈┈┈┈choose a random height and divide the chamber by that height
+
+┈┈┈┈┈┈┈┈choose a random point in the divide for a path gap
+
+┈┈┈┈┈┈┈┈update the current chamber's height
+
+┈┈┈┈┈┈┈┈push the chamber after the divide onto the stack
+
+┈┈┈┈else if chamber width >= chamber height and height meets min requirement
+
+┈┈┈┈┈┈┈┈choose a random width and divide the chamber by that width
+
+┈┈┈┈┈┈┈┈choose a random point in the divide for a path gap
+
+┈┈┈┈┈┈┈┈update the current chamber's width
+
+┈┈┈┈┈┈┈┈push the chamber after the divide onto the stack
+
+┈┈┈┈else
+
+┈┈┈┈┈┈┈┈pop chamber from the stack.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This is a great algorithm because the mazes it produces are completely different from anything else that you see. I appreciate the interesting flow patterns that breadth first searches produce.

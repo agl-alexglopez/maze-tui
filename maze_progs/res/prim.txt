@@ -1,0 +1,44 @@
+│ /$$$$$$$         /$$             
+│| $$__  $$       |__/             
+│| $$  \ $$/$$$$$$ /$$/$$$$$$/$$$$ '$
+│| $$$$$$$/$$__  $| $| $$_  $$_  $$
+│| $$____| $$  \__| $| $$ \ $$ \ $$
+│| $$    | $$     | $| $$ | $$ | $$
+│| $$    | $$     | $| $$ | $$ | $$
+│|__/    |__/     |__|__/ |__/ |__/
+
+(scroll with <↓>/<↑>, toggle info <i>)
+                                  
+There are many versions of Prim's algorithm: simplified, true, and truest are three that I am aware of. I went with true Prim's algorithm. Prim's algorithm is part of a family of algorithms that focus on sets or costs for generating the maze. If you enjoy Prim's check out Kruskal's and Eller's algorithms next. Here is the algorithm.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+load all path cell into a lookup table and give each a random cost
+
+choose a random starting cell
+
+enqueue this cell into a min priority queue by cost
+
+while the min priority queue is not empty
+
+┈┈┈┈mark the current cell as visited
+
+┈┈┈┈set cell MIN with cost = INFINITY
+
+┈┈┈┈for each valid neighbor
+
+┈┈┈┈┈┈┈┈if this neighbor has a lower cost than MIN
+
+┈┈┈┈┈┈┈┈┈┈┈┈MIN = neighbor
+
+┈┈┈┈if MIN is not equal to INFINITY
+
+┈┈┈┈┈┈┈┈break the wall between current and MIN joining squares
+
+┈┈┈┈┈┈┈┈push MIN into the min priority queue
+
+┈┈┈┈else
+
+┈┈┈┈┈┈┈┈pop from the min priority
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

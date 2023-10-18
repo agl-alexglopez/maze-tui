@@ -32,14 +32,14 @@ impl MazeRunner {
                 offset: maze::Offset::default(),
                 style: maze::MazeStyle::Sharp,
             },
-            build_view: ViewingMode::AnimatedPlayback,
+            build_view: ViewingMode::StaticImage,
             build_speed: speed::Speed::Speed4,
             build: (
                 tables::recursive_backtracker::generate_maze,
                 tables::recursive_backtracker::animate_maze,
             ),
             modify: None,
-            solve_view: ViewingMode::AnimatedPlayback,
+            solve_view: ViewingMode::StaticImage,
             solve_speed: speed::Speed::Speed4,
             solve: (tables::dfs::hunt, tables::dfs::animate_hunt),
         }
