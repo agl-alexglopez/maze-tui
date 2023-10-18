@@ -69,15 +69,13 @@ fn run_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui::Result<(
 
     while patient_user.is_empty() {
         match tui.events.next()? {
-            tui::Pack::Ev(tui::CtEvent::Key(_)) | tui::Pack::Ev(tui::CtEvent::Resize(_, _)) => {
-                match impatient_user.send(true) {
-                    Ok(_) => {
-                        should_quit = true;
-                        break;
-                    }
-                    Err(_) => return Err(Box::new(Quit::new())),
+            tui::Pack::Press(_) | tui::Pack::Resize(_, _) => match impatient_user.send(true) {
+                Ok(_) => {
+                    should_quit = true;
+                    break;
                 }
-            }
+                Err(_) => return Err(Box::new(Quit::new())),
+            },
             _ => {}
         }
     }
@@ -85,7 +83,7 @@ fn run_channels(this_run: args::MazeRunner, tui: &mut tui::Tui) -> tui::Result<(
     if !should_quit {
         'looking_at_maze: loop {
             match tui.events.next()? {
-                tui::Pack::Ev(tui::CtEvent::Key(_)) | tui::Pack::Ev(tui::CtEvent::Resize(_, _)) => {
+                tui::Pack::Press(_) | tui::Pack::Resize(_, _) => {
                     break 'looking_at_maze;
                 }
                 _ => {}

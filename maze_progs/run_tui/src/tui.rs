@@ -3,7 +3,7 @@ use crate::run;
 use crate::tables;
 
 use crossbeam_channel::{self, unbounded};
-use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture};
+use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyEvent};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use rand::{seq::SliceRandom, thread_rng};
 use ratatui::prelude::Alignment;
@@ -31,7 +31,8 @@ pub type CtEvent = crossterm::event::Event;
 #[derive(Debug)]
 pub enum Pack {
     Tick,
-    Ev(CtEvent),
+    Press(KeyEvent),
+    Resize(u16, u16),
 }
 
 #[derive(Debug)]
@@ -166,7 +167,7 @@ impl Tui {
         self.terminal.draw(|f| ui_err(&msg, f))?;
         'reading_message: loop {
             match self.events.next()? {
-                Pack::Ev(CtEvent::Key(_)) | Pack::Ev(CtEvent::Resize(_, _)) => {
+                Pack::Press(_) | Pack::Resize(_, _) => {
                     break 'reading_message;
                 }
                 _ => {}
@@ -191,31 +192,29 @@ impl Tui {
         'render: loop {
             self.home(&mut cmd_prompt)?;
             match self.events.next()? {
-                Pack::Tick => {}
-                Pack::Ev(ev) => match ev {
-                    CtEvent::Resize(_, _) => {
-                        self.background_maze()?;
-                    }
-                    e => {
-                        match e.into() {
-                            Input { key: Key::Esc, .. } => break 'render,
-                            Input { key: Key::Down, .. } => self.scroll(ScrollDirection::Forward),
-                            Input { key: Key::Up, .. } => self.scroll(ScrollDirection::Backward),
-                            Input {
-                                key: Key::Enter, ..
-                            } => {
-                                run::run_command(&cmd_prompt.lines()[0], self)?;
-                                //run::rand_with_channels(self)?;
-                                self.terminal.clear()?;
-                                self.background_maze()?;
-                            }
-                            input => {
-                                // TextArea::input returns if the input modified its text
-                                let _ = cmd_prompt.input(input);
-                            }
+                Pack::Resize(_, _) => {
+                    self.background_maze()?;
+                }
+                Pack::Press(ev) => {
+                    match ev.into() {
+                        Input { key: Key::Esc, .. } => break 'render,
+                        Input { key: Key::Down, .. } => self.scroll(ScrollDirection::Forward),
+                        Input { key: Key::Up, .. } => self.scroll(ScrollDirection::Backward),
+                        Input {
+                            key: Key::Enter, ..
+                        } => {
+                            run::run_command(&cmd_prompt.lines()[0], self)?;
+                            //run::rand_with_channels(self)?;
+                            self.terminal.clear()?;
+                            self.background_maze()?;
+                        }
+                        input => {
+                            // TextArea::input returns if the input modified its text
+                            let _ = cmd_prompt.input(input);
                         }
                     }
-                },
+                }
+                Pack::Tick => {}
             }
         }
         Ok(())
@@ -237,9 +236,19 @@ impl EventHandler {
                         .unwrap_or(tick_rate);
 
                     if event::poll(timeout).expect("no events available") {
-                        let package = event::read().expect("unable to read event");
-                        sender.send(Pack::Ev(package)).expect("couldn't send.");
+                        match event::read().expect("unable to read event") {
+                            CtEvent::Key(e) => {
+                                if e.kind == event::KeyEventKind::Press {
+                                    sender.send(Pack::Press(e)).expect("couldn't send.");
+                                }
+                            }
+                            CtEvent::Resize(w, h) => {
+                                sender.send(Pack::Resize(w, h)).expect("could not send.");
+                            }
+                            _ => {}
+                        }
                     }
+                    // Ticks are important for some submodule channel communications.
                     if last_tick.elapsed() >= tick_rate {
                         sender.send(Pack::Tick).expect("failed to send tick event");
                         last_tick = Instant::now();
