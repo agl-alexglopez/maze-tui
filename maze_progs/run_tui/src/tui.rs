@@ -26,7 +26,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub static PLACEHOLDER: &'static str = "Start Typing to Enter Command";
+pub static PLACEHOLDER: &'static str = "Type Command or Press <ENTER> for Random";
 
 pub type CtEvent = crossterm::event::Event;
 
@@ -47,8 +47,7 @@ pub struct EventHandler {
 pub struct Tui {
     pub terminal: CrosstermTerminal,
     pub events: EventHandler,
-    pub instructions_scroll_state: ScrollbarState,
-    pub vertical_scroll: usize,
+    pub scroll: Scroller,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -58,10 +57,37 @@ pub struct Dimension {
     pub offset: maze::Offset,
 }
 
+pub struct Scroller {
+    pub state: ScrollbarState,
+    pub pos: usize,
+}
+
 pub type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<std::io::Stderr>>;
 pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stderr>>;
 pub type Err = Box<dyn std::error::Error>;
 pub type Result<T> = std::result::Result<T, Err>;
+
+impl Scroller {
+    pub fn default() -> Self {
+        Scroller {
+            state: ScrollbarState::default(),
+            pos: 0,
+        }
+    }
+
+    pub fn scroll(&mut self, dir: ScrollDirection) {
+        match dir {
+            ScrollDirection::Forward => {
+                self.pos = self.pos.saturating_add(2);
+                self.state = self.state.position(self.pos as u16);
+            }
+            ScrollDirection::Backward => {
+                self.pos = self.pos.saturating_sub(2);
+                self.state = self.state.position(self.pos as u16);
+            }
+        }
+    }
+}
 
 impl Tui {
     /// Constructs a new instance of [`Tui`].
@@ -69,8 +95,7 @@ impl Tui {
         Self {
             terminal,
             events,
-            instructions_scroll_state: ScrollbarState::default(),
-            vertical_scroll: 0,
+            scroll: Scroller::default(),
         }
     }
 
@@ -131,14 +156,8 @@ impl Tui {
     }
 
     pub fn home(&mut self, cmd: &mut TextArea) -> Result<()> {
-        self.terminal.draw(|frame| {
-            ui_home(
-                cmd,
-                &mut self.vertical_scroll,
-                &mut self.instructions_scroll_state,
-                frame,
-            )
-        })?;
+        self.terminal
+            .draw(|frame| ui_home(cmd, &mut self.scroll, frame))?;
         Ok(())
     }
 
@@ -148,20 +167,7 @@ impl Tui {
     }
 
     pub fn scroll(&mut self, dir: ScrollDirection) {
-        match dir {
-            ScrollDirection::Forward => {
-                self.vertical_scroll = self.vertical_scroll.saturating_add(1);
-                self.instructions_scroll_state = self
-                    .instructions_scroll_state
-                    .position(self.vertical_scroll as u16);
-            }
-            ScrollDirection::Backward => {
-                self.vertical_scroll = self.vertical_scroll.saturating_sub(1);
-                self.instructions_scroll_state = self
-                    .instructions_scroll_state
-                    .position(self.vertical_scroll as u16);
-            }
-        }
+        self.scroll.scroll(dir)
     }
 
     pub fn error_popup(&mut self, msg: String) -> Result<()> {
@@ -183,7 +189,6 @@ impl Tui {
         let mut cmd_prompt = TextArea::default();
         cmd_prompt.set_cursor_line_style(Style::default());
         cmd_prompt.set_placeholder_text(PLACEHOLDER);
-        cmd_prompt.set_placeholder_style(Style::default().fg(Color::LightYellow));
         let text_block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::new().fg(Color::Yellow))
@@ -319,17 +324,11 @@ fn ui_bg_maze(f: &mut Frame<'_>) {
     }
 }
 
-fn ui_home(
-    cmd: &mut TextArea,
-    scroll: &mut usize,
-    scroll_state: &mut ScrollbarState,
-    f: &mut Frame<'_>,
-) {
+fn ui_home(cmd: &mut TextArea, scroll: &mut Scroller, f: &mut Frame<'_>) {
     let overall_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Percentage(70), Constraint::Percentage(30)])
         .split(f.size());
-    let frame_block = Block::default().padding(Padding::new(1, 1, 1, 1));
     let popup_layout_v = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -354,8 +353,7 @@ fn ui_home(
                 .style(Style::default().bg(Color::Black)),
         )
         .alignment(Alignment::Center)
-        .scroll((*scroll as u16, 0));
-    f.render_widget(frame_block, overall_layout[0]);
+        .scroll((scroll.pos as u16, 0));
     f.render_widget(popup_instructions, popup_layout_h);
     // I can scroll but the scrollbar does not appear?
     f.render_stateful_widget(
@@ -365,7 +363,7 @@ fn ui_home(
             .begin_symbol(Some("↑"))
             .end_symbol(Some("↓")),
         popup_layout_v[0],
-        scroll_state,
+        &mut scroll.state,
     );
     let text_v = Layout::default()
         .direction(Direction::Vertical)
@@ -385,6 +383,83 @@ fn ui_home(
         .split(text_v[1])[1];
     let tb = cmd.widget();
     f.render_widget(tb, text_h);
+}
+
+fn ui_info_prompt(f: &mut Frame<'_>) {
+    let overall_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Percentage(80), Constraint::Percentage(20)])
+        .split(f.size());
+    let popup_layout_v = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - 15) / 2),
+            Constraint::Min(3),
+            Constraint::Percentage((100 - 15) / 2),
+        ])
+        .split(overall_layout[1]);
+    let popup_layout_h = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - 15) / 2),
+            Constraint::Min(15),
+            Constraint::Percentage((100 - 15) / 2),
+        ])
+        .split(popup_layout_v[1])[1];
+    let popup_instructions = Paragraph::new("Toggle [i] for more [i]nformation.")
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::new().fg(Color::Yellow))
+                .style(Style::default().bg(Color::Black)),
+        )
+        .wrap(Wrap { trim: true })
+        .alignment(Alignment::Center);
+    f.render_widget(popup_instructions, popup_layout_h);
+}
+
+fn ui_info(msg: &str, scroll: &mut Scroller, f: &mut Frame<'_>) {
+    let overall_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Percentage(70), Constraint::Percentage(30)])
+        .split(f.size());
+    let popup_layout_v = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - 80) / 2),
+            Constraint::Percentage(80),
+            Constraint::Percentage((100 - 80) / 2),
+        ])
+        .split(overall_layout[0]);
+    let popup_layout_h = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - 50) / 2),
+            Constraint::Min(70),
+            Constraint::Percentage((100 - 50) / 2),
+        ])
+        .split(popup_layout_v[1])[1];
+    let popup_instructions = Paragraph::new(msg)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::new().fg(Color::Yellow))
+                .style(Style::default().bg(Color::Black)),
+        )
+        .wrap(Wrap { trim: true })
+        .alignment(Alignment::Center)
+        .scroll((scroll.pos as u16, 0));
+    f.render_widget(popup_instructions, popup_layout_h);
+    // I can scroll but the scrollbar does not appear?
+    f.render_stateful_widget(
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::VerticalRight)
+            .thumb_symbol("█")
+            .begin_symbol(Some("↑"))
+            .end_symbol(Some("↓")),
+        popup_layout_v[0],
+        &mut scroll.state,
+    );
 }
 
 fn ui_err(msg: &str, f: &mut Frame<'_>) {
