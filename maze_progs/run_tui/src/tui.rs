@@ -5,6 +5,8 @@ use crate::tables;
 use crossbeam_channel::{self, unbounded};
 use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyEvent};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
+use rand::distributions::Bernoulli;
+use rand::prelude::Distribution;
 use rand::{seq::SliceRandom, thread_rng};
 use ratatui::prelude::Alignment;
 use ratatui::widgets::ScrollDirection;
@@ -280,7 +282,22 @@ fn ui_bg_maze(f: &mut Frame<'_>) {
         Some(&style) => style.1,
         None => print::maze_panic!("Styles not found."),
     };
-    background_maze.build.0 = builders::recursive_backtracker::generate_maze;
+    let modification_probability = Bernoulli::new(0.2);
+    background_maze.modify = None;
+    if modification_probability
+        .expect("Bernoulli innefective")
+        .sample(&mut rng)
+    {
+        background_maze.modify = match tables::MODIFICATIONS.choose(&mut rng) {
+            Some(&m) => Some(m.1),
+            None => print::maze_panic!("Modification table empty."),
+        }
+    }
+    let mut rng = thread_rng();
+    background_maze.build.0 = match &tables::BUILDERS.choose(&mut rng) {
+        Some(b) => b.1 .0,
+        None => print::maze_panic!("Builder table empty!"),
+    };
     let inner = frame_block.inner(f.size());
     background_maze.args.odd_rows = inner.height as i32;
     background_maze.args.odd_cols = inner.width as i32;
@@ -290,10 +307,15 @@ fn ui_bg_maze(f: &mut Frame<'_>) {
     };
     let mut bg_maze = maze::Maze::new(background_maze.args);
     background_maze.build.0(&mut bg_maze);
+    match background_maze.modify {
+        Some(m) => m.0(&mut bg_maze),
+        _ => {}
+    }
     let monitor = solve::Solver::new(bg_maze);
     background_maze.solve.0(monitor.clone());
-    if let Ok(lk) = monitor.clone().lock() {
-        solve::print_paths(&lk.maze);
+    match monitor.clone().lock() {
+        Ok(lk) => solve::print_paths(&lk.maze),
+        Err(_) => print::maze_panic!("Home screen broke."),
     }
 }
 
