@@ -1,55 +1,51 @@
-│ __      __ .__ .__                           
-│/  \    /  \|__||  |    ______  ____    ____  
-│\   \/\/   /|  ||  |   /  ___/ /  _ \  /    \ 
-│ \        / |  ||  |__ \___ \ (  <_> )|   |  \
-│  \__/\  /  |__||____//____  > \____/ |___|  /
-│       \/                  \/              \/ 
-│_________                                         
-│\_   ___ \ _____   _______ ___  __  ____  _______ 
-│/    \  \/ \__  \  \_  __ \\  \/ /_/ __ \ \_  __ \
-│\     \____ / __ \_ |  | \/ \   / \  ___/  |  | \/
-│ \______  /(____  / |__|     \_/   \___  > |__|   
-│        \/      \/                     \/         
+│ ▁▁      ▁▁ .▁▁. ▁▁
+│╱  ╲    ╱  ╲▕▁▁▏▕ ▕     ▁▁▁▁▁▁ ▁▁▁▁▁▁   ▁▁▁▁
+│╲   ╲╱╲╱   ╱▕  ▏▕ ▕    ╱  ▁▁▁╱╱   ▁  ╲ ╱  ▁ ╲
+│ ╲        ╱ ▕  ▏▕ ▕▁▁▁ ╲▁▁▁  ╲╲  ╱▁╱ ╱▕   ▏▏ ╲
+│  ╲▁▁╱╲  ╱  ▕▁▁▏▕▁▁▁▁╱╱▁▁▁▁  ╱ ╲▁▁▁▁╱ ▕▁▁▁▏▏ ╱
+│       ╲╱                  ╲╱              ╲╱
+│▁▁▁▁▁▁▁▁▁
+│╲▁   ▁▁▁ ╲ ▁▁▁▁▁   ▁▁▁▁▁▁▁ ▁▁▁  ▁▁  ▁▁▁▁  ▁▁▁▁▁▁▁
+│╱    ╲  ╲╱ ╲▁▁  ╲  ╲▁  ▁▁ ╲╲  ╲╱ ╱▁╱ ▁▁ ╲ ╲▁  ▁▁ ╲
+│╲     ╲▁▁▁▁ ╱ ╱╲ ╲▁ ▕  ▏ ╲╱ ╲   ╱ ╲  ▁▁▁╱  ▕  ▏ ╲╱
+│ ╲▁▁▁▁▁▁  ╱╱▁▁▁▁  ╱ ▕▁▁▏     ╲▁╱   ╲▁▁▁ ╲  ▕▁▁▏
+│        ╲╱      ╲╱                     ╲╱
 
 (scroll with <↓>/<↑>, toggle info <i>)
 
-The Wilson's algorithms are my favorite. They are a much more visually interesting and fun to implement approach at producing perfect mazes. This algorithm, as I have implemented it goes as follows.
+The Wilson's algorithms are my favorite. They are a much more visually interesting and fun to implement approach at producing perfect mazes.
 
 Watching this is one live is very fun and frustrating. Sometimes, you wish the flailing walk path would just find the square sitting out there in the grid but it won't. The starting maze point is a needle in a haystack and we eventually find it but it can just take some time. These are very well balanced mazes with interesting twists and turns and unexpected long paths that can sometimes weave through the maze.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-pick a random square and make it a path that is part of a maze
-
-pick a random WALK point for a random walk
-
-creat a cell called PREVIOUS that starts as nil.
-
-while we have selected a starting square for a random walk
-
-┈┈┈┈for each neighbor NEXT in random order
-
-┈┈┈┈┈┈┈┈if the NEXT != PREVIOUS and is in bounds
-
-┈┈┈┈┈┈┈┈┈┈┈┈select NEXT for consideration
-
-┈┈┈┈┈┈┈┈┈┈┈┈if NEXT is part of our own walk
-
-┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈erase the loop we have formed using backtracking
-
-┈┈┈┈┈┈┈┈┈┈┈┈else if NEXT is part of the maze
-
-┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈join our walk to the maze using backtracking to carve a path.
-
-┈┈┈┈┈┈┈┈┈┈┈┈else
-
-┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈mark NEXT with the direction it needs for backtracking
-
-┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈PREVIOUS = WALK
-
-┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈WALK = NEXT
-
-┈┈┈┈┈┈┈┈continue outer while loop
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+│pick a random square and make it a path that is part of a maze
+│
+│pick a random WALK point for a random walk
+│
+│creat a cell called PREVIOUS that starts as nil.
+│
+│while we have selected a starting square for a random walk
+│
+│    for each neighbor NEXT in random order
+│
+│        if the NEXT != PREVIOUS and is in bounds
+│
+│            select NEXT for consideration
+│
+│            if NEXT is part of our own walk
+│
+│                erase the loop we have formed using backtracking
+│
+│            else if NEXT is part of the maze
+│
+│                join our walk to the maze using backtracking to carve a path.
+│
+│            else
+│
+│                mark NEXT with the direction it needs for backtracking
+│
+│                PREVIOUS = WALK
+│
+│                WALK = NEXT
+│
+│        continue outer while loop
 
