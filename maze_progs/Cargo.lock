@@ -215,6 +215,7 @@ dependencies = [
  "painters",
  "print",
  "rand",
+ "solvers",
  "speed",
 ]
 
@@ -251,6 +252,7 @@ dependencies = [
  "maze",
  "print",
  "rand",
+ "solvers",
  "speed",
 ]
 

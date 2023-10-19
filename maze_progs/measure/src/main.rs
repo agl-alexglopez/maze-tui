@@ -11,14 +11,17 @@ use builders::wilson_adder;
 use builders::wilson_carver;
 
 use painters::distance;
-use painters::rgb;
 use painters::runs;
+use solvers::solve;
 
 use std::collections::{HashMap, HashSet};
 use std::env;
 
 type BuildFunction = (fn(&mut maze::Maze), fn(&mut maze::Maze, speed::Speed));
-type PaintFunction = (fn(&mut maze::Maze), fn(rgb::PainterMonitor, speed::Speed));
+type PaintFunction = (
+    fn(solve::SolverMonitor),
+    fn(solve::SolverMonitor, speed::Speed),
+);
 
 struct FlagArg<'a, 'b> {
     flag: &'a str,
@@ -179,15 +182,16 @@ fn main() {
             (
                 String::from("distance"),
                 (
-                    distance::paint_distance_from_center as fn(&mut maze::Maze),
-                    distance::animate_distance_from_center as fn(rgb::PainterMonitor, speed::Speed),
+                    distance::paint_distance_from_center as fn(solve::SolverMonitor),
+                    distance::animate_distance_from_center
+                        as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
             (
                 String::from("runs"),
                 (
-                    runs::paint_run_lengths as fn(&mut maze::Maze),
-                    runs::animate_run_lengths as fn(rgb::PainterMonitor, speed::Speed),
+                    runs::paint_run_lengths as fn(solve::SolverMonitor),
+                    runs::animate_run_lengths as fn(solve::SolverMonitor, speed::Speed),
                 ),
             ),
         ]),
@@ -267,13 +271,11 @@ fn main() {
     // Ensure a smooth transition from build to solve with no flashing.
     print::set_cursor_position(maze::Point::default(), maze::Offset::default());
 
-    let monitor = rgb::Painter::new(maze);
     match measure.paint_view {
-        ViewingMode::StaticImage => match monitor.lock() {
-            Ok(mut lk) => measure.paint.0(&mut lk.maze),
-            Err(_) => print::maze_panic!("Thread panic."),
-        },
-        ViewingMode::AnimatedPlayback => measure.paint.1(monitor, measure.paint_speed),
+        ViewingMode::StaticImage => measure.paint.0(solve::Solver::new(maze)),
+        ViewingMode::AnimatedPlayback => {
+            measure.paint.1(solve::Solver::new(maze), measure.paint_speed)
+        }
     }
 }
 

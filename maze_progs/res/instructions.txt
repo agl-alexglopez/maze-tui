@@ -6,8 +6,8 @@
 ██║ ╚═╝ ██║██║  ██║███████╗███████╗       ██║   ╚██████╔╝██║
 ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝       ╚═╝    ╚═════╝ ╚═╝
 
-- Use flags, followed by arguments, in any order
-- Press <ENTER> to confirm your flag choices.
+Use flags, followed by arguments, in any order
+Press <ENTER> to confirm your flag choices.
 
 (scroll with <↓>/<↑>, exit with <ESC>)
 
@@ -17,7 +17,7 @@ BUILDER FLAG[-b] Set maze building algorithm.
     [prim] - Randomized Prim's algorithm.
     [eller] - Randomized Eller's algorithm.
     [wilson] - Loop-Erased Random Path Carver.
-    [wilso]n-walls - Loop-Erased Random Wall Adder.
+    [wilson-walls] - Loop-Erased Random Wall Adder.
     [fractal] - Randomized recursive subdivision.
     [grid] - A random grid pattern.
     [arena] - Open floor with no walls.

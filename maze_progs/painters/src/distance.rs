@@ -2,6 +2,7 @@ use crate::rgb;
 use builders::build::print_square;
 use crossterm::{execute, style::Print};
 use maze;
+use solvers::solve;
 use std::collections::{HashSet, VecDeque};
 use std::io::{self};
 
@@ -9,16 +10,21 @@ use std::{thread, time};
 
 use rand::{thread_rng, Rng};
 
-pub fn paint_distance_from_center(maze: &mut maze::Maze) {
-    let row_mid = maze.row_size() / 2;
-    let col_mid = maze.col_size() / 2;
+pub fn paint_distance_from_center(monitor: solve::SolverMonitor) {
+    let mut lk = match monitor.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("Lock panic."),
+    };
+
+    let row_mid = lk.maze.row_size() / 2;
+    let col_mid = lk.maze.col_size() / 2;
     let start = maze::Point {
         row: row_mid + 1 - (row_mid % 2),
         col: col_mid + 1 - (col_mid % 2),
     };
-    let mut map = rgb::MaxMap::new(start, 0);
+    let mut map = solve::MaxMap::new(start, 0);
     let mut bfs = VecDeque::from([(start, 0u64)]);
-    maze[start.row as usize][start.col as usize] |= rgb::MEASURE;
+    lk.maze[start.row as usize][start.col as usize] |= rgb::MEASURE;
     while let Some(cur) = bfs.pop_front() {
         if cur.1 > map.max {
             map.max = cur.1;
@@ -28,25 +34,24 @@ pub fn paint_distance_from_center(maze: &mut maze::Maze) {
                 row: cur.0.row + p.row,
                 col: cur.0.col + p.col,
             };
-            if (maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0
-                || (maze[next.row as usize][next.col as usize] & rgb::MEASURE) != 0
+            if (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0
+                || (lk.maze[next.row as usize][next.col as usize] & rgb::MEASURE) != 0
             {
                 continue;
             }
-            maze[next.row as usize][next.col as usize] |= rgb::MEASURE;
+            lk.maze[next.row as usize][next.col as usize] |= rgb::MEASURE;
             map.distances.insert(next, cur.1 + 1);
             bfs.push_back((next, cur.1 + 1));
         }
     }
-    painter(maze, &map);
+    painter(&mut lk.maze, &map);
     match execute!(io::stdout(), Print('\n')) {
         Ok(_) => {}
         Err(_) => print::maze_panic!("Painter failed to print."),
     }
 }
 
-pub fn animate_distance_from_center(monitor: rgb::PainterMonitor, speed: speed::Speed) {
-    let mut map = rgb::MaxMap::default();
+pub fn animate_distance_from_center(monitor: solve::SolverMonitor, speed: speed::Speed) {
     let start = if let Ok(mut lk) = monitor.lock() {
         let row_mid = lk.maze.row_size() / 2;
         let col_mid = lk.maze.col_size() / 2;
@@ -54,11 +59,12 @@ pub fn animate_distance_from_center(monitor: rgb::PainterMonitor, speed: speed::
             row: row_mid + 1 - (row_mid % 2),
             col: col_mid + 1 - (col_mid % 2),
         };
+        lk.map.distances.insert(start, 0);
         let mut bfs = VecDeque::from([(start, 0u64)]);
         lk.maze[start.row as usize][start.col as usize] |= rgb::MEASURE;
         while let Some(cur) = bfs.pop_front() {
-            if cur.1 > map.max {
-                map.max = cur.1;
+            if cur.1 > lk.map.max {
+                lk.map.max = cur.1;
             }
             for &p in maze::CARDINAL_DIRECTIONS.iter() {
                 let next = maze::Point {
@@ -71,7 +77,7 @@ pub fn animate_distance_from_center(monitor: rgb::PainterMonitor, speed: speed::
                     continue;
                 }
                 lk.maze[next.row as usize][next.col as usize] |= rgb::MEASURE;
-                map.distances.insert(next, cur.1 + 1);
+                lk.map.distances.insert(next, cur.1 + 1);
                 bfs.push_back((next, cur.1 + 1));
             }
         }
@@ -79,11 +85,6 @@ pub fn animate_distance_from_center(monitor: rgb::PainterMonitor, speed: speed::
     } else {
         print::maze_panic!("Thread panic.");
     };
-
-    match monitor.lock() {
-        Ok(mut lk) => lk.map = map,
-        Err(_) => print::maze_panic!("Thread panic"),
-    }
 
     let mut rng = thread_rng();
     let rand_color_choice: usize = rng.gen_range(0..3);
@@ -126,7 +127,7 @@ pub fn animate_distance_from_center(monitor: rgb::PainterMonitor, speed: speed::
 
 // Private Helper Functions-----------------------------------------------------------------------
 
-fn painter(maze: &maze::Maze, map: &rgb::MaxMap) {
+fn painter(maze: &maze::Maze, map: &solve::MaxMap) {
     let mut rng = thread_rng();
     let rand_color_choice: usize = rng.gen_range(0..3);
     for r in 0..maze.row_size() {
@@ -152,7 +153,7 @@ fn painter(maze: &maze::Maze, map: &rgb::MaxMap) {
 }
 
 fn painter_animated(
-    monitor: rgb::PainterMonitor,
+    monitor: solve::SolverMonitor,
     guide: rgb::ThreadGuide,
     animation: rgb::SpeedUnit,
 ) {
