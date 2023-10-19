@@ -14,8 +14,7 @@ use solvers::dfs;
 use solvers::floodfs;
 use solvers::rdfs;
 
-use painters::distance;
-use painters::runs;
+use solvers::solve;
 
 use std::env;
 use std::{thread, time};
@@ -28,7 +27,7 @@ use rand::{
 
 type BuildDemo = fn(&mut maze::Maze, speed::Speed);
 
-type SolveDemo = fn(maze::BoxMaze, speed::Speed);
+type SolveDemo = fn(solve::SolverMonitor, speed::Speed);
 
 struct DemoRunner {
     args: maze::MazeArgs,
@@ -76,8 +75,6 @@ impl DemoRunner {
                 floodfs::animate_hunt,
                 floodfs::animate_gather,
                 floodfs::animate_corner,
-                runs::animate_run_lengths,
-                distance::animate_distance_from_center,
             ],
             speeds: vec![
                 speed::Speed::Speed1,
@@ -119,7 +116,13 @@ fn main() {
     invisible.hide();
     ctrlc::set_handler(move || {
         print::clear_screen();
-        print::set_cursor_position(maze::Point { row: 0, col: 0 });
+        print::set_cursor_position(
+            maze::Point { row: 0, col: 0 },
+            maze::Offset {
+                add_rows: 0,
+                add_cols: 0,
+            },
+        );
         print::unhide_cursor_on_process_exit();
         std::process::exit(0);
     })
@@ -161,13 +164,14 @@ fn main() {
             }
         }
 
-        print::set_cursor_position(maze::Point { row: 0, col: 0 });
+        print::set_cursor_position(maze::Point::default(), maze::Offset::default());
 
-        solve_algo(maze, solve_speed);
+        let monitor = solve::Solver::new(maze);
+        solve_algo(monitor, solve_speed);
         print!("Loading next maze...");
         print::flush();
         thread::sleep(time::Duration::from_secs(2));
-        print::set_cursor_position(maze::Point { row: 0, col: 0 });
+        print::set_cursor_position(maze::Point::default(), maze::Offset::default());
     }
 }
 

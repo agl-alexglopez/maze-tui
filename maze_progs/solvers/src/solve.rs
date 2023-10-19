@@ -1,15 +1,16 @@
 use crossterm::{
-    queue,
+    execute, queue,
     style::{
         Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor,
     },
 };
+use key;
 use print::maze_panic;
 use rand::prelude::*;
 use std::io::{self};
 use std::sync::{Arc, Mutex};
-// Types available to all solvers.
 
+// Types available to all solvers.
 pub type ThreadPaint = u16;
 pub type ThreadCache = u16;
 pub type SolveSpeedUnit = u64;
@@ -21,21 +22,18 @@ pub struct ThreadGuide {
     pub speed: SolveSpeedUnit,
 }
 
-pub struct ThreadColor {
-    pub block: &'static str,
-    pub code: u8,
-}
-
 pub struct Solver {
-    pub maze: maze::BoxMaze,
+    pub maze: maze::Maze,
     pub win: Option<usize>,
+    pub win_path: Vec<(maze::Point, ThreadPaint)>,
 }
 
 impl Solver {
-    pub fn new(boxed_maze: maze::BoxMaze) -> Arc<Mutex<Self>> {
+    pub fn new(boxed_maze: maze::Maze) -> Arc<Mutex<Self>> {
         Arc::new(Mutex::new(Self {
             maze: boxed_maze,
             win: None,
+            win_path: Vec::new(),
         }))
     }
 }
@@ -112,118 +110,160 @@ pub fn print_paths(maze: &maze::Maze) {
         for c in 0..maze.col_size() {
             print_point(maze, maze::Point { row: r, col: c });
         }
-        println!();
+        match queue!(io::stdout(), Print('\n'),) {
+            Ok(_) => {}
+            Err(_) => maze_panic!("Could not print newline."),
+        }
     }
     print::flush();
 }
 
 pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
-    print::set_cursor_position(point);
-    print_point(maze, point);
-    print::flush();
-}
-
-pub fn print_point(maze: &maze::Maze, point: maze::Point) {
+    print::set_cursor_position(
+        maze::Point {
+            row: point.row,
+            col: point.col,
+        },
+        maze.offset(),
+    );
     let square = &maze[point.row as usize][point.col as usize];
     // We have some special printing for the finish square. Not here.
     if (square & FINISH_BIT) != 0 {
-        let av = THREAD_COLORS[((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize].code;
+        let ansi = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+        match execute!(
+            io::stdout(),
+            SetAttribute(Attribute::SlowBlink),
+            SetAttribute(Attribute::Bold),
+            SetBackgroundColor(Color::AnsiValue(ansi)),
+            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            Print('F'),
+            ResetColor
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark Finish square"),
+        }
+    }
+    if (square & START_BIT) != 0 {
+        match execute!(
+            io::stdout(),
+            SetAttribute(Attribute::Bold),
+            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            Print('S'),
+            ResetColor
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark Start square."),
+        }
+    }
+    if (square & THREAD_MASK) != 0 {
+        let thread_color: key::ThreadColor =
+            key::thread_color(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+        match execute!(
+            io::stdout(),
+            SetForegroundColor(Color::AnsiValue(thread_color.ansi)),
+            Print(thread_color.block),
+            ResetColor,
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark thread color."),
+        }
+    }
+    if (square & maze::PATH_BIT) == 0 {
+        match execute!(
+            io::stdout(),
+            Print(maze.wall_style()[(square & maze::WALL_MASK) as usize]),
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not print wall."),
+        }
+    }
+    if (square & maze::PATH_BIT) != 0 {
+        match execute!(io::stdout(), Print(' '),) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not print path."),
+        }
+    }
+    maze_panic!("Uncategorized maze square! Check the bits.");
+}
+
+pub fn print_point(maze: &maze::Maze, point: maze::Point) {
+    print::set_cursor_position(
+        maze::Point {
+            row: point.row,
+            col: point.col,
+        },
+        maze.offset(),
+    );
+    let square = &maze[point.row as usize][point.col as usize];
+    if (square & FINISH_BIT) != 0 {
+        let ansi = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
         match queue!(
             io::stdout(),
             SetAttribute(Attribute::SlowBlink),
             SetAttribute(Attribute::Bold),
-            SetBackgroundColor(Color::AnsiValue(av)),
-            SetForegroundColor(Color::AnsiValue(ANSI_CYN)),
-            Print("F".to_string()),
+            SetBackgroundColor(Color::AnsiValue(ansi)),
+            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            Print('F'),
             ResetColor
         ) {
-            Ok(_) => {}
+            Ok(_) => return,
             Err(_) => maze_panic!("Could not mark Finish square"),
         }
-        return;
     }
     if (square & START_BIT) != 0 {
-        print!("{}", ANSI_START);
-        return;
-    }
-    if (square & THREAD_MASK) != 0 {
-        let thread_color: ThreadPaint = (square & THREAD_MASK) >> THREAD_TAG_OFFSET;
-        print!("{}", THREAD_COLORS[thread_color as usize].block);
-        return;
-    }
-    if (square & maze::PATH_BIT) == 0 {
-        print!("{}", maze.wall_style()[(square & maze::WALL_MASK) as usize]);
-        return;
-    }
-    if (square & maze::PATH_BIT) != 0 {
-        print!(" ");
-        return;
-    }
-    print::maze_panic!("Uncategorized maze square! Check the bits.");
-}
-
-pub fn deluminate_maze(rows: i32, cols: i32) {
-    for r in 0..rows {
-        for c in 0..cols {
-            let p = maze::Point { row: r, col: c };
-            print::set_cursor_position(p);
-            print!(" ");
+        match queue!(
+            io::stdout(),
+            SetAttribute(Attribute::Bold),
+            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            Print('S'),
+            ResetColor
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark Start square."),
         }
     }
-}
-
-pub fn print_hunt_solution_message(winning_index: Option<usize>) {
-    match winning_index {
-        Some(i) => print!(
-            "{} THREAD {} WINS!",
-            THREAD_COLORS[(THREAD_MASKS[i] >> THREAD_TAG_OFFSET) as usize].block,
-            i
-        ),
-        None => print!("{}", THREAD_COLORS[ALL_THREADS_FAILED_INDEX].block),
+    if (square & THREAD_MASK) != 0 {
+        let thread_color: key::ThreadColor =
+            key::thread_color(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+        match queue!(
+            io::stdout(),
+            SetForegroundColor(Color::AnsiValue(thread_color.ansi)),
+            Print(thread_color.block),
+            ResetColor,
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark thread color."),
+        }
     }
-}
-
-pub fn print_gather_solution_message() {
-    for mask in &THREAD_MASKS {
-        print!(
-            "{}",
-            THREAD_COLORS[(mask >> THREAD_TAG_OFFSET) as usize].block
-        );
+    if (square & maze::PATH_BIT) == 0 {
+        match queue!(
+            io::stdout(),
+            Print(maze.wall_style()[(square & maze::WALL_MASK) as usize]),
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not print wall."),
+        }
     }
-    println!(" All threads found their finish squares!");
+    if (square & maze::PATH_BIT) != 0 {
+        match queue!(io::stdout(), Print(' '),) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not print path."),
+        }
+    }
+    maze_panic!("Uncategorized maze square! Check the bits.");
 }
 
-pub fn print_overlap_key() {
-    println!("┌────────────────────────────────────────────────────────────────┐");
-    println!("│     Overlap Key: 3_THREAD | 2_THREAD | 1_THREAD | 0_THREAD     │");
-    println!("├────────────┬────────────┬────────────┬────────────┬────────────┤");
-    println!(
-        "│ {} = 0      │ {} = 1      │ {} = 1|0    │ {} = 2      │ {} = 2|0    │",
-        THREAD_COLORS[1].block,
-        THREAD_COLORS[2].block,
-        THREAD_COLORS[3].block,
-        THREAD_COLORS[4].block,
-        THREAD_COLORS[5].block
-    );
-    println!("├────────────┼────────────┼────────────┼────────────┼────────────┤");
-    println!(
-        "│ {} = 2|1    │ {} = 2|1|0  │ {} = 3      │ {} = 3|0    │ {} = 3|1    │",
-        THREAD_COLORS[6].block,
-        THREAD_COLORS[7].block,
-        THREAD_COLORS[8].block,
-        THREAD_COLORS[9].block,
-        THREAD_COLORS[10].block
-    );
-    println!("├────────────┼────────────┼────────────┼────────────┼────────────┤");
-    println!(
-        "│ {} = 3|1|0  │ {} = 3|2    │ {} = 3|2|0  │ {} = 3|2|1  │ {} = 3|2|1|0│",
-        THREAD_COLORS[11].block,
-        THREAD_COLORS[12].block,
-        THREAD_COLORS[13].block,
-        THREAD_COLORS[14].block,
-        THREAD_COLORS[15].block
-    );
-    println!("└────────────┴────────────┴────────────┴────────────┴────────────┘");
+pub fn deluminate_maze(maze: &maze::Maze) {
+    for r in 0..maze.row_size() {
+        for c in 0..maze.col_size() {
+            let p = maze::Point { row: r, col: c };
+            print::set_cursor_position(p, maze.offset());
+            match queue!(io::stdout(), Print(' '),) {
+                Ok(_) => {}
+                Err(_) => maze_panic!("Could not print path."),
+            }
+        }
+    }
 }
 
 // Private Module Function
@@ -239,7 +279,6 @@ fn is_valid_start_or_finish(maze: &maze::Maze, choice: maze::Point) -> bool {
 }
 
 // Read Only Data Available to All Solvers
-
 pub const START_BIT: ThreadPaint = 0b0100_0000_0000_0000;
 pub const FINISH_BIT: ThreadPaint = 0b1000_0000_0000_0000;
 pub const NUM_THREADS: usize = 4;
@@ -256,112 +295,4 @@ pub const THREAD_MASKS: [ThreadPaint; 4] = [ZERO_THREAD, ONE_THREAD, TWO_THREAD,
 
 pub const CACHE_MASK: ThreadCache = 0b1111_0000_0000;
 
-// The first four colors are the thread primitives that mix to form the rest.
-pub const ANSI_RED: u8 = 1;
-pub const ANSI_GRN: u8 = 2;
-pub const ANSI_BLU: u8 = 4;
-pub const ANSI_PRP: u8 = 183;
-pub const ANSI_CYN: u8 = 14;
-pub const ANSI_RED_BLOCK: &str = "\x1b[38;5;1m█\x1b[0m";
-pub const ANSI_GRN_BLOCK: &str = "\x1b[38;5;2m█\x1b[0m";
-pub const ANSI_YEL_BLOCK: &str = "\x1b[38;5;3m█\x1b[0m";
-pub const ANSI_BLU_BLOCK: &str = "\x1b[38;5;4m█\x1b[0m";
-pub const ANSI_PRP_BLOCK: &str = "\x1b[38;5;183m█\x1b[0m";
-pub const ANSI_MAG_BLOCK: &str = "\x1b[38;5;201m█\x1b[0m";
-pub const ANSI_CYN_BLOCK: &str = "\x1b[38;5;87m█\x1b[0m";
-pub const ANSI_WIT_BLOCK: &str = "\x1b[38;5;231m█\x1b[0m";
-pub const ANSI_PRP_RED_BLOCK: &str = "\x1b[38;5;204m█\x1b[0m";
-pub const ANSI_RED_GRN_BLU_BLOCK: &str = "\x1b[38;5;121m█\x1b[0m";
-pub const ANSI_GRN_PRP_BLOCK: &str = "\x1b[38;5;106m█\x1b[0m";
-pub const ANSI_GRN_BLU_PRP_BLOCK: &str = "\x1b[38;5;60m█\x1b[0m";
-pub const ANSI_RED_GRN_PRP_BLOCK: &str = "\x1b[38;5;105m█\x1b[0m";
-pub const ANSI_RED_BLU_PRP_BLOCK: &str = "\x1b[38;5;89m█\x1b[0m";
-pub const ANSI_DRK_BLU_MAG_BLOCK: &str = "\x1b[38;5;57m█\x1b[0m";
-pub const ANSI_NO_SOLUTION: &str = "\x1b[38;5;15m\x1b[48;255;0;0m╳ no thread won..\x1b[0m";
-pub const ANSI_START: &str = "\x1b[1m\x1b[38;5;87mS\x1b[0m";
-pub const ALL_THREADS_FAILED_INDEX: usize = 0;
-// Threads Overlaps. The zero thread is the zero index bit with a value of 1.
-pub static THREAD_COLORS: [ThreadColor; 16] = [
-    ThreadColor {
-        // 0b0000
-        block: ANSI_NO_SOLUTION,
-        code: 0,
-    },
-    ThreadColor {
-        // 0b0001
-        block: ANSI_RED_BLOCK,
-        code: ANSI_RED,
-    },
-    ThreadColor {
-        // 0b0010
-        block: ANSI_GRN_BLOCK,
-        code: ANSI_GRN,
-    },
-    ThreadColor {
-        // 0b0011
-        block: ANSI_YEL_BLOCK,
-        code: 3,
-    },
-    ThreadColor {
-        // 0b0100
-        block: ANSI_BLU_BLOCK,
-        code: ANSI_BLU,
-    },
-    ThreadColor {
-        // 0b0101
-        block: ANSI_MAG_BLOCK,
-        code: 201,
-    },
-    ThreadColor {
-        // 0b0110
-        block: ANSI_CYN_BLOCK,
-        code: ANSI_CYN,
-    },
-    ThreadColor {
-        // 0b0111
-        block: ANSI_RED_GRN_BLU_BLOCK,
-        code: 121,
-    },
-    ThreadColor {
-        // 0b1000
-        block: ANSI_PRP_BLOCK,
-        code: ANSI_PRP,
-    },
-    ThreadColor {
-        // 0b1001
-        block: ANSI_PRP_RED_BLOCK,
-        code: 204,
-    },
-    ThreadColor {
-        // 0b1010
-        block: ANSI_GRN_PRP_BLOCK,
-        code: 106,
-    },
-    ThreadColor {
-        // 0b1011
-        block: ANSI_RED_GRN_PRP_BLOCK,
-        code: 105,
-    },
-    ThreadColor {
-        // 0b1100
-        block: ANSI_DRK_BLU_MAG_BLOCK,
-        code: 57,
-    },
-    ThreadColor {
-        // 0b1101
-        block: ANSI_RED_BLU_PRP_BLOCK,
-        code: 89,
-    },
-    ThreadColor {
-        // 0b1110
-        block: ANSI_GRN_BLU_PRP_BLOCK,
-        code: 60,
-    },
-    ThreadColor {
-        // 0b1111
-        block: ANSI_WIT_BLOCK,
-        code: 231,
-    },
-];
-pub const OVERLAP_KEY_AND_MESSAGE_HEIGHT: i32 = 9;
 pub const SOLVER_SPEEDS: [SolveSpeedUnit; 8] = [0, 20000, 10000, 5000, 2000, 1000, 500, 250];

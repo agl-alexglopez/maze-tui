@@ -6,4 +6,4 @@ pub mod darkrdfs;
 pub mod dfs;
 pub mod floodfs;
 pub mod rdfs;
-pub(crate) mod solve;
+pub mod solve;

@@ -40,6 +40,7 @@
 // maze start bit--------||| |||| |||| ||||
 // maze goals bit-------|||| |||| |||| ||||
 //                    0b0000 0000 0000 0000
+use crossbeam_channel::Receiver;
 use std::ops::{Index, IndexMut};
 
 // Public Types
@@ -47,10 +48,16 @@ use std::ops::{Index, IndexMut};
 pub type Square = u16;
 pub type WallLine = u16;
 
-#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
+#[derive(Default, Debug, PartialEq, Eq, Hash, Copy, Clone)]
 pub struct Point {
     pub row: i32,
     pub col: i32,
+}
+
+#[derive(Default, Debug, Clone, Copy)]
+pub struct Offset {
+    pub add_rows: i32,
+    pub add_cols: i32,
 }
 
 #[derive(Clone, Copy)]
@@ -67,16 +74,19 @@ pub enum MazeStyle {
 pub struct MazeArgs {
     pub odd_rows: i32,
     pub odd_cols: i32,
+    pub offset: Offset,
     pub style: MazeStyle,
 }
 
 // Model a ROWxCOLUMN maze in a flat Vec. Implement tricky indexing in Index impls.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Maze {
     maze: Vec<Square>,
     maze_row_size: i32,
     maze_col_size: i32,
+    offset: Offset,
     wall_style_index: usize,
+    receiver: Option<Receiver<bool>>,
 }
 
 // Core Maze Object Implementation
@@ -84,25 +94,47 @@ pub struct Maze {
 // A maze in this program is intended to be shared both mutably and immutably.
 // A maze only provides building blocks and some convenience read-only data.
 // Builders and solvers use the visitor pattern to operate on and extend
-// what they wish on the maze. A BoxMaze allows borrows during its scope.
-// This is necessary for the multithreading in the solver functions.
-
-pub type BoxMaze = Box<Maze>;
-
+// what they wish on the maze.
 impl Maze {
-    pub fn new(args: MazeArgs) -> Box<Self> {
+    pub fn new(args: MazeArgs) -> Self {
         let rows = args.odd_rows + 1 - (args.odd_rows % 2);
         let cols = args.odd_cols + 1 - (args.odd_cols % 2);
-        Box::new(Self {
+        Self {
             maze: (vec![0; rows as usize * cols as usize]),
             maze_row_size: (rows),
             maze_col_size: (cols),
+            offset: args.offset,
             wall_style_index: (args.style as usize),
-        })
+            receiver: None,
+        }
+    }
+
+    pub fn new_channel(args: &MazeArgs, rec: Receiver<bool>) -> Self {
+        let rows = args.odd_rows + 1 - (args.odd_rows % 2);
+        let cols = args.odd_cols + 1 - (args.odd_cols % 2);
+        Self {
+            maze: (vec![0; rows as usize * cols as usize]),
+            maze_row_size: (rows),
+            maze_col_size: (cols),
+            offset: args.offset,
+            wall_style_index: (args.style as usize),
+            receiver: Some(rec),
+        }
+    }
+
+    pub fn exit(&self) -> bool {
+        match &self.receiver {
+            Some(rec) => rec.is_full(),
+            None => false,
+        }
     }
 
     pub fn row_size(&self) -> i32 {
         self.maze_row_size
+    }
+
+    pub fn offset(&self) -> Offset {
+        self.offset
     }
 
     pub fn col_size(&self) -> i32 {
@@ -112,6 +144,10 @@ impl Maze {
     pub fn wall_style(&self) -> &[&'static str] {
         &WALL_STYLES
             [(self.wall_style_index * WALL_ROW)..(self.wall_style_index * WALL_ROW + WALL_ROW)]
+    }
+
+    pub fn style_index(&self) -> usize {
+        self.wall_style_index
     }
 }
 
@@ -136,6 +172,7 @@ impl Default for MazeArgs {
             odd_rows: DEFAULT_ROWS,
             odd_cols: DEFAULT_COLS,
             style: MazeStyle::Sharp,
+            offset: Offset::default(),
         }
     }
 }

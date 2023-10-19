@@ -1,0 +1,44 @@
+┌┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄                              
+│╱╲╲╲╲╲╲╲╲╲╲╲╲╲╲┄┄┄╱╲╲╲╲╲┄┄┄┄┄┄╱╲╲╲╲╲┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+│╲╱╲╲╲╱╱╱╱╱╱╱╱╱╱┄┄┄╲╱╱╱╱╲╲┄┄┄┄┄╲╱╱╱╱╲╲┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+├┄╲╱╲╲┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄╲╱╲╲┄┄┄┄┄┄┄┄╲╱╲╲┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄      
+├┄┄╲╱╲╲╲╲╲╲╲╲╲╲┄┄┄┄┄┄┄┄┄╲╱╲╲┄┄┄┄┄┄┄┄╲╱╲╲┄┄┄┄┄┄┄┄┄╱╲╲╲╲╲╲╲┄┄┄┄╱╲╲╱╲╲╲╲╲╲┄┄┄     
+├┄┄┄╲╱╲╲╲╱╱╱╱╱╱┄┄┄┄┄┄┄┄┄┄╲╱╲╲┄┄┄┄┄┄┄┄╲╱╲╲┄┄┄┄┄┄┄╱╲╲╲╱╱╱╱╱╲╲┄┄╲╱╲╲╲╱╱╱╱╱╲╲┄┄    
+├┄┄┄┄╲╱╲╲┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄╲╱╲╲┄┄┄┄┄┄┄┄╲╱╲╲┄┄┄┄┄┄╱╲╲╲╲╲╲╲╲╲╲┄┄┄╲╱╲╲┄┄┄┄╲╱╱┄┄┄   
+├┄┄┄┄┄╲╱╲╲┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄╲╱╲╲┄┄┄┄┄┄┄┄╲╱╲╲┄┄┄┄┄╲╱╱╲╲╱╱╱╱╱╱┄┄┄┄╲╱╲╲┄┄┄┄┄┄┄┄┄┄
+├┄┄┄┄┄┄╲╱╲╲╲╲╲╲╲╲╲╲╲╲╲╲┄┄┄╱╲╲╲╲╲╲╲╲┄┄┄╱╲╲╲╲╲╲╲╲┄┄┄╲╱╱╲╲╲╲╲╲╲╲╲┄┄╲╱╲╲┄┄┄┄┄┄┄┄┄┄ 
+├┄┄┄┄┄┄┄╲╱╱╱╱╱╱╱╱╱╱╱╱╱╱┄┄┄╲╱╱╱╱╱╱╱╱┄┄┄╲╱╱╱╱╱╱╱╱┄┄┄┄┄╲╱╱╱╱╱╱╱╱╱┄┄┄╲╱╱┄┄┄┄┄┄┄┄┄┄┄
+└┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+
+(scroll with <↓>/<↑>, toggle info <i>)
+
+People interested in mazes love Eller's algorithm. This is because it can be implemented many ways, some of which allow for arbitrarily large generation of mazes with a memory requirement only equivalent to the width of the maze. This algorithm can generate row by row which makes it quite fast and efficient. For all of its benefits it is challenging to find good information on the implementation. So, I went with a somewhat original approach to the problem for now. I was able to uphold the main benefit of Eller, that being I only require a memory constant tied to the width of the maze. I think there are smarter ways to implement my approach and when I get a chance, I think I can cut down on the number of passes over a row that I require.
+
+│prepare a sliding window of the current and next row
+│
+│give every cell in the first row of the window a unique set id
+│
+│for every row in the maze except the last
+│
+│    give every cell in the next sliding window row a unique set id
+│
+│    for every column in the current row
+│
+│        if chance merges a square with its right neighbor
+│
+│            merge squares into the same set
+│
+│    for every set merged with another or left isolated
+│
+│        choose a random number of elements >= 1 in that set to drop to row below
+│
+│            join that element with the set below, joining squares.
+│
+│    adjust the sliding window, set current = next.
+│
+│for every column in the final row
+│
+│    if a square is not part of its neighbors set
+│
+│        merge them into the same set, joining squares.
+

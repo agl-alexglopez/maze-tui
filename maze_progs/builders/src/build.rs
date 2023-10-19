@@ -1,6 +1,14 @@
+use crossterm::{
+    execute, queue,
+    style::{
+        Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor,
+    },
+};
+use key;
 use maze;
 use print;
 use print::maze_panic;
+use std::io::{self};
 
 use std::{thread, time};
 
@@ -13,6 +21,12 @@ pub enum ParityPoint {
     Odd,
 }
 
+#[derive(Copy, Clone)]
+pub struct BacktrackSymbol {
+    arrow: char,
+    ansi: u8,
+}
+
 // Any builders that choose to cache seen squares in place can use this bit.
 pub const BUILDER_BIT: maze::Square = 0b0001_0000_0000_0000;
 // Data that will help backtracker algorithms like recursive backtracker and Wilson's.
@@ -23,12 +37,33 @@ pub const FROM_NORTH: BacktrackMarker = 0b0001_0000;
 pub const FROM_EAST: BacktrackMarker = 0b0010_0000;
 pub const FROM_SOUTH: BacktrackMarker = 0b0011_0000;
 pub const FROM_WEST: BacktrackMarker = 0b0100_0000;
-pub static BACKTRACKING_SYMBOLS: [&str; 5] = [
-    " ",                                 // I came from the orgin.
-    "\x1b[38;5;15m\x1b[48;5;1m↑\x1b[0m", // I came from the north.
-    "\x1b[38;5;15m\x1b[48;5;2m→\x1b[0m", // I came from the east.
-    "\x1b[38;5;15m\x1b[48;5;3m↓\x1b[0m", // I came from the south.
-    "\x1b[38;5;15m\x1b[48;5;4m←\x1b[0m", // I came from the west.
+pub const ANSI_WHITE: u8 = 15;
+pub static BACKTRACKING_SYMBOLS: [BacktrackSymbol; 5] = [
+    BacktrackSymbol {
+        // Origin
+        arrow: ' ',
+        ansi: 0,
+    },
+    BacktrackSymbol {
+        // From North
+        arrow: '↑',
+        ansi: 1,
+    },
+    BacktrackSymbol {
+        // From East
+        arrow: '→',
+        ansi: 2,
+    },
+    BacktrackSymbol {
+        // From South
+        arrow: '↓',
+        ansi: 3,
+    },
+    BacktrackSymbol {
+        // From West
+        arrow: '←',
+        ansi: 4,
+    },
 ];
 pub const BACKTRACKING_POINTS: [maze::Point; 5] = [
     maze::Point { row: 0, col: 0 },
@@ -264,15 +299,6 @@ pub fn mark_origin_animated(
 }
 
 pub fn fill_maze_with_walls(maze: &mut maze::Maze) {
-    for r in 0..maze.row_size() {
-        for c in 0..maze.col_size() {
-            build_wall(maze, maze::Point { row: r, col: c });
-        }
-    }
-}
-
-pub fn fill_maze_with_walls_animated(maze: &mut maze::Maze) {
-    print::clear_screen();
     for r in 0..maze.row_size() {
         for c in 0..maze.col_size() {
             build_wall(maze, maze::Point { row: r, col: c });
@@ -561,35 +587,137 @@ pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUn
     }
 }
 
+pub fn print_overlap_key(maze: &maze::Maze) {
+    let offset = maze::Offset {
+        add_rows: maze.offset().add_rows + maze.row_size(),
+        add_cols: maze.offset().add_cols,
+    };
+    let mut cur_print = 0;
+    for r in 0..THREAD_KEY_MAZE_ROWS {
+        for c in (0..THREAD_KEY_MAZE_COLS).step_by((KEY_ENTRY_LEN) as usize) {
+            let cur_pos = maze::Point { row: r, col: c };
+            print::set_cursor_position(cur_pos, offset);
+            let thread_info = key::thread_color(cur_print);
+            execute!(
+                io::stdout(),
+                SetForegroundColor(Color::AnsiValue(thread_info.ansi)),
+                Print(format!("{}{:04b}", thread_info.block, cur_print)),
+                ResetColor,
+            )
+            .expect("Could not execute print_overlap_key_command");
+            cur_print += 1;
+        }
+    }
+    print::set_cursor_position(maze::Point { row: 0, col: 0 }, offset);
+    execute!(
+        io::stdout(),
+        SetForegroundColor(Color::Grey),
+        Print(format!(" {:04b}", 0)),
+        ResetColor,
+    )
+    .expect("Could not execute print_overlap_key_command");
+}
+
+pub fn print_overlap_key_animated(maze: &maze::Maze) {
+    let offset = maze::Offset {
+        add_rows: maze.offset().add_rows + maze.row_size(),
+        add_cols: maze.offset().add_cols,
+    };
+    let mut cur_print = 0;
+    for r in 0..THREAD_KEY_MAZE_ROWS {
+        for c in (0..THREAD_KEY_MAZE_COLS).step_by((KEY_ENTRY_LEN) as usize) {
+            let cur_pos = maze::Point { row: r, col: c };
+            print::set_cursor_position(cur_pos, offset);
+            let thread_info = key::thread_color(cur_print);
+            execute!(
+                io::stdout(),
+                SetForegroundColor(Color::AnsiValue(thread_info.ansi)),
+                Print(format!("{}{:04b}", thread_info.block, cur_print)),
+                ResetColor,
+            )
+            .expect("Could not execute print_overlap_key_command");
+            cur_print += 1;
+        }
+    }
+    print::set_cursor_position(maze::Point { row: 0, col: 0 }, offset);
+    execute!(
+        io::stdout(),
+        SetForegroundColor(Color::Grey),
+        Print(format!(" {:04b}", 0)),
+        ResetColor,
+    )
+    .expect("Could not execute print_overlap_key_command");
+}
+
 // Terminal Printing Helpers
 
 pub fn flush_cursor_maze_coordinate(maze: &maze::Maze, p: maze::Point) {
-    print_square(maze, p);
-    print::flush();
-}
-
-pub fn print_square(maze: &maze::Maze, p: maze::Point) {
     let square = &maze[p.row as usize][p.col as usize];
-    print::set_cursor_position(p);
+    print::set_cursor_position(p, maze.offset());
     if square & MARKERS_MASK != 0 {
-        let mark = (square & MARKERS_MASK) >> MARKER_SHIFT;
-        print!("{}", BACKTRACKING_SYMBOLS[mark as usize]);
+        let mark = BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize];
+        execute!(
+            io::stdout(),
+            SetAttribute(Attribute::Bold),
+            SetForegroundColor(Color::AnsiValue(ANSI_WHITE)),
+            SetBackgroundColor(Color::AnsiValue(mark.ansi)),
+            Print(mark.arrow),
+            ResetColor,
+        )
+        .expect("Could not print backtrack point.");
     } else if square & maze::PATH_BIT == 0 {
-        print!("{}", maze.wall_style()[(square & maze::WALL_MASK) as usize]);
+        execute!(
+            io::stdout(),
+            Print(maze.wall_style()[(square & maze::WALL_MASK) as usize]),
+        )
+        .expect("Could not print wall.");
     } else if square & maze::PATH_BIT != 0 {
-        print!(" ");
+        execute!(io::stdout(), Print(' '),).expect("Could not print path");
     } else {
         print::maze_panic!("Printed a maze square without a category.");
     }
 }
 
-pub fn clear_and_flush_grid(maze: &maze::Maze) {
-    print::clear_screen();
+pub fn print_square(maze: &maze::Maze, p: maze::Point) {
+    let square = &maze[p.row as usize][p.col as usize];
+    print::set_cursor_position(p, maze.offset());
+    if square & MARKERS_MASK != 0 {
+        let mark = BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize];
+        queue!(
+            io::stdout(),
+            SetAttribute(Attribute::Bold),
+            SetForegroundColor(Color::AnsiValue(ANSI_WHITE)),
+            SetBackgroundColor(Color::AnsiValue(mark.ansi)),
+            Print(mark.arrow),
+            ResetColor,
+        )
+        .expect("Could not print backtrack point.");
+    } else if square & maze::PATH_BIT == 0 {
+        queue!(
+            io::stdout(),
+            Print(maze.wall_style()[(square & maze::WALL_MASK) as usize]),
+        )
+        .expect("Could not print wall.");
+    } else if square & maze::PATH_BIT != 0 {
+        queue!(io::stdout(), Print(' '),).expect("Could not print path");
+    } else {
+        print::maze_panic!("Printed a maze square without a category.");
+    }
+}
+
+pub fn flush_grid(maze: &maze::Maze) {
     for r in 0..maze.row_size() {
         for c in 0..maze.col_size() {
             print_square(maze, maze::Point { row: r, col: c });
         }
-        println!();
+        match queue!(io::stdout(), Print('\n')) {
+            Ok(_) => {}
+            Err(_) => maze_panic!("Couldn't print square."),
+        };
     }
     print::flush();
 }
+
+const KEY_ENTRY_LEN: i32 = 5;
+const THREAD_KEY_MAZE_ROWS: i32 = 2;
+const THREAD_KEY_MAZE_COLS: i32 = 8 * KEY_ENTRY_LEN;
