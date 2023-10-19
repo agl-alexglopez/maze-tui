@@ -1,4 +1,4 @@
-# Multithreading with Mazes in Rust
+# Maze TUI
 
 ![wilson-demo](/images/wilson-demo.png)
 
