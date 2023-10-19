@@ -1,6 +1,6 @@
 # Maze TUI
 
-![wilson-demo](/images/wilson-demo.png)
+![splash](/images/splash.png)
 
 > **For a complete breakdown of all maze generation algorithms, pseudocode, and many other important details please read the [wiki](https://github.com/agl-alexglopez/multithreading-with-mazes-in-rust/wiki)! This is just the quick start guide to refer to for usage instructions.**
 
