@@ -14,3 +14,5 @@ target/
 *.pdb
 
 .gdb_history
+
+.DS_Store
