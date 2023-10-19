@@ -6,7 +6,7 @@
 ██║ ╚═╝ ██║██║  ██║███████╗███████╗       ██║   ╚██████╔╝██║
 ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝       ╚═╝    ╚═════╝ ╚═╝
 
-Use flags, followed by arguments, in any order
+Use flags, followed by arguments, in any order.
 Press <ENTER> to confirm your flag choices.
 
 (scroll with <↓>/<↑>, exit with <ESC>)
@@ -66,6 +66,11 @@ EXAMPLES:
 -s bfs-gather -b prim
 -s bfs-corners -d round -b fractal
 -s dfs-hunt -ba 4 -sa 5 -b wilson-walls -m x
+
+ASCII lettering for this title and algorithm
+descriptions are templates I used from
+patorjk.com and modified to use box-drawing
+characters.
 
 Enjoy!
 

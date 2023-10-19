@@ -364,7 +364,7 @@ fn ui_home(cmd: &mut TextArea, scroll: &mut Scroller, f: &mut Frame<'_>) {
                 .border_style(Style::new().fg(Color::Yellow))
                 .style(Style::default().bg(Color::Black)),
         )
-        .alignment(Alignment::Center)
+        .alignment(Alignment::Left)
         .scroll((scroll.pos as u16, 0));
     f.render_widget(popup_instructions, popup_layout_h);
     scroll.state = scroll.state.content_length(INSTRUCTIONS_LINE_COUNT as u16);
@@ -438,9 +438,9 @@ fn ui_info(msg: &str, scroll: &mut Scroller, f: &mut Frame<'_>) {
     let popup_layout_v = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Percentage((100 - 90) / 2),
-            Constraint::Percentage(90),
-            Constraint::Percentage((100 - 80) / 2),
+            Constraint::Percentage((100 - 70) / 2),
+            Constraint::Percentage(70),
+            Constraint::Percentage((100 - 70) / 2),
         ])
         .split(overall_layout[0]);
     let popup_layout_h = Layout::default()
