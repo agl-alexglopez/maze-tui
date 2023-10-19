@@ -58,7 +58,7 @@ impl Solver {
         Arc::new(Mutex::new(Self {
             maze: boxed_maze,
             win: None,
-            win_path: Vec::new(),
+            win_path: Vec::default(),
             map: MaxMap::default(),
             count: 0,
         }))

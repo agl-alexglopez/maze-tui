@@ -98,45 +98,53 @@ fn run_channels(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result
         }
     }
     worker_thread.join().unwrap();
-    if !should_quit {
-        tui.info_prompt()?;
-        let mut scroll = tui::Scroller::default();
-        let mut info_popup = false;
-        let description = load_desc(&this_run.build);
-        'looking_at_maze: loop {
-            if info_popup {
-                tui.info_popup(&mut scroll, &description)?;
-            }
-            match tui.events.next()? {
-                tui::Pack::Press(ke) => match ke.code {
-                    KeyCode::Char('i') => {
-                        if info_popup {
-                            if let Ok(lk) = maze.lock() {
-                                tui.terminal.clear()?;
-                                solve::print_paths(&lk.maze);
-                                build::print_overlap_key(&lk.maze);
-                                tui.info_prompt()?;
-                            }
-                            info_popup = false;
-                        } else {
-                            info_popup = true;
+    if should_quit {
+        return Ok(());
+    }
+    handle_waiting_user(&this_run.build, maze.clone(), tui)
+}
+
+fn handle_waiting_user(
+    builder: &tables::BuildFunction,
+    maze: solve::SolverMonitor,
+    tui: &mut tui::Tui,
+) -> tui::Result<()> {
+    tui.info_prompt()?;
+    let mut scroll = tui::Scroller::default();
+    let mut info_popup = false;
+    let description = load_desc(builder);
+    'looking_at_maze: loop {
+        if info_popup {
+            tui.info_popup(&mut scroll, &description)?;
+        }
+        match tui.events.next()? {
+            tui::Pack::Press(ke) => match ke.code {
+                KeyCode::Char('i') => {
+                    if info_popup {
+                        if let Ok(lk) = maze.lock() {
+                            tui.terminal.clear()?;
+                            solve::print_paths(&lk.maze);
+                            build::print_overlap_key(&lk.maze);
+                            tui.info_prompt()?;
                         }
                     }
-                    KeyCode::Down => {
-                        if info_popup {
-                            scroll.scroll(ratatui::widgets::ScrollDirection::Forward);
-                        }
+                    info_popup = !info_popup;
+                }
+                KeyCode::Down => {
+                    if info_popup {
+                        scroll.scroll(ratatui::widgets::ScrollDirection::Forward);
                     }
-                    KeyCode::Up => {
-                        if info_popup {
-                            scroll.scroll(ratatui::widgets::ScrollDirection::Backward);
-                        }
+                }
+                KeyCode::Up => {
+                    if info_popup {
+                        scroll.scroll(ratatui::widgets::ScrollDirection::Backward);
                     }
-                    _ => break 'looking_at_maze,
-                },
-                tui::Pack::Resize(_, _) => break 'looking_at_maze,
+                }
+                KeyCode::Esc => break 'looking_at_maze,
                 _ => {}
-            }
+            },
+            tui::Pack::Resize(_, _) => break 'looking_at_maze,
+            _ => {}
         }
     }
     Ok(())
@@ -161,7 +169,12 @@ fn set_command_args(tui: &mut tui::Tui, cmd: &String) -> Result<tables::MazeRunn
             ) {
                 Ok(_) => {}
                 Err(msg) => {
-                    tui.error_popup(msg).expect("Tui error");
+                    tui.error_popup(format!(
+                        "{}\n{}\npress any key to continue",
+                        msg,
+                        get_arg_section(&prev_flag)
+                    ))
+                    .expect("Tui error");
                     return Err(Quit::new());
                 }
             }
@@ -174,16 +187,20 @@ fn set_command_args(tui: &mut tui::Tui, cmd: &String) -> Result<tables::MazeRunn
                 prev_flag = flag;
             }
             None => {
-                tui.error_popup(format!("Unknown Flag[{}]\nPress any key to continue.", &a))
-                    .expect("Tui error");
+                tui.error_popup(format!(
+                    "unknown flag[{}].\n{}\npress any key to continue",
+                    &a, VALID_FLAGS
+                ))
+                .expect("Tui error");
                 return Err(Quit::new());
             }
         }
     }
     if process_current {
         tui.error_popup(format!(
-            "Flag[{}] with missing Arg[?]\nPress any key to continue.",
-            &prev_flag
+            "flag[{}] with missing arg[?]\n{}\npress any key to continue",
+            &prev_flag,
+            get_arg_section(&prev_flag)
         ))
         .expect("Tui error");
         return Err(Quit::new());
@@ -270,7 +287,7 @@ fn set_random_args(tui: &mut tui::Tui) -> tables::MazeRunner {
 
 pub fn err_string(args: &tables::FlagArg) -> String {
     String::from(format!(
-        "Invalid Flag[{}] Arg[{}] combo.\nPress any key to continue.",
+        "invalid flag[{}] arg[{}] combo",
         args.flag, args.arg
     ))
 }
@@ -281,6 +298,24 @@ pub fn load_desc(cur_builder: &tables::BuildFunction) -> &'static str {
         None => "Coming Soon!",
     }
 }
+
+fn get_arg_section(flag: &str) -> &'static str {
+    VALID_ARGS
+        .iter()
+        .find(|(f, _)| *f == flag)
+        .expect("check VALID_ARGS table.")
+        .1
+}
+
+pub static VALID_FLAGS: &'static str = "VALID FLAGS:[-b][-ba][-s][-sa][-w][-m]";
+pub static VALID_ARGS: [(&'static str, &'static str); 6] = [
+    ("-b", "see BUILDER FLAG section"),
+    ("-m", "see MODIFICATION FLAG section"),
+    ("-w", "see WALL FLAG section"),
+    ("-s", "see SOLVER FLAG section"),
+    ("-sa", "see SOLVER ANIMATION section"),
+    ("-ba", "see BUILDER ANIMATION section"),
+];
 
 pub static DESCRIPTIONS: [(tables::BuildFunction, &'static str); 9] = [
     (
