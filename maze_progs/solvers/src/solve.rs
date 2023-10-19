@@ -8,7 +8,10 @@ use key;
 use print::maze_panic;
 use rand::prelude::*;
 use std::io::{self};
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 // Types available to all solvers.
 pub type ThreadPaint = u16;
@@ -22,10 +25,32 @@ pub struct ThreadGuide {
     pub speed: SolveSpeedUnit,
 }
 
+pub struct MaxMap {
+    pub max: u64,
+    pub distances: HashMap<maze::Point, u64>,
+}
+
+impl MaxMap {
+    pub fn new(p: maze::Point, m: u64) -> Self {
+        Self {
+            max: m,
+            distances: HashMap::from([(p, m)]),
+        }
+    }
+    pub fn default() -> Self {
+        Self {
+            max: 0,
+            distances: HashMap::default(),
+        }
+    }
+}
+
 pub struct Solver {
     pub maze: maze::Maze,
     pub win: Option<usize>,
     pub win_path: Vec<(maze::Point, ThreadPaint)>,
+    pub map: MaxMap,
+    pub count: usize,
 }
 
 impl Solver {
@@ -34,6 +59,8 @@ impl Solver {
             maze: boxed_maze,
             win: None,
             win_path: Vec::new(),
+            map: MaxMap::default(),
+            count: 0,
         }))
     }
 }

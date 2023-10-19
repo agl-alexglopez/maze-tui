@@ -3,55 +3,13 @@ use crossterm::{
     style::{Color, Print, ResetColor, SetForegroundColor},
 };
 use print::maze_panic;
-use std::{
-    collections::HashMap,
-    io::{self},
-    sync::{Arc, Mutex},
-};
-
-pub struct MaxMap {
-    pub max: u64,
-    pub distances: HashMap<maze::Point, u64>,
-}
-
-impl MaxMap {
-    pub fn new(p: maze::Point, m: u64) -> Self {
-        Self {
-            max: m,
-            distances: HashMap::from([(p, m)]),
-        }
-    }
-    pub fn default() -> Self {
-        Self {
-            max: 0,
-            distances: HashMap::default(),
-        }
-    }
-}
+use std::io::{self};
 
 pub struct ThreadGuide {
     pub bias: usize,
     pub color_i: usize,
     pub p: maze::Point,
 }
-
-pub struct Painter {
-    pub maze: maze::Maze,
-    pub map: MaxMap,
-    pub count: usize,
-}
-
-impl Painter {
-    pub fn new(box_maze: maze::Maze) -> Arc<Mutex<Self>> {
-        Arc::new(Mutex::new(Self {
-            maze: box_maze,
-            map: MaxMap::default(),
-            count: 0,
-        }))
-    }
-}
-
-pub type PainterMonitor = Arc<Mutex<Painter>>;
 
 pub type SpeedUnit = u64;
 

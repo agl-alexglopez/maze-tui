@@ -9,6 +9,7 @@ pub use builders::recursive_subdivision;
 pub use builders::wilson_adder;
 pub use builders::wilson_carver;
 pub use painters::distance;
+pub use painters::rgb;
 pub use painters::runs;
 pub use solvers::bfs;
 pub use solvers::darkbfs;
@@ -132,7 +133,7 @@ pub const MODIFICATIONS: [(&'static str, BuildFunction); 2] = [
     ("cross", (modify::add_cross, modify::add_cross_animated)),
     ("x", (modify::add_x, modify::add_x_animated)),
 ];
-pub const SOLVERS: [(&'static str, SolveFunction); 24] = [
+pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
     ("dfs-hunt", (dfs::hunt, dfs::animate_hunt)),
     ("dfs-gather", (dfs::gather, dfs::animate_gather)),
     ("dfs-corner", (dfs::corner, dfs::animate_corner)),
@@ -166,6 +167,14 @@ pub const SOLVERS: [(&'static str, SolveFunction); 24] = [
         "darkfloodfs-corner",
         (floodfs::corner, darkfloodfs::animate_corner),
     ),
+    (
+        "distance",
+        (
+            distance::paint_distance_from_center,
+            distance::animate_distance_from_center,
+        ),
+    ),
+    ("runs", (runs::paint_run_lengths, runs::animate_run_lengths)),
 ];
 pub const SPEEDS: [(&'static str, speed::Speed); 7] = [
     ("1", speed::Speed::Speed1),
