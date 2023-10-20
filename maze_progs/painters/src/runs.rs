@@ -87,6 +87,9 @@ pub fn animate_run_lengths(monitor: solve::SolverMonitor, speed: speed::Speed) {
         }]);
         lk.maze[start.row as usize][start.col as usize] |= rgb::MEASURE;
         while let Some(cur) = bfs.pop_front() {
+            if lk.maze.exit() {
+                return;
+            }
             if cur.len > lk.map.max {
                 lk.map.max = cur.len;
             }
@@ -198,7 +201,7 @@ fn painter_animated(
     while let Some(cur) = bfs.pop_front() {
         match monitor.lock() {
             Ok(mut lk) => {
-                if lk.count == lk.map.distances.len() {
+                if lk.maze.exit() || lk.count == lk.map.distances.len() {
                     return;
                 }
                 let run = lk

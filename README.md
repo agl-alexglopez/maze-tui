@@ -6,7 +6,7 @@
 
 ## Quick Start Guide
 
-This project is a terminal user interface application powered by [crossterm](https://github.com/crossterm-rs/crossterm), [ratatui.rs](https://github.com/ratatui-org/ratatui), and [tui-textarea](https://github.com/rhysd/tui-textarea) that can be run with various combinations of commands. The basic principle behind the program is that you can ask for any combination of settings, include any settings, exclude any settings, and the program will just work. There are sensible defaults for every flag so experiment with different combinations and tweaks until you get what you are looking for. In addition, you can learn about each maze algorithm you observe with informational popups (they are a work in progress right now!).
+This project is a terminal user interface application powered by [crossterm](https://github.com/crossterm-rs/crossterm), [ratatui.rs](https://github.com/ratatui-org/ratatui), and [tui-textarea](https://github.com/rhysd/tui-textarea) that can be run with various combinations of commands. The goal of the program is to explore various maze building, solving, and measurement algorithms while visualizing them in interesting ways. The basic principle behind the program is that you can ask for any combination of settings, include any settings, exclude any settings, and the program will just work. There are sensible defaults for every flag so experiment with different combinations and tweaks until you get what you are looking for. In addition, you can learn about each maze algorithm you observe with informational popups (they are a work in progress right now!).
 
 If you just want to get started follow these steps.
 
