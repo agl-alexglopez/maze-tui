@@ -127,6 +127,7 @@ dependencies = [
  "rand",
  "solvers",
  "speed",
+ "tables",
 ]
 
 [[package]]
