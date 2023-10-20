@@ -44,6 +44,7 @@ pub fn hunt(monitor: solve::SolverMonitor) {
             speed: 0,
         },
     );
+
     for handle in handles {
         handle.join().unwrap();
     }
@@ -92,9 +93,7 @@ pub fn animate_hunt(monitor: solve::SolverMonitor, speed: speed::Speed) {
             );
         }));
     }
-    for handle in handles {
-        handle.join().unwrap();
-    }
+
     animated_hunter(
         monitor.clone(),
         solve::ThreadGuide {
@@ -104,6 +103,11 @@ pub fn animate_hunt(monitor: solve::SolverMonitor, speed: speed::Speed) {
             speed: animation,
         },
     );
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
     if let Ok(mut lk) = monitor.lock() {
         for i in 0..lk.win_path.len() {
             let p = lk.win_path[i];
@@ -145,6 +149,7 @@ pub fn gather(monitor: solve::SolverMonitor) {
             );
         }));
     }
+
     gatherer(
         monitor.clone(),
         solve::ThreadGuide {
@@ -154,6 +159,7 @@ pub fn gather(monitor: solve::SolverMonitor) {
             speed: 0,
         },
     );
+
     for handle in handles {
         handle.join().unwrap();
     }
@@ -253,6 +259,7 @@ pub fn corner(monitor: solve::SolverMonitor) {
             );
         }));
     }
+
     hunter(
         monitor.clone(),
         solve::ThreadGuide {
@@ -262,6 +269,7 @@ pub fn corner(monitor: solve::SolverMonitor) {
             speed: 0,
         },
     );
+
     for handle in handles {
         handle.join().unwrap();
     }
@@ -328,6 +336,7 @@ pub fn animate_corner(monitor: solve::SolverMonitor, speed: speed::Speed) {
             );
         }));
     }
+
     animated_hunter(
         monitor.clone(),
         solve::ThreadGuide {
@@ -337,6 +346,7 @@ pub fn animate_corner(monitor: solve::SolverMonitor, speed: speed::Speed) {
             speed: animation,
         },
     );
+
     for handle in handles {
         handle.join().unwrap();
     }
