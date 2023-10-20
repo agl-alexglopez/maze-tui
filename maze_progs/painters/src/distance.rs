@@ -63,6 +63,9 @@ pub fn animate_distance_from_center(monitor: solve::SolverMonitor, speed: speed:
         let mut bfs = VecDeque::from([(start, 0u64)]);
         lk.maze[start.row as usize][start.col as usize] |= rgb::MEASURE;
         while let Some(cur) = bfs.pop_front() {
+            if lk.maze.exit() {
+                return;
+            }
             if cur.1 > lk.map.max {
                 lk.map.max = cur.1;
             }
@@ -162,7 +165,7 @@ fn painter_animated(
     while let Some(cur) = bfs.pop_front() {
         match monitor.lock() {
             Ok(mut lk) => {
-                if lk.count == lk.map.distances.len() {
+                if lk.maze.exit() || lk.count == lk.map.distances.len() {
                     return;
                 }
                 let dist = lk
