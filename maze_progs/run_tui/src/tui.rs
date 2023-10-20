@@ -1,6 +1,4 @@
 use crate::run;
-use crate::tables;
-
 use crossbeam_channel::{self, unbounded};
 use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyEvent};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
@@ -19,6 +17,7 @@ use ratatui::{
     widgets::{Block, Borders, Padding, Paragraph, Scrollbar, ScrollbarOrientation},
 };
 use solvers::solve;
+use tables;
 use tui_textarea::{Input, Key, TextArea};
 
 use std::{

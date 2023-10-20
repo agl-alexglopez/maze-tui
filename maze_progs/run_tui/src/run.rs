@@ -1,4 +1,3 @@
-use crate::tables;
 use crate::tui;
 use builders::build;
 use crossbeam_channel::bounded;
@@ -10,6 +9,7 @@ use solvers::solve;
 use std::error;
 use std::fmt;
 use std::thread;
+use tables;
 
 #[derive(Debug)]
 pub struct Quit {

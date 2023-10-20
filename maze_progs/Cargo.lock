@@ -205,21 +205,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "measure"
-version = "0.1.0"
-dependencies = [
- "builders",
- "crossterm 0.26.1",
- "ctrlc",
- "maze",
- "painters",
- "print",
- "rand",
- "solvers",
- "speed",
-]
-
-[[package]]
 name = "mio"
 version = "0.8.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -385,6 +370,7 @@ dependencies = [
  "rand",
  "solvers",
  "speed",
+ "tables",
 ]
 
 [[package]]
@@ -402,6 +388,7 @@ dependencies = [
  "ratatui",
  "solvers",
  "speed",
+ "tables",
  "tui-textarea",
 ]
 
@@ -507,6 +494,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "tables"
+version = "0.1.0"
+dependencies = [
+ "builders",
+ "maze",
+ "painters",
+ "solvers",
+ "speed",
 ]
 
 [[package]]

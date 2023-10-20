@@ -9,6 +9,7 @@ edition = "2021"
 maze = { path = "../maze" }
 builders = { path = "../builders" }
 solvers = { path = "../solvers" }
+tables = { path = "../tables" }
 print = { path = "../print" }
 speed = { path = "../speed" }
 crossterm = "0.26.1"
