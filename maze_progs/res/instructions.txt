@@ -1,76 +1,78 @@
-
-███╗   ███╗ █████╗ ███████╗███████╗    ████████╗██╗   ██╗██╗
-████╗ ████║██╔══██╗╚══███╔╝██╔════╝    ╚══██╔══╝██║   ██║██║
-██╔████╔██║███████║  ███╔╝ █████╗         ██║   ██║   ██║██║
-██║╚██╔╝██║██╔══██║ ███╔╝  ██╔══╝         ██║   ██║   ██║██║
-██║ ╚═╝ ██║██║  ██║███████╗███████╗       ██║   ╚██████╔╝██║
-╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝       ╚═╝    ╚═════╝ ╚═╝
-
-Use flags, followed by arguments, in any order.
-Press <ENTER> to confirm your flag choices.
-
-(scroll with <↓>/<↑>, exit with <ESC>)
-
-BUILDER FLAG[-b] Set maze building algorithm.
-    [rdfs] - Randomized Depth First Search.
-    [kruskal] - Randomized Kruskal's algorithm.
-    [prim] - Randomized Prim's algorithm.
-    [eller] - Randomized Eller's algorithm.
-    [wilson] - Loop-Erased Random Path Carver.
-    [wilson-walls] - Loop-Erased Random Wall Adder.
-    [fractal] - Randomized recursive subdivision.
-    [grid] - A random grid pattern.
-    [arena] - Open floor with no walls.
-
-MODIFICATION FLAG[-m] Add shortcuts to the maze.
-    [cross]- Add crossroads through the center.
-    [x]- Add an x of crossing paths through center.
-
-SOLVER FLAG[-s] Set maze solving algorithm.
-    [dfs-hunt] - Depth First Search
-    [dfs-gather] - Depth First Search
-    [dfs-corners] - Depth First Search
-    [floodfs-hunt] - Depth First Search
-    [floodfs-gather] - Depth First Search
-    [floodfs-corners] - Depth First Search
-    [rdfs-hunt] - Randomized Depth First Search
-    [rdfs-gather] - Randomized Depth First Search
-    [rdfs-corners] - Randomized Depth First Search
-    [bfs-hunt] - Breadth First Search
-    [bfs-gather] - Breadth First Search
-    [bfs-corners] - Breadth First Search
-    [dark[algorithm]-[game]] - A mystery...
-
-WALL FLAG[-w] Set the wall style for the maze.
-    [sharp] - The default straight lines.
-    [round] - Rounded corners.
-    [doubles] - Sharp double lines.
-    [bold] - Thicker straight lines.
-    [contrast] - Full block width and height walls.
-    [spikes] - Connected lines with spikes.
-
-SOLVER ANIMATION FLAG[-sa] Watch the maze solution.
-    [1-7] - Speed increases with number.
-
-BUILDER ANIMATION FLAG[-ba] Watch the maze build.
-    [1-7] - Speed increases with number.
-
-Cancel any animation by pressing any key.
-Zoom out/in with <Ctrl-[-]>/<Ctrl-[+]>
-If any flags are omitted, defaults are used.
-An empty command line will create a random maze.
-
-EXAMPLES:
-
--b rdfs -s bfs-hunt
--s bfs-gather -b prim
--s bfs-corners -d round -b fractal
--s dfs-hunt -ba 4 -sa 5 -b wilson-walls -m x
-
-ASCII lettering for this title and algorithm
-descriptions are templates I used from
-patorjk.com and modified to use box-drawing
-characters.
-
-Enjoy!
-
+                                                             ██████████████████████████████████   
+███╗   ███╗ █████╗ ███████╗███████╗  ████████╗██╗   ██╗██╗   ██████████████████████████████████  
+████╗ ████║██╔══██╗╚══███╔╝██╔════╝  ╚══██╔══╝██║   ██║██║   ██████████████████████████████████
+██╔████╔██║███████║  ███╔╝ █████╗       ██║   ██║   ██║██║   ██▓██████▓████▓███████████████████  
+██║╚██╔╝██║██╔══██║ ███╔╝  ██╔══╝       ██║   ██║   ██║██║   ██████████████████████████████████
+██║ ╚═╝ ██║██║  ██║███████╗███████╗     ██║   ╚██████╔╝██║   █████████▓███▓██▓████▓███▓████████
+╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝     ╚═╝    ╚═════╝ ╚═╝   █▓█▓██▓███▓███████████████████████
+                                                             ████▓█▓█▓█▓█████████████▓█████████
+Use flags, followed by arguments, in any order.              ██▓█▓▓▓███▓████▓████████▓█████████
+Press <ENTER> to confirm your flag choices.                  ▓▓████▓▓██▓████▓████▓███▓███▓█████ 
+                                                             ▓██▓▓█▒▓██▒█▓██▓████████▓███▓█████ 
+(scroll with <↓>/<↑>, exit with <ESC>)                       ▓▓▓█▓█▒▓██▒████▓████▓███▒███▓█████ 
+                                                             ▓▓█▓▓█▒▓██▒██▓█▓█▓█████▓▒███▓█████  
+BUILDER FLAG[-b] Set maze building algorithm.                ▒▓██▓█▒▓██▒████▓███████▓▒███▓█████  
+    [rdfs] - Randomized Depth First Search.                  ▒▓█▓▓▓▒▓██▒█▓██▒████▓██▓▒███▓█████  
+    [kruskal] - Randomized Kruskal's algorithm.              ▒▓██▓▓▒▓██▒████▒████▓██▓▒███▓█████   
+    [prim] - Randomized Prim's algorithm.                    ▒▓██▓▓▒▓█▓▒████▒▓███▓██▓▒███▓█████   
+    [eller] - Randomized Eller's algorithm.                  ▒▓██▓▓▒▓█▓▒█▓█▓▒▓███▒██▓▒███▓█████
+    [wilson] - Loop-Erased Random Path Carver.               ▒▓██▓▓░▓█▓▒█▓██▒▓▓██▒██▓▒███▓█████   
+    [wilson-walls] - Loop-Erased Random Wall Adder.          ▒▓██▓▓░▓█▓░█▓██▒▓▓██▒██▓▒███▓█████   
+    [fractal] - Randomized recursive subdivision.            ▒▓██▓▓░▓▓▓░▓▓██▒▓▓██▒██▓▒███▓█████
+    [grid] - A random grid pattern.                          ▒▒█▓▓▓░▓▓▒░▓▒█▓▒▓▓██▒██▓▒▓█▓▓▓████
+    [arena] - Open floor with no walls.                      ▒▒█▓▓▓░▓▓▒░▓▒█▓▒▓▓██▒██▓▒▓██▓▓████
+                                                             ▒▒▓▓▓▓░▓▓▒░▓▒█▓▒▓▓██▒██▓▒▓██▓▓████
+MODIFICATION FLAG[-m] Add shortcuts to the maze.             ▒▒▓▓▓▓░▓▓▒░▓▒█▓▒▒▓██▒██▓▒███▓▓████ 
+    [cross]- Add crossroads through the center.              ▒▒▓▓▓▓░▓▓▒░▓▒█▓▒▒▒██▒██▓▒███▓▓████
+    [x]- Add an x of crossing paths through center.          ▒▒▓▓▓▒░▓▓▒░▓▒█▓░▒▒██▒██▓░███▓▓███▓ 
+                                                             ▒▒▓▓▒▒░▓▓▒░▓▒█▓░▒▒██▒██▓░███▓▓███▓    
+SOLVER FLAG[-s] Set maze solving algorithm.                  ▒▒▓▓▒▒░▓▓▒░▓▒█▓░▒▒██▒██▓░███▓▓███▓    
+    [dfs-hunt] - Depth First Search                          ▒▒▓▓░▒░▓▓▒░▓▒█▓░░▒██░██▓░███▒▒███▒    
+    [dfs-gather] - Depth First Search                        ▒▒▓▓░▒░▓▓▒░▓▒█▓░░▒██░██▓░███▒▒███▒
+    [dfs-corners] - Depth First Search                       ▒▒▓▓░▒░▓▓▒░▓░█▓░░▒██░██▓░█▓█▒▒███▒
+    [floodfs-hunt] - Depth First Search                      ▒▒▓▓░▒░▓▓▒░▓░█▓░░▒██░██▓░█▓█▒▒███▒ 
+    [floodfs-gather] - Depth First Search                    ▒▒▓▓░▒░▓▓▒░▓░▓▓░░▒██░██▓░█▓█▒▒███▒  
+    [floodfs-corners] - Depth First Search                   ▒▒▓▒░░░▓▓▒░▓░▓▓░░░██░██▓░█▓█░▒███▒  
+    [rdfs-hunt] - Randomized Depth First Search              ░▒▓▒░░░▓▓▒░▓░▓▓░░░██░██▓░▓▓█░▒███▒
+    [rdfs-gather] - Randomized Depth First Search            ░▒▓▒░░░▓▓▒░▓░▓▓░░░▓▓░██▒░▓▓█░▒███▒
+    [rdfs-corners] - Randomized Depth First Search           ░▒▓▒░░░▓▓▒░▓░▓▓░░░▓▓░▓█▒░▓▓█░▒███▒
+    [bfs-hunt] - Breadth First Search                        ░░▒▒░░░▓▓▒░▒░▓▓░░░▓▓░▓█▒░▓▓█░▒███▒ 
+    [bfs-gather] - Breadth First Search                      ░░▒▒░░░░▓▒░▒░▓▓░░░▓▓░▓█▒░▓▓█░▒███▒  
+    [bfs-corners] - Breadth First Search                     ░░▒▒░░░░▓▒░▒░▓▓░░░▓▓░▓█▒░▓▓█░▒███▒  
+    [dark[algorithm]-[game]] - A mystery...                  ░ ▒▒░░░░▓▒░▒░▓▓░░░▓▓░▓█▒░▓▓▓░▒███▒   
+                                                             ░░▒▒░░░░▓▒░▒░▓▓░░░▓▓░▓█▒░▓▓▓░▒██▓▒      
+WALL FLAG[-w] Set the wall style for the maze.                ░▒▒ ░░░▓▒░▒░▒▓░░░▓▓░▓█▒░▓▓▓░▒██▓▒      
+    [sharp] - The default straight lines.                    ░ ▒▒░ ░░▓▒░▒░▒▓░░░▓▓░▓█▒░▓▓▓░▒██▓▒
+    [round] - Rounded corners.                               ░░▒▒ ░ ░▓▒░▒ ▒▓░░░▓▓░▓█▒░▓▓▓░▒▓█▓▒ 
+    [doubles] - Sharp double lines.                          ░░▒▒    ░▒░▒ ▒▒░░ ▓▓░▓█▒░▓▓▓░▒▓█▓▒    
+    [bold] - Thicker straight lines.                         ░ ▒▒░ ░ ░▒░▒ ░▒░░ ▓▓░▓▓▒░▓▓▓░▒▓█▓▒    
+    [contrast] - Full block width and height walls.           ░▒░ ░░░░▒░▒  ▒░░ ▓▓░▓▓▒░▓▓▓ ▒▓█▓▒    
+    [spikes] - Connected lines with spikes.                  ░░░░  ░░░▒░▒ ░▒░  ▓▓░▒▓▒ ▓▓▓ ▒▓█▒▒     
+                                                             ░░░░ ░ ░░▒░░░░▒░  ▓▓░▒▓▒ ▓▓▓ ▒▓▓▒▒ 
+SOLVER ANIMATION FLAG[-sa] Watch the maze solution.          ░░░░░ ░░ ░░░  ▒░░ ▓▒░▒▒▒ ▓▒▓ ▒▓▓▒▒ 
+    [1-7] - Speed increases with number.                     ░░░░░░ ░ ░░░ ░▒░░ ▓▒░▒▒▒ ▓▒▓ ▒▓▓▒▒ 
+                                                             ░░░░░░ ░ ░░░  ▒░  ▓▒ ▒▒▒ ▒▒▓ ▒▓▓▒▒   
+BUILDER ANIMATION FLAG[-ba] Watch the maze build.            ░░ ░░ ░ ░░░░  ▒   ▓▒ ▒▒▒ ▒▒▓ ▒▓▓▒▒       
+    [1-7] - Speed increases with number.                     ░  ░ ░  ░ ░░  ▒░  ▓▒ ▒▒▒░▒▒▓ ▒▓▓▒▒        
+                                                             ░  ░░ ░ ░ ░  ░▒   ▓▒ ▒▒▒ ▒▒▓ ▒▓▓▒▒        
+Cancel any animation by pressing any key.                     ░ ░   ░░ ░ ░ ▒ ░ ▓▒ ▒▒▒ ▒▒▓ ▒▓▒░▒         
+Zoom out/in with <Ctrl-[-]>/<Ctrl-[+]>                       ░  ░ ░  ░ ░░  ▒   ▓▒ ▒▒░ ▒▒▓ ▒▓▒░░ 
+If any flags are omitted, defaults are used.                 ░  ░░░  ░ ░   ░   ▒▒ ▒▒░ ▒▒▓ ▒▓▒░░
+An empty command line will create a random maze.               ░░ ░  ░ ░   ░░  ▒░ ▒░  ▒▒▓ ▒▓▒░░ 
+                                                             ░  ░░  ░░    ░░░  ▒░ ░░  ▒▒▓ ▒▓▒░░ 
+EXAMPLES:                                                      ░  ░ ░░  ░  ░   ▒  ░░  ▒▒▓ ░▓▒░░  
+                                                              ░ ░ ░ ░░░ ░  ░ ░ ▒  ░░  ▒▒▓ ░▒▒░░ 
+-b rdfs -s bfs-hunt                                             ░   ░░░ ░  ░  ░▒  ░░  ▒▒▓ ░▒░░ 
+-s bfs-gather -b prim                                         ░ ░  ░ ░░    ░ ░ ░  ░░  ░▒▓ ░▒░░  
+-s bfs-corners -d round -b fractal                           ░░ ░    ░░ ░ ░░░  ░  ░░  ░▒▒ ░▒░  
+-s dfs-hunt -ba 4 -sa 5 -b wilson-walls -m x                  ░ ░░ ░ ░░  ░ ░░  ░  ░░  ░▒▒ ░▒░ ░
+                                                               ░░    ░  ░ ░    ░   ░  ░░▒ ░▒░   
+ASCII lettering for this title and algorithm                  ░ ░  ░      ░ ░  ░   ░  ░░▒ ░░░   
+descriptions are templates I used from                         ░  ░ ░  ░  ░   ░    ░  ░░▒ ░░░ ░    
+patorjk.com and modified to use box-drawing                     ░ ░   ░         ░  ░ ░░░░ ░░░  
+characters.                                                     ░    ░   ░    ░    ░  ░░░ ░░░  ░
+                                                                 ░    ░          ░    ░ ░ ░░    
+Enjoy!                                                          ░  ░   ░               ░   ░░   
+                                                                  
+                                                                ░  ░
+                                                                 ░
