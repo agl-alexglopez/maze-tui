@@ -494,14 +494,15 @@ fn ui_err(msg: &str, f: &mut Frame<'_>) {
             Constraint::Percentage((100 - 50) / 2),
         ])
         .split(popup_layout_v[1])[1];
+    // This is just a dummy popup to show during the error. No need to track scroll state.
     let popup_instructions = Paragraph::new(INSTRUCTIONS)
         .block(
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::new().fg(Color::Yellow))
-                .style(Style::default().bg(Color::Black)),
+                .style(Style::default().bg(Color::DarkGray)),
         )
-        .alignment(Alignment::Center);
+        .alignment(Alignment::Left);
     f.render_widget(popup_instructions, popup_layout_h);
     let text_v = Layout::default()
         .direction(Direction::Vertical)
@@ -522,7 +523,7 @@ fn ui_err(msg: &str, f: &mut Frame<'_>) {
     let text_block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::new().fg(Color::Yellow))
-        .style(Style::default().bg(Color::Black));
+        .style(Style::default().bg(Color::DarkGray));
     f.render_widget(text_block, text_h);
     let err_layout_v = Layout::default()
         .direction(Direction::Vertical)
