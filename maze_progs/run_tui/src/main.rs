@@ -1,5 +1,4 @@
 mod run;
-mod tables;
 mod tui;
 use ratatui::prelude::{CrosstermBackend, Terminal};
 

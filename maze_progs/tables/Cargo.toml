@@ -1,17 +1,13 @@
 [package]
-name = "measure"
+name = "tables"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-maze = { path = "../maze" }
-builders = { path = "../builders" }
-solvers = { path = "../solvers" }
-print = { path = "../print" }
 speed = { path = "../speed" }
+maze = { path = "../maze" }
+solvers = { path = "../solvers" }
+builders = { path = "../builders" }
 painters = { path = "../painters" }
-crossterm = "0.26.1"
-rand = "0.8.5"
-ctrlc = "3.4.0"

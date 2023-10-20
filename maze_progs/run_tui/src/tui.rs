@@ -1,6 +1,4 @@
 use crate::run;
-use crate::tables;
-
 use crossbeam_channel::{self, unbounded};
 use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyEvent};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
@@ -19,6 +17,7 @@ use ratatui::{
     widgets::{Block, Borders, Padding, Paragraph, Scrollbar, ScrollbarOrientation},
 };
 use solvers::solve;
+use tables;
 use tui_textarea::{Input, Key, TextArea};
 
 use std::{
@@ -288,6 +287,9 @@ impl EventHandler {
     }
 }
 
+// The UI section has a lot of boilerplate, repetition, and magic numbers but at least we can edit
+// it in one place. Look into more sane organization.
+
 fn ui_bg_maze(f: &mut Frame<'_>) {
     let frame_block = Block::default().padding(Padding::new(1, 1, 1, 1));
     let mut background_maze = tables::MazeRunner::new();
@@ -361,17 +363,17 @@ fn ui_home(cmd: &mut TextArea, scroll: &mut Scroller, f: &mut Frame<'_>) {
                 .border_style(Style::new().fg(Color::Yellow))
                 .style(Style::default().bg(Color::Black)),
         )
-        .alignment(Alignment::Center)
+        .alignment(Alignment::Left)
         .scroll((scroll.pos as u16, 0));
     f.render_widget(popup_instructions, popup_layout_h);
-    // I can scroll but the scrollbar does not appear?
+    scroll.state = scroll.state.content_length(INSTRUCTIONS_LINE_COUNT as u16);
     f.render_stateful_widget(
         Scrollbar::default()
             .orientation(ScrollbarOrientation::VerticalRight)
             .thumb_symbol("█")
             .begin_symbol(Some("↑"))
             .end_symbol(Some("↓")),
-        popup_layout_v[0],
+        popup_layout_h,
         &mut scroll.state,
     );
     let text_v = Layout::default()
@@ -415,7 +417,7 @@ fn ui_info_prompt(f: &mut Frame<'_>) {
             Constraint::Percentage((100 - 50) / 2),
         ])
         .split(popup_layout_v[1])[1];
-    let popup_instructions = Paragraph::new("Toggle <i> for more <i>nformation.")
+    let popup_instructions = Paragraph::new("Toggle <i> for more <i>nfo. Exit <esc>.")
         .block(
             Block::default()
                 .borders(Borders::ALL)
@@ -435,9 +437,9 @@ fn ui_info(msg: &str, scroll: &mut Scroller, f: &mut Frame<'_>) {
     let popup_layout_v = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Percentage((100 - 90) / 2),
-            Constraint::Percentage(90),
-            Constraint::Percentage((100 - 80) / 2),
+            Constraint::Percentage((100 - 70) / 2),
+            Constraint::Percentage(70),
+            Constraint::Percentage((100 - 70) / 2),
         ])
         .split(overall_layout[0]);
     let popup_layout_h = Layout::default()
@@ -458,14 +460,14 @@ fn ui_info(msg: &str, scroll: &mut Scroller, f: &mut Frame<'_>) {
         .wrap(Wrap { trim: true })
         .scroll((scroll.pos as u16, 0));
     f.render_widget(popup_instructions, popup_layout_h);
-    // I can scroll but the scrollbar does not appear?
+    scroll.state = scroll.state.content_length(DESCRIPTION_LINE_COUNT);
     f.render_stateful_widget(
         Scrollbar::default()
             .orientation(ScrollbarOrientation::VerticalRight)
             .thumb_symbol("█")
             .begin_symbol(Some("↑"))
             .end_symbol(Some("↓")),
-        popup_layout_v[0],
+        popup_layout_h,
         &mut scroll.state,
     );
 }
@@ -491,14 +493,15 @@ fn ui_err(msg: &str, f: &mut Frame<'_>) {
             Constraint::Percentage((100 - 50) / 2),
         ])
         .split(popup_layout_v[1])[1];
+    // This is just a dummy popup to show during the error. No need to track scroll state.
     let popup_instructions = Paragraph::new(INSTRUCTIONS)
         .block(
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::new().fg(Color::Yellow))
-                .style(Style::default().bg(Color::Black)),
+                .style(Style::default().bg(Color::DarkGray)),
         )
-        .alignment(Alignment::Center);
+        .alignment(Alignment::Left);
     f.render_widget(popup_instructions, popup_layout_h);
     let text_v = Layout::default()
         .direction(Direction::Vertical)
@@ -519,7 +522,7 @@ fn ui_err(msg: &str, f: &mut Frame<'_>) {
     let text_block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::new().fg(Color::Yellow))
-        .style(Style::default().bg(Color::Black));
+        .style(Style::default().bg(Color::DarkGray));
     f.render_widget(text_block, text_h);
     let err_layout_v = Layout::default()
         .direction(Direction::Vertical)
@@ -542,7 +545,7 @@ fn ui_err(msg: &str, f: &mut Frame<'_>) {
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::new().fg(Color::Black).bg(Color::Red))
+                .border_style(Style::new().fg(Color::Red).bg(Color::Red))
                 .style(
                     Style::default()
                         .bg(Color::Black)
@@ -556,3 +559,5 @@ fn ui_err(msg: &str, f: &mut Frame<'_>) {
 }
 
 static INSTRUCTIONS: &'static str = include_str!("../../res/instructions.txt");
+static INSTRUCTIONS_LINE_COUNT: u16 = 70;
+static DESCRIPTION_LINE_COUNT: u16 = 50;

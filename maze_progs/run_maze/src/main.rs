@@ -1,81 +1,8 @@
-use builders::arena;
-use builders::build::flush_grid;
-use builders::eller;
-use builders::grid;
-use builders::kruskal;
-use builders::modify;
-use builders::prim;
-use builders::recursive_backtracker;
-use builders::recursive_subdivision;
-use builders::wilson_adder;
-use builders::wilson_carver;
-
-use solvers::bfs;
-use solvers::darkbfs;
-use solvers::darkdfs;
-use solvers::darkfloodfs;
-use solvers::darkrdfs;
-use solvers::dfs;
-use solvers::floodfs;
-use solvers::rdfs;
+use builders::build::{self, flush_grid};
 use solvers::solve;
+use tables;
 
-use std::collections::{HashMap, HashSet};
 use std::env;
-
-type BuildFunction = (fn(&mut maze::Maze), fn(&mut maze::Maze, speed::Speed));
-type SolveFunction = (
-    fn(solve::SolverMonitor),
-    fn(solve::SolverMonitor, speed::Speed),
-);
-
-struct FlagArg<'a, 'b> {
-    flag: &'a str,
-    arg: &'b str,
-}
-
-enum ViewingMode {
-    StaticImage,
-    AnimatedPlayback,
-}
-
-struct MazeRunner {
-    args: maze::MazeArgs,
-    build_view: ViewingMode,
-    build_speed: speed::Speed,
-    build: BuildFunction,
-    modify: Option<BuildFunction>,
-    solve_view: ViewingMode,
-    solve_speed: speed::Speed,
-    solve: SolveFunction,
-}
-
-impl MazeRunner {
-    fn default() -> Self {
-        Self {
-            args: maze::MazeArgs::default(),
-            build_view: ViewingMode::StaticImage,
-            build_speed: speed::Speed::Speed4,
-            build: (
-                recursive_backtracker::generate_maze,
-                recursive_backtracker::animate_maze,
-            ),
-            modify: None,
-            solve_view: ViewingMode::StaticImage,
-            solve_speed: speed::Speed::Speed4,
-            solve: (dfs::hunt, dfs::animate_hunt),
-        }
-    }
-}
-
-struct LookupTables {
-    arg_flags: HashSet<String>,
-    build_table: HashMap<String, BuildFunction>,
-    mod_table: HashMap<String, BuildFunction>,
-    solve_table: HashMap<String, SolveFunction>,
-    style_table: HashMap<String, maze::MazeStyle>,
-    animation_table: HashMap<String, speed::Speed>,
-}
 
 fn main() {
     // RAII approach to cursor hiding. Call hide and on scope drop it unhides, no call needed.
@@ -89,336 +16,58 @@ fn main() {
     })
     .expect("Could not set quit handler.");
 
-    let tables = LookupTables {
-        arg_flags: HashSet::from([
-            String::from("-r"),
-            String::from("-c"),
-            String::from("-b"),
-            String::from("-s"),
-            String::from("-h"),
-            String::from("-d"),
-            String::from("-m"),
-            String::from("-sa"),
-            String::from("-ba"),
-        ]),
-        build_table: HashMap::from([
-            (
-                String::from("rdfs"),
-                (
-                    recursive_backtracker::generate_maze as fn(&mut maze::Maze),
-                    recursive_backtracker::animate_maze as fn(&mut maze::Maze, speed::Speed),
-                ),
-            ),
-            (
-                String::from("fractal"),
-                (
-                    recursive_subdivision::generate_maze as fn(&mut maze::Maze),
-                    recursive_subdivision::animate_maze as fn(&mut maze::Maze, speed::Speed),
-                ),
-            ),
-            (
-                String::from("grid"),
-                (
-                    grid::generate_maze as fn(&mut maze::Maze),
-                    grid::animate_maze as fn(&mut maze::Maze, speed::Speed),
-                ),
-            ),
-            (
-                String::from("prim"),
-                (
-                    prim::generate_maze as fn(&mut maze::Maze),
-                    prim::animate_maze as fn(&mut maze::Maze, speed::Speed),
-                ),
-            ),
-            (
-                String::from("kruskal"),
-                (
-                    kruskal::generate_maze as fn(&mut maze::Maze),
-                    kruskal::animate_maze as fn(&mut maze::Maze, speed::Speed),
-                ),
-            ),
-            (
-                String::from("eller"),
-                (
-                    eller::generate_maze as fn(&mut maze::Maze),
-                    eller::animate_maze as fn(&mut maze::Maze, speed::Speed),
-                ),
-            ),
-            (
-                String::from("wilson"),
-                (
-                    wilson_carver::generate_maze as fn(&mut maze::Maze),
-                    wilson_carver::animate_maze as fn(&mut maze::Maze, speed::Speed),
-                ),
-            ),
-            (
-                String::from("wilson-walls"),
-                (
-                    wilson_adder::generate_maze as fn(&mut maze::Maze),
-                    wilson_adder::animate_maze as fn(&mut maze::Maze, speed::Speed),
-                ),
-            ),
-            (
-                String::from("arena"),
-                (
-                    arena::generate_maze as fn(&mut maze::Maze),
-                    arena::animate_maze as fn(&mut maze::Maze, speed::Speed),
-                ),
-            ),
-        ]),
-        mod_table: HashMap::from([
-            (
-                String::from("cross"),
-                (
-                    modify::add_cross as fn(&mut maze::Maze),
-                    modify::add_cross_animated as fn(&mut maze::Maze, speed::Speed),
-                ),
-            ),
-            (
-                String::from("x"),
-                (
-                    modify::add_x as fn(&mut maze::Maze),
-                    modify::add_x_animated as fn(&mut maze::Maze, speed::Speed),
-                ),
-            ),
-        ]),
-        solve_table: HashMap::from([
-            (
-                String::from("dfs-hunt"),
-                (
-                    dfs::hunt as fn(solve::SolverMonitor),
-                    dfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("dfs-gather"),
-                (
-                    dfs::gather as fn(solve::SolverMonitor),
-                    dfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("dfs-corners"),
-                (
-                    dfs::corner as fn(solve::SolverMonitor),
-                    dfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("bfs-hunt"),
-                (
-                    bfs::hunt as fn(solve::SolverMonitor),
-                    bfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("bfs-gather"),
-                (
-                    bfs::gather as fn(solve::SolverMonitor),
-                    bfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("bfs-corners"),
-                (
-                    bfs::corner as fn(solve::SolverMonitor),
-                    bfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("floodfs-hunt"),
-                (
-                    floodfs::hunt as fn(solve::SolverMonitor),
-                    floodfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("floodfs-gather"),
-                (
-                    floodfs::gather as fn(solve::SolverMonitor),
-                    floodfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("floodfs-corners"),
-                (
-                    floodfs::corner as fn(solve::SolverMonitor),
-                    floodfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("rdfs-hunt"),
-                (
-                    rdfs::hunt as fn(solve::SolverMonitor),
-                    rdfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("rdfs-gather"),
-                (
-                    rdfs::gather as fn(solve::SolverMonitor),
-                    rdfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("rdfs-corners"),
-                (
-                    rdfs::corner as fn(solve::SolverMonitor),
-                    rdfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("darkdfs-hunt"),
-                (
-                    dfs::hunt as fn(solve::SolverMonitor),
-                    darkdfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("darkdfs-gather"),
-                (
-                    dfs::gather as fn(solve::SolverMonitor),
-                    darkdfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("darkdfs-corners"),
-                (
-                    dfs::corner as fn(solve::SolverMonitor),
-                    darkdfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("darkfloodfs-hunt"),
-                (
-                    floodfs::hunt as fn(solve::SolverMonitor),
-                    darkfloodfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("darkfloodfs-gather"),
-                (
-                    floodfs::gather as fn(solve::SolverMonitor),
-                    darkfloodfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("darkfloodfs-corners"),
-                (
-                    floodfs::corner as fn(solve::SolverMonitor),
-                    darkfloodfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("darkrdfs-hunt"),
-                (
-                    rdfs::hunt as fn(solve::SolverMonitor),
-                    darkrdfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("darkrdfs-gather"),
-                (
-                    rdfs::gather as fn(solve::SolverMonitor),
-                    darkrdfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("darkrdfs-corners"),
-                (
-                    rdfs::corner as fn(solve::SolverMonitor),
-                    darkrdfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("darkbfs-hunt"),
-                (
-                    bfs::hunt as fn(solve::SolverMonitor),
-                    darkbfs::animate_hunt as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("darkbfs-gather"),
-                (
-                    bfs::gather as fn(solve::SolverMonitor),
-                    darkbfs::animate_gather as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-            (
-                String::from("darkbfs-corners"),
-                (
-                    bfs::corner as fn(solve::SolverMonitor),
-                    darkbfs::animate_corner as fn(solve::SolverMonitor, speed::Speed),
-                ),
-            ),
-        ]),
-        style_table: HashMap::from([
-            (String::from("sharp"), maze::MazeStyle::Sharp),
-            (String::from("round"), maze::MazeStyle::Round),
-            (String::from("doubles"), maze::MazeStyle::Doubles),
-            (String::from("bold"), maze::MazeStyle::Bold),
-            (String::from("contrast"), maze::MazeStyle::Contrast),
-            (String::from("spikes"), maze::MazeStyle::Spikes),
-        ]),
-        animation_table: HashMap::from([
-            (String::from("0"), speed::Speed::Instant),
-            (String::from("1"), speed::Speed::Speed1),
-            (String::from("2"), speed::Speed::Speed2),
-            (String::from("3"), speed::Speed::Speed3),
-            (String::from("4"), speed::Speed::Speed4),
-            (String::from("5"), speed::Speed::Speed5),
-            (String::from("6"), speed::Speed::Speed6),
-            (String::from("7"), speed::Speed::Speed7),
-        ]),
-    };
-    let mut run = MazeRunner::default();
+    let mut run = tables::MazeRunner::new();
 
     let mut prev_flag: &str = "";
     let mut process_current = false;
     for a in env::args().skip(1) {
         if process_current {
-            set_args(
-                &tables,
+            match set_arg(
                 &mut run,
-                &FlagArg {
+                &tables::FlagArg {
                     flag: prev_flag,
                     arg: &a,
                 },
-            );
+            ) {
+                Ok(_) => {}
+                Err(msg) => print::maze_panic!("{}", msg),
+            }
             process_current = false;
             continue;
         }
-        match tables.arg_flags.get(&a) {
+        match tables::search_table(&a, &tables::FLAGS) {
             Some(flag) => {
                 process_current = true;
                 prev_flag = flag;
             }
             None => {
-                quit(&FlagArg {
+                quit(&err_string(&tables::FlagArg {
                     flag: &a,
                     arg: "[NONE]",
-                });
+                }));
             }
         }
     }
     if process_current {
-        quit(&FlagArg {
-            flag: prev_flag,
+        quit(&err_string(&tables::FlagArg {
+            flag: &prev_flag,
             arg: "[NONE]",
-        });
+        }));
     }
 
     let mut maze = maze::Maze::new(run.args);
 
+    print::clear_screen();
+    build::print_overlap_key(&maze);
     match run.build_view {
-        ViewingMode::StaticImage => {
+        tables::ViewingMode::StaticImage => {
             run.build.0(&mut maze);
             flush_grid(&maze);
             if let Some((static_mod, _)) = run.modify {
                 static_mod(&mut maze)
             }
         }
-        ViewingMode::AnimatedPlayback => {
+        tables::ViewingMode::AnimatedPlayback => {
             run.build.1(&mut maze, run.build_speed);
             if let Some((_, animate_mod)) = run.modify {
                 animate_mod(&mut maze, run.build_speed)
@@ -431,77 +80,91 @@ fn main() {
     let monitor = solve::Solver::new(maze);
 
     match run.solve_view {
-        ViewingMode::StaticImage => run.solve.0(monitor),
-        ViewingMode::AnimatedPlayback => run.solve.1(monitor, run.solve_speed),
-    }
-}
-
-fn set_args(tables: &LookupTables, run: &mut MazeRunner, pairs: &FlagArg) {
-    match pairs.flag {
-        "-h" => {
-            print_usage();
-            safe_exit();
+        tables::ViewingMode::StaticImage => {
+            run.solve.0(monitor.clone());
         }
-        "-r" => run.args.odd_rows = set_dimension(pairs),
-        "-c" => run.args.odd_cols = set_dimension(pairs),
-        "-b" => match tables.build_table.get(pairs.arg) {
-            Some(build_tuple) => run.build = *build_tuple,
-            None => quit(pairs),
-        },
-        "-m" => match tables.mod_table.get(pairs.arg) {
-            Some(mod_tuple) => run.modify = Some(*mod_tuple),
-            None => quit(pairs),
-        },
-        "-s" => match tables.solve_table.get(pairs.arg) {
-            Some(solve_tuple) => run.solve = *solve_tuple,
-            None => quit(pairs),
-        },
-        "-d" => match tables.style_table.get(pairs.arg) {
-            Some(wall_style) => run.args.style = *wall_style,
-            None => quit(pairs),
-        },
-        "-ba" => match tables.animation_table.get(pairs.arg) {
-            Some(speed) => {
-                run.build_speed = *speed;
-                run.build_view = ViewingMode::AnimatedPlayback;
-            }
-            None => quit(pairs),
-        },
-        "-sa" => match tables.animation_table.get(pairs.arg) {
-            Some(speed) => {
-                run.solve_speed = *speed;
-                run.solve_view = ViewingMode::AnimatedPlayback;
-            }
-            None => quit(pairs),
-        },
-        _ => quit(pairs),
+        tables::ViewingMode::AnimatedPlayback => run.solve.1(monitor.clone(), run.solve_speed),
+    }
+
+    if let Ok(lk) = monitor.clone().lock() {
+        print::set_cursor_position(
+            maze::Point {
+                row: lk.maze.row_size() + 2,
+                col: 0,
+            },
+            maze::Offset::default(),
+        );
     }
 }
 
-fn set_dimension(pairs: &FlagArg) -> i32 {
+fn set_arg(run: &mut tables::MazeRunner, args: &tables::FlagArg) -> Result<(), String> {
+    match args.flag {
+        "-h" => return Err("".to_string()),
+        "-r" => {
+            run.args.odd_rows = set_dimension(args);
+            Ok(())
+        }
+        "-c" => {
+            run.args.odd_cols = set_dimension(args);
+            Ok(())
+        }
+        "-b" => tables::search_table(args.arg, &tables::BUILDERS)
+            .map(|func_pair| run.build = func_pair)
+            .ok_or(err_string(args)),
+        "-m" => tables::search_table(args.arg, &tables::MODIFICATIONS)
+            .map(|mod_tuple| run.modify = Some(mod_tuple))
+            .ok_or(err_string(args)),
+        "-s" => tables::search_table(args.arg, &tables::SOLVERS)
+            .map(|solve_tuple| run.solve = solve_tuple)
+            .ok_or(err_string(args)),
+        "-w" => tables::search_table(args.arg, &tables::WALL_STYLES)
+            .map(|wall_style| run.args.style = wall_style)
+            .ok_or(err_string(args)),
+        "-ba" => match tables::search_table(args.arg, &tables::SPEEDS) {
+            Some(speed) => {
+                run.build_speed = speed;
+                run.build_view = tables::ViewingMode::AnimatedPlayback;
+                Ok(())
+            }
+            None => Err(err_string(args)),
+        },
+        "-sa" => match tables::search_table(args.arg, &tables::SPEEDS) {
+            Some(speed) => {
+                run.solve_speed = speed;
+                run.solve_view = tables::ViewingMode::AnimatedPlayback;
+                Ok(())
+            }
+            None => Err(err_string(args)),
+        },
+        _ => Err(err_string(args)),
+    }
+}
+
+pub fn err_string(args: &tables::FlagArg) -> String {
+    String::from(format!(
+        "invalid flag[{}] arg[{}] combo",
+        args.flag, args.arg
+    ))
+}
+
+fn set_dimension(pairs: &tables::FlagArg) -> i32 {
     match pairs.arg.parse::<i32>() {
         Ok(num) => {
             if num < 7 {
-                quit(pairs);
+                quit("Invalid row or column dimension");
                 std::process::exit(1);
             }
             num
         }
         Err(_) => {
-            quit(pairs);
+            quit("Invalid row or column dimension");
             std::process::exit(1);
         }
     }
 }
 
-fn safe_exit() {
-    print::unhide_cursor_on_process_exit();
-    std::process::exit(0);
-}
-
-fn quit(pairs: &FlagArg) {
-    println!("Flag was: {}", pairs.flag);
-    println!("Argument was: {}", pairs.arg);
+fn quit(msg: &str) {
+    println!("{}", msg);
     print_usage();
     print::unhide_cursor_on_process_exit();
     std::process::exit(0);
