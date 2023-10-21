@@ -92,13 +92,14 @@ pub const FLAGS: [(&'static str, &'static str); 6] = [
     ("-ba", "-ba"),
 ];
 
-pub const WALL_STYLES: [(&'static str, maze::MazeStyle); 6] = [
-    ("sharp", (maze::MazeStyle::Sharp)),
-    ("round", (maze::MazeStyle::Round)),
-    ("doubles", (maze::MazeStyle::Doubles)),
-    ("bold", (maze::MazeStyle::Bold)),
-    ("contrast", (maze::MazeStyle::Contrast)),
-    ("spikes", (maze::MazeStyle::Spikes)),
+pub const WALL_STYLES: [(&'static str, maze::MazeStyle); 7] = [
+    ("sharp", maze::MazeStyle::Sharp),
+    ("round", maze::MazeStyle::Round),
+    ("doubles", maze::MazeStyle::Doubles),
+    ("bold", maze::MazeStyle::Bold),
+    ("contrast", maze::MazeStyle::Contrast),
+    ("half", maze::MazeStyle::Half),
+    ("spikes", maze::MazeStyle::Spikes),
 ];
 pub const BUILDERS: [(&'static str, BuildFunction); 9] = [
     ("arena", (arena::generate_maze, arena::animate_maze)),

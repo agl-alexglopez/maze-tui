@@ -124,6 +124,6 @@ Please read the [wiki](https://github.com/agl-alexglopez/maze-tui/wiki) for more
 ## Tips
 
 - Windows is slow, sorry. For some reason the animations are much slower in Windows Terminal in my experience. It's not horrible but try smaller mazes at first.
-- Windows Terminal does not render fonts correctly. Depending on your font the Box-Drawing characters may be slightly disconnected or at times completely incorrect. I develop this project on WSL2 sometimes and notice the problems. Try the `-w contrast` option for smoother animations.
+- Windows Terminal does not render fonts correctly. Depending on your font the Box-Drawing characters may be slightly disconnected or at times completely incorrect. I develop this project on WSL2 sometimes and notice the problems. Try the `-w contrast` or `-w half` option for smoother animations.
 - Mac and many Linux distributions render everything beautifully in my experience (as long as fully featured fonts are installed)!
 
