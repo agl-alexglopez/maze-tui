@@ -77,6 +77,7 @@ WALL FLAG[-w] Set the wall style for the maze.
     [doubles] - Sharp double lines.
     [bold] - Thicker straight lines.
     [contrast] - Full block width and height walls.
+    [half] - Half block height and full width squares.
     [spikes] - Connected lines with spikes.
 
 SOLVER ANIMATION FLAG[-sa] Watch the maze solution.
