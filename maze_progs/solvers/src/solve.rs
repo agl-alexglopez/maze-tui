@@ -5,6 +5,7 @@ use crossterm::{
     },
 };
 use key;
+use maze;
 use print::maze_panic;
 use rand::prelude::*;
 use std::io::{self};
@@ -211,6 +212,206 @@ pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         }
     }
     maze_panic!("Uncategorized maze square! Check the bits.");
+}
+
+pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
+    print::set_cursor_position(
+        maze::Point {
+            row: point.row / 2,
+            col: point.col,
+        },
+        maze.offset(),
+    );
+    let square = &maze[point.row as usize][point.col as usize];
+    let this_color = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+    if (square & FINISH_BIT) != 0 {
+        if point.row % 2 != 0 {
+            if point.row - 1 == 0
+                || (point.row - 1 >= 0
+                    && (maze[(point.row - 1) as usize][point.col as usize] & maze::PATH_BIT) == 0)
+            {
+                execute!(
+                    io::stdout(),
+                    SetAttribute(Attribute::SlowBlink),
+                    SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+                    SetBackgroundColor(Color::AnsiValue(this_color)),
+                    Print('▀'),
+                    ResetColor
+                )
+                .expect("printer broke.");
+                return;
+            }
+            execute!(
+                io::stdout(),
+                SetAttribute(Attribute::SlowBlink),
+                SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+                SetBackgroundColor(Color::AnsiValue(this_color)),
+                Print('■'),
+                ResetColor
+            )
+            .expect("printer broke.");
+        // point.row % 2 == 0
+        } else {
+            if point.row + 1 <= maze.row_size() - 1
+                && (maze[(point.row + 1) as usize][point.col as usize] & maze::PATH_BIT) != 0
+            {
+                execute!(
+                    io::stdout(),
+                    SetAttribute(Attribute::SlowBlink),
+                    SetBackgroundColor(Color::AnsiValue(this_color)),
+                    SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+                    Print('▀'),
+                    ResetColor
+                )
+                .expect("printer broke.");
+                return;
+            }
+            execute!(
+                io::stdout(),
+                SetAttribute(Attribute::SlowBlink),
+                SetBackgroundColor(Color::AnsiValue(this_color)),
+                SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+                Print('■'),
+                ResetColor
+            )
+            .expect("printer broke.");
+            return;
+        }
+    }
+    if (square & START_BIT) != 0 {
+        if point.row % 2 != 0 {
+            if point.row - 1 == 0
+                || (point.row - 1 >= 0
+                    && (maze[(point.row - 1) as usize][point.col as usize] & maze::PATH_BIT) == 0)
+            {
+                execute!(
+                    io::stdout(),
+                    SetBackgroundColor(Color::AnsiValue(key::ANSI_CYN)),
+                    Print('▀'),
+                    ResetColor
+                )
+                .expect("printer broke.");
+                return;
+            }
+            let neighbor_color = key::thread_color_code(
+                ((maze[(point.row - 1) as usize][point.col as usize] & THREAD_MASK)
+                    >> THREAD_TAG_OFFSET) as usize,
+            );
+            execute!(
+                io::stdout(),
+                SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+                SetBackgroundColor(Color::AnsiValue(neighbor_color)),
+                Print('■'),
+                ResetColor
+            )
+            .expect("printer broke.");
+        // point.row % 2 == 0
+        } else {
+            if point.row + 1 <= maze.row_size() - 1
+                && (maze[(point.row + 1) as usize][point.col as usize] & maze::PATH_BIT) == 0
+            {
+                execute!(
+                    io::stdout(),
+                    SetBackgroundColor(Color::AnsiValue(key::ANSI_CYN)),
+                    Print('■'),
+                    ResetColor
+                )
+                .expect("printer broke.");
+                return;
+            }
+            let neighbor_color = key::thread_color_code(
+                ((maze[(point.row + 1) as usize][point.col as usize] & THREAD_MASK)
+                    >> THREAD_TAG_OFFSET) as usize,
+            );
+            execute!(
+                io::stdout(),
+                SetBackgroundColor(Color::AnsiValue(neighbor_color)),
+                SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+                Print('▀'),
+                ResetColor
+            )
+            .expect("printer broke.");
+            return;
+        }
+    }
+    if (square & maze::PATH_BIT) == 0 {
+        let mut thread_color = 0;
+        if point.row % 2 != 0 && point.row - 1 >= 0 {
+            thread_color = key::thread_color_code(
+                ((maze[(point.row - 1) as usize][point.col as usize] & THREAD_MASK)
+                    >> THREAD_TAG_OFFSET) as usize,
+            );
+        } else if point.row + 1 < maze.row_size() {
+            thread_color = key::thread_color_code(
+                ((maze[(point.row + 1) as usize][point.col as usize] & THREAD_MASK)
+                    >> THREAD_TAG_OFFSET) as usize,
+            );
+        }
+        match execute!(
+            io::stdout(),
+            SetBackgroundColor(Color::AnsiValue(thread_color)),
+            Print(maze.wall_char((square & maze::WALL_MASK) as usize)),
+            ResetColor,
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not print wall."),
+        }
+    // This is a path square.
+    } else {
+        if point.row % 2 != 0 {
+            if point.row - 1 == 0
+                || (point.row - 1 >= 0
+                    && (maze[(point.row - 1) as usize][point.col as usize] & maze::PATH_BIT) == 0)
+            {
+                execute!(
+                    io::stdout(),
+                    SetBackgroundColor(Color::AnsiValue(this_color)),
+                    Print('▀'),
+                    ResetColor
+                )
+                .expect("printer broke.");
+                return;
+            }
+            let neighbor_color = key::thread_color_code(
+                ((maze[(point.row - 1) as usize][point.col as usize] & THREAD_MASK)
+                    >> THREAD_TAG_OFFSET) as usize,
+            );
+            execute!(
+                io::stdout(),
+                SetForegroundColor(Color::AnsiValue(neighbor_color)),
+                SetBackgroundColor(Color::AnsiValue(this_color)),
+                Print('▀'),
+                ResetColor
+            )
+            .expect("printer broke.");
+        // point.row % 2 == 0
+        } else {
+            if point.row + 1 <= maze.row_size() - 1
+                && (maze[(point.row + 1) as usize][point.col as usize] & maze::PATH_BIT) != 0
+            {
+                let neighbor_color = key::thread_color_code(
+                    ((maze[(point.row + 1) as usize][point.col as usize] & THREAD_MASK)
+                        >> THREAD_TAG_OFFSET) as usize,
+                );
+                execute!(
+                    io::stdout(),
+                    SetBackgroundColor(Color::AnsiValue(this_color)),
+                    SetForegroundColor(Color::AnsiValue(neighbor_color)),
+                    Print('■'),
+                    ResetColor
+                )
+                .expect("printer broke.");
+                return;
+            }
+            execute!(
+                io::stdout(),
+                SetBackgroundColor(Color::AnsiValue(this_color)),
+                Print('■'),
+                ResetColor
+            )
+            .expect("printer broke.");
+        }
+    }
 }
 
 pub fn print_point(maze: &maze::Maze, point: maze::Point) {

@@ -178,10 +178,6 @@ impl Default for MazeArgs {
     }
 }
 
-pub fn mini_row(row_parity: usize) -> &'static [char] {
-    &WALL_STYLES[row_parity * WALL_ROW..row_parity * WALL_ROW + WALL_ROW]
-}
-
 // Read Only Data Available to Any Maze Users
 
 // Any modification made to these bits by a builder MUST be cleared before build process completes.

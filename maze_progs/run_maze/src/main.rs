@@ -90,24 +90,24 @@ fn main() {
 
     // Commented out for testing builders only right now.
 
-    // let monitor = solve::Solver::new(maze);
+    let monitor = solve::Solver::new(maze);
 
-    // match run.solve_view {
-    //     tables::ViewingMode::StaticImage => {
-    //         run.solve.0(monitor.clone());
-    //     }
-    //     tables::ViewingMode::AnimatedPlayback => run.solve.1(monitor.clone(), run.solve_speed),
-    // }
+    match run.solve_view {
+        tables::ViewingMode::StaticImage => {
+            run.solve.0(monitor.clone());
+        }
+        tables::ViewingMode::AnimatedPlayback => run.solve.1(monitor.clone(), run.solve_speed),
+    }
 
-    // if let Ok(lk) = monitor.clone().lock() {
-    //     print::set_cursor_position(
-    //         maze::Point {
-    //             row: lk.maze.row_size() + 2,
-    //             col: 0,
-    //         },
-    //         maze::Offset::default(),
-    //     );
-    // }
+    if let Ok(lk) = monitor.clone().lock() {
+        print::set_cursor_position(
+            maze::Point {
+                row: lk.maze.row_size() + 2,
+                col: 0,
+            },
+            maze::Offset::default(),
+        );
+    }
 }
 
 fn set_arg(run: &mut tables::MazeRunner, args: &tables::FlagArg) -> Result<(), String> {

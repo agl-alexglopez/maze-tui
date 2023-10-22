@@ -138,8 +138,9 @@ pub const MODIFICATIONS: [(&'static str, BuildFunction); 2] = [
     ("x", (modify::add_x, modify::add_x_animated)),
 ];
 
-pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
+pub const SOLVERS: [(&'static str, SolveFunction); 27] = [
     ("dfs-hunt", (dfs::hunt, dfs::animate_hunt)),
+    ("minidfs-hunt", (dfs::hunt, dfs::animate_mini_hunt)),
     ("dfs-gather", (dfs::gather, dfs::animate_gather)),
     ("dfs-corner", (dfs::corner, dfs::animate_corner)),
     ("darkdfs-hunt", (dfs::hunt, darkdfs::animate_hunt)),
