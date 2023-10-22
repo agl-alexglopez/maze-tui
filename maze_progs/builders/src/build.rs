@@ -23,8 +23,8 @@ pub enum ParityPoint {
 
 #[derive(Copy, Clone)]
 pub struct BacktrackSymbol {
-    arrow: char,
-    ansi: u8,
+    pub arrow: char,
+    pub ansi: u8,
 }
 
 // Any builders that choose to cache seen squares in place can use this bit.

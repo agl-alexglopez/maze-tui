@@ -9,8 +9,8 @@ fn main() {
     let invisible = print::InvisibleCursor::new();
     invisible.hide();
     ctrlc::set_handler(move || {
-        print::clear_screen();
-        print::set_cursor_position(maze::Point::default(), maze::Offset::default());
+        //print::clear_screen();
+        print::set_cursor_position(maze::Point { row: 50, col: 111 }, maze::Offset::default());
         print::unhide_cursor_on_process_exit();
         std::process::exit(0);
     })
@@ -40,12 +40,22 @@ fn main() {
                 process_current = true;
                 prev_flag = flag;
             }
-            None => {
-                quit(&err_string(&tables::FlagArg {
-                    flag: &a,
-                    arg: "[NONE]",
-                }));
-            }
+            None => match &*a {
+                "-r" => {
+                    process_current = true;
+                    prev_flag = "-r";
+                }
+                "-c" => {
+                    process_current = true;
+                    prev_flag = "-c";
+                }
+                _ => {
+                    quit(&err_string(&tables::FlagArg {
+                        flag: &a,
+                        arg: "[NONE]",
+                    }));
+                }
+            },
         }
     }
     if process_current {

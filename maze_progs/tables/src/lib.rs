@@ -107,7 +107,7 @@ pub const BUILDERS: [(&'static str, BuildFunction); 9] = [
         "rdfs",
         (
             recursive_backtracker::generate_maze,
-            recursive_backtracker::animate_maze,
+            recursive_backtracker::animate_mini_maze,
         ),
     ),
     (
