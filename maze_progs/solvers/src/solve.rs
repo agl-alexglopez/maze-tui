@@ -198,7 +198,7 @@ pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     if (square & maze::PATH_BIT) == 0 {
         match execute!(
             io::stdout(),
-            Print(maze.wall_style()[(square & maze::WALL_MASK) as usize]),
+            Print(maze.wall_char((square & maze::WALL_MASK) as usize)),
         ) {
             Ok(_) => return,
             Err(_) => maze_panic!("Could not print wall."),
@@ -265,7 +265,7 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
     if (square & maze::PATH_BIT) == 0 {
         match queue!(
             io::stdout(),
-            Print(maze.wall_style()[(square & maze::WALL_MASK) as usize]),
+            Print(maze.wall_char((square & maze::WALL_MASK) as usize)),
         ) {
             Ok(_) => return,
             Err(_) => maze_panic!("Could not print wall."),
