@@ -210,22 +210,22 @@ pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
     ),
     (
         "dfs-gather",
-        (dfs::gather, dfs::animate_gather, dfs::animate_gather),
+        (dfs::gather, dfs::animate_gather, dfs::animate_mini_gather),
     ),
     (
         "dfs-corner",
-        (dfs::corner, dfs::animate_corner, dfs::animate_corner),
+        (dfs::corner, dfs::animate_corner, dfs::animate_mini_corner),
     ),
     (
         "darkdfs-hunt",
-        (dfs::hunt, darkdfs::animate_hunt, darkdfs::animate_hunt),
+        (dfs::hunt, darkdfs::animate_hunt, darkdfs::animate_mini_hunt),
     ),
     (
         "darkdfs-gather",
         (
             dfs::gather,
             darkdfs::animate_gather,
-            darkdfs::animate_gather,
+            darkdfs::animate_mini_gather,
         ),
     ),
     (
@@ -233,31 +233,43 @@ pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
         (
             dfs::corner,
             darkdfs::animate_corner,
-            darkdfs::animate_corner,
+            darkdfs::animate_mini_corner,
         ),
     ),
     (
         "rdfs-hunt",
-        (rdfs::hunt, rdfs::animate_hunt, rdfs::animate_hunt),
+        (rdfs::hunt, rdfs::animate_hunt, rdfs::animate_mini_hunt),
     ),
     (
         "rdfs-gather",
-        (rdfs::gather, rdfs::animate_gather, rdfs::animate_gather),
+        (
+            rdfs::gather,
+            rdfs::animate_gather,
+            rdfs::animate_mini_gather,
+        ),
     ),
     (
         "rdfs-corner",
-        (rdfs::corner, rdfs::animate_corner, rdfs::animate_corner),
+        (
+            rdfs::corner,
+            rdfs::animate_corner,
+            rdfs::animate_mini_corner,
+        ),
     ),
     (
         "darkrdfs-hunt",
-        (rdfs::hunt, darkrdfs::animate_hunt, darkrdfs::animate_hunt),
+        (
+            rdfs::hunt,
+            darkrdfs::animate_hunt,
+            darkrdfs::animate_mini_hunt,
+        ),
     ),
     (
         "darkrdfs-gather",
         (
             rdfs::gather,
             darkrdfs::animate_gather,
-            darkrdfs::animate_gather,
+            darkrdfs::animate_mini_gather,
         ),
     ),
     (
@@ -265,31 +277,31 @@ pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
         (
             rdfs::corner,
             darkrdfs::animate_corner,
-            darkrdfs::animate_corner,
+            darkrdfs::animate_mini_corner,
         ),
     ),
     (
         "bfs-hunt",
-        (bfs::hunt, bfs::animate_hunt, bfs::animate_hunt),
+        (bfs::hunt, bfs::animate_hunt, bfs::animate_mini_hunt),
     ),
     (
         "bfs-gather",
-        (bfs::gather, bfs::animate_gather, bfs::animate_gather),
+        (bfs::gather, bfs::animate_gather, bfs::animate_mini_gather),
     ),
     (
         "bfs-corner",
-        (bfs::corner, bfs::animate_corner, bfs::animate_corner),
+        (bfs::corner, bfs::animate_corner, bfs::animate_mini_corner),
     ),
     (
         "darkbfs-hunt",
-        (bfs::hunt, darkbfs::animate_hunt, darkbfs::animate_hunt),
+        (bfs::hunt, darkbfs::animate_hunt, darkbfs::animate_mini_hunt),
     ),
     (
         "darkbfs-gather",
         (
             bfs::gather,
             darkbfs::animate_gather,
-            darkbfs::animate_gather,
+            darkbfs::animate_mini_gather,
         ),
     ),
     (
@@ -297,19 +309,23 @@ pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
         (
             bfs::corner,
             darkbfs::animate_corner,
-            darkbfs::animate_corner,
+            darkbfs::animate_mini_corner,
         ),
     ),
     (
         "floodfs-hunt",
-        (floodfs::hunt, floodfs::animate_hunt, floodfs::animate_hunt),
+        (
+            floodfs::hunt,
+            floodfs::animate_hunt,
+            floodfs::animate_mini_hunt,
+        ),
     ),
     (
         "floodfs-gather",
         (
             floodfs::gather,
             floodfs::animate_gather,
-            floodfs::animate_gather,
+            floodfs::animate_mini_gather,
         ),
     ),
     (
@@ -317,7 +333,7 @@ pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
         (
             floodfs::corner,
             floodfs::animate_corner,
-            floodfs::animate_corner,
+            floodfs::animate_mini_corner,
         ),
     ),
     (
@@ -325,7 +341,7 @@ pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
         (
             floodfs::hunt,
             darkfloodfs::animate_hunt,
-            darkfloodfs::animate_hunt,
+            darkfloodfs::animate_mini_hunt,
         ),
     ),
     (
@@ -333,7 +349,7 @@ pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
         (
             floodfs::gather,
             darkfloodfs::animate_gather,
-            darkfloodfs::animate_gather,
+            darkfloodfs::animate_mini_gather,
         ),
     ),
     (
@@ -341,7 +357,7 @@ pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
         (
             floodfs::corner,
             darkfloodfs::animate_corner,
-            darkfloodfs::animate_corner,
+            darkfloodfs::animate_mini_corner,
         ),
     ),
     (

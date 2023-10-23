@@ -64,6 +64,9 @@ fn main() {
             arg: "[NONE]",
         }));
     }
+    if run.args.style == maze::MazeStyle::Mini {
+        run.args.odd_rows *= 2;
+    }
 
     let mut maze = maze::Maze::new(run.args);
 
@@ -95,8 +98,6 @@ fn main() {
     // Ensure a smooth transition from build to solve with no flashing.
     print::set_cursor_position(maze::Point { row: 50, col: 0 }, maze::Offset::default());
 
-    // Commented out for testing builders only right now.
-
     let monitor = solve::Solver::new(maze);
 
     match run.solve_view {
@@ -115,7 +116,11 @@ fn main() {
     if let Ok(lk) = monitor.clone().lock() {
         print::set_cursor_position(
             maze::Point {
-                row: lk.maze.row_size() + 2,
+                row: if lk.maze.style_index() == (maze::MazeStyle::Mini as usize) {
+                    lk.maze.row_size() / 2 + 3
+                } else {
+                    lk.maze.row_size() + 2
+                },
                 col: 0,
             },
             maze::Offset::default(),

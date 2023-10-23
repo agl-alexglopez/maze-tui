@@ -218,6 +218,9 @@ fn set_command_args(tui: &mut tui::Tui, cmd: &String) -> Result<tables::MazeRunn
         .expect("Tui error");
         return Err(Quit::new());
     }
+    if run.args.style == maze::MazeStyle::Mini {
+        run.args.odd_rows = run.args.odd_rows * 2;
+    }
     Ok(run)
 }
 
@@ -295,6 +298,9 @@ fn set_random_args(tui: &mut tui::Tui) -> tables::MazeRunner {
             None => print::maze_panic!("Modification table empty."),
         }
     }
+    if this_run.args.style == maze::MazeStyle::Mini {
+        this_run.args.odd_rows *= 2;
+    }
     this_run
 }
 
@@ -335,7 +341,7 @@ pub static DESCRIPTIONS: [(tables::BuildFunction, &'static str); 9] = [
         (
             builders::arena::generate_maze,
             builders::arena::animate_maze,
-            builders::arena::animate_maze,
+            builders::arena::animate_mini_maze,
         ),
         include_str!("../../res/arena.txt"),
     ),
@@ -343,7 +349,7 @@ pub static DESCRIPTIONS: [(tables::BuildFunction, &'static str); 9] = [
         (
             builders::eller::generate_maze,
             builders::eller::animate_maze,
-            builders::eller::animate_maze,
+            builders::eller::animate_mini_maze,
         ),
         include_str!("../../res/eller.txt"),
     ),
@@ -351,7 +357,7 @@ pub static DESCRIPTIONS: [(tables::BuildFunction, &'static str); 9] = [
         (
             builders::grid::generate_maze,
             builders::grid::animate_maze,
-            builders::grid::animate_maze,
+            builders::grid::animate_mini_maze,
         ),
         include_str!("../../res/grid.txt"),
     ),
@@ -383,7 +389,7 @@ pub static DESCRIPTIONS: [(tables::BuildFunction, &'static str); 9] = [
         (
             builders::recursive_subdivision::generate_maze,
             builders::recursive_subdivision::animate_maze,
-            builders::recursive_subdivision::animate_maze,
+            builders::recursive_subdivision::animate_mini_maze,
         ),
         include_str!("../../res/recursive_subdivision.txt"),
     ),
@@ -391,7 +397,7 @@ pub static DESCRIPTIONS: [(tables::BuildFunction, &'static str); 9] = [
         (
             builders::wilson_adder::generate_maze,
             builders::wilson_adder::animate_maze,
-            builders::wilson_adder::animate_maze,
+            builders::wilson_adder::animate_mini_maze,
         ),
         include_str!("../../res/wilson_adder.txt"),
     ),
@@ -399,7 +405,7 @@ pub static DESCRIPTIONS: [(tables::BuildFunction, &'static str); 9] = [
         (
             builders::wilson_carver::generate_maze,
             builders::wilson_carver::animate_maze,
-            builders::wilson_carver::animate_maze,
+            builders::wilson_carver::animate_mini_maze,
         ),
         include_str!("../../res/wilson_carver.txt"),
     ),

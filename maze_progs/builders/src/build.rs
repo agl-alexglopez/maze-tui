@@ -852,7 +852,11 @@ pub fn build_mini_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: Sp
 
 pub fn print_overlap_key(maze: &maze::Maze) {
     let offset = maze::Offset {
-        add_rows: maze.offset().add_rows + maze.row_size(),
+        add_rows: if maze.style_index() == (maze::MazeStyle::Mini as usize) {
+            maze.offset().add_rows + maze.row_size() / 2 + 1
+        } else {
+            maze.offset().add_rows + maze.row_size()
+        },
         add_cols: maze.offset().add_cols,
     };
     let mut cur_print = 0;
@@ -883,7 +887,11 @@ pub fn print_overlap_key(maze: &maze::Maze) {
 
 pub fn print_overlap_key_animated(maze: &maze::Maze) {
     let offset = maze::Offset {
-        add_rows: maze.offset().add_rows + maze.row_size(),
+        add_rows: if maze.style_index() == (maze::MazeStyle::Mini as usize) {
+            maze.offset().add_rows + maze.row_size() / 2 + 1
+        } else {
+            maze.offset().add_rows + maze.row_size()
+        },
         add_cols: maze.offset().add_cols,
     };
     let mut cur_print = 0;
