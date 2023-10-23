@@ -100,7 +100,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
 pub fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(maze);
-    build::flush_mini_walls(maze);
+    build::flush_grid(maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
         row: 2 * (gen.gen_range(1..maze.row_size() - 2) / 2) + 1,
@@ -136,13 +136,6 @@ pub fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         };
         maze[cur.row as usize][cur.col as usize] &= !build::MARKERS_MASK;
         maze[half_step.row as usize][half_step.col as usize] &= !build::MARKERS_MASK;
-        print::set_cursor_position(
-            maze::Point {
-                row: half_step.row / 2,
-                col: half_step.col,
-            },
-            maze.offset(),
-        );
         build::flush_mini_backtracker_coordinate(maze, half_step);
         thread::sleep(time::Duration::from_micros(animation * BACKTRACK_DELAY));
         build::flush_mini_backtracker_coordinate(maze, cur);

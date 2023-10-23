@@ -72,15 +72,22 @@ fn main() {
     match run.build_view {
         tables::ViewingMode::StaticImage => {
             run.build.0(&mut maze);
-            flush_grid(&maze);
-            if let Some((static_mod, _)) = run.modify {
+            if let Some((static_mod, _, _)) = run.modify {
                 static_mod(&mut maze)
             }
+            flush_grid(&maze);
         }
         tables::ViewingMode::AnimatedPlayback => {
-            run.build.1(&mut maze, run.build_speed);
-            if let Some((_, animate_mod)) = run.modify {
-                animate_mod(&mut maze, run.build_speed)
+            if run.args.style == maze::MazeStyle::Mini {
+                run.build.2(&mut maze, run.build_speed);
+                if let Some((_, _, mini_mod)) = run.modify {
+                    mini_mod(&mut maze, run.build_speed)
+                }
+            } else {
+                run.build.1(&mut maze, run.build_speed);
+                if let Some((_, animate_mod, _)) = run.modify {
+                    animate_mod(&mut maze, run.build_speed)
+                }
             }
         }
     }
@@ -96,7 +103,13 @@ fn main() {
         tables::ViewingMode::StaticImage => {
             run.solve.0(monitor.clone());
         }
-        tables::ViewingMode::AnimatedPlayback => run.solve.1(monitor.clone(), run.solve_speed),
+        tables::ViewingMode::AnimatedPlayback => {
+            if run.args.style == maze::MazeStyle::Mini {
+                run.solve.2(monitor.clone(), run.solve_speed);
+            } else {
+                run.solve.1(monitor.clone(), run.solve_speed);
+            }
+        }
     }
 
     if let Ok(lk) = monitor.clone().lock() {

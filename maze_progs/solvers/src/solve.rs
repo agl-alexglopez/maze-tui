@@ -252,17 +252,23 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     // This is a path square. We should never be asked to print a wall from a solver animation?
     assert!((square & maze::PATH_BIT) != 0);
     if point.row % 2 != 0 {
-        let fg_color =
-            match (maze[(point.row - 1) as usize][point.col as usize] & maze::PATH_BIT) != 0 {
-                true => Color::AnsiValue(key::thread_color_code(
-                    ((maze[(point.row - 1) as usize][point.col as usize] & THREAD_MASK)
-                        >> THREAD_TAG_OFFSET) as usize,
-                )),
-                false => Color::Reset,
-            };
+        if (maze[(point.row - 1) as usize][point.col as usize] & maze::PATH_BIT) != 0 {
+            let neighbor = key::thread_color_code(
+                ((maze[(point.row - 1) as usize][point.col as usize] & THREAD_MASK)
+                    >> THREAD_TAG_OFFSET) as usize,
+            );
+            execute!(
+                io::stdout(),
+                SetForegroundColor(Color::AnsiValue(neighbor)),
+                SetBackgroundColor(Color::AnsiValue(this_color)),
+                Print('▀'),
+                ResetColor
+            )
+            .expect("printer broke.");
+            return;
+        }
         execute!(
             io::stdout(),
-            SetForegroundColor(fg_color),
             SetBackgroundColor(Color::AnsiValue(this_color)),
             Print('▀'),
             ResetColor
@@ -272,19 +278,25 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     }
     // Even rows but this still must be a path.
     assert!((square & maze::PATH_BIT) != 0);
-    let fg_color = match (maze[(point.row + 1) as usize][point.col as usize] & maze::PATH_BIT) != 0
-    {
-        true => Color::AnsiValue(key::thread_color_code(
+    if (maze[(point.row + 1) as usize][point.col as usize] & maze::PATH_BIT) != 0 {
+        let neighbor = key::thread_color_code(
             ((maze[(point.row + 1) as usize][point.col as usize] & THREAD_MASK)
                 >> THREAD_TAG_OFFSET) as usize,
-        )),
-        false => Color::Reset,
-    };
+        );
+        execute!(
+            io::stdout(),
+            SetForegroundColor(Color::AnsiValue(neighbor)),
+            SetBackgroundColor(Color::AnsiValue(this_color)),
+            Print('▀'),
+            ResetColor
+        )
+        .expect("printer broke.");
+        return;
+    }
     execute!(
         io::stdout(),
-        SetForegroundColor(fg_color),
         SetBackgroundColor(Color::AnsiValue(this_color)),
-        Print('■'),
+        Print('▀'),
         ResetColor
     )
     .expect("printer broke.");

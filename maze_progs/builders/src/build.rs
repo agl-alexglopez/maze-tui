@@ -249,6 +249,71 @@ pub fn build_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, speed: Sp
     thread::sleep(time::Duration::from_micros(speed));
 }
 
+pub fn build_mini_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUnit) {
+    let u_row = p.row as usize;
+    let u_col = p.col as usize;
+    let mut wall: maze::WallLine = 0b0;
+    if p.row > 0 && (maze[u_row - 1][u_col] & maze::PATH_BIT) == 0 {
+        wall |= maze::NORTH_WALL;
+        maze[u_row - 1][u_col] |= maze::SOUTH_WALL;
+        flush_mini_backtracker_coordinate(
+            maze,
+            maze::Point {
+                row: p.row - 1,
+                col: p.col,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+    if p.row + 1 < maze.row_size() && (maze[u_row + 1][u_col] & maze::PATH_BIT) == 0 {
+        wall |= maze::SOUTH_WALL;
+        maze[u_row + 1][u_col] |= maze::NORTH_WALL;
+        flush_mini_backtracker_coordinate(
+            maze,
+            maze::Point {
+                row: p.row + 1,
+                col: p.col,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+    if p.col > 0 && (maze[u_row][u_col - 1] & maze::PATH_BIT) == 0 {
+        wall |= maze::WEST_WALL;
+        maze[u_row][u_col - 1] |= maze::EAST_WALL;
+        flush_mini_backtracker_coordinate(
+            maze,
+            maze::Point {
+                row: p.row,
+                col: p.col - 1,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+    if p.col + 1 < maze.col_size() && (maze[u_row][u_col + 1] & maze::PATH_BIT) == 0 {
+        wall |= maze::EAST_WALL;
+        maze[u_row][u_col + 1] |= maze::WEST_WALL;
+        flush_mini_backtracker_coordinate(
+            maze,
+            maze::Point {
+                row: p.row,
+                col: p.col + 1,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+    maze[u_row][u_col] |= wall;
+    maze[u_row][u_col] |= BUILDER_BIT;
+    maze[u_row][u_col] &= !maze::PATH_BIT;
+    flush_mini_backtracker_coordinate(
+        maze,
+        maze::Point {
+            row: p.row,
+            col: p.col,
+        },
+    );
+    thread::sleep(time::Duration::from_micros(speed));
+}
+
 /// PATH CARVING HELPERS-------------------------------------------------------------------
 
 pub fn fill_maze_with_walls(maze: &mut maze::Maze) {
@@ -302,6 +367,38 @@ pub fn mark_origin_animated(
     flush_cursor_maze_coordinate(maze, wall);
     thread::sleep(time::Duration::from_micros(speed));
     flush_cursor_maze_coordinate(maze, next);
+    thread::sleep(time::Duration::from_micros(speed));
+}
+
+pub fn mark_mini_origin_animated(
+    maze: &mut maze::Maze,
+    walk: maze::Point,
+    next: maze::Point,
+    speed: SpeedUnit,
+) {
+    let u_next_row = next.row as usize;
+    let u_next_col = next.col as usize;
+    let mut wall = walk;
+    if next.row > walk.row {
+        wall.row += 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_NORTH;
+        maze[u_next_row][u_next_col] |= FROM_NORTH;
+    } else if next.row < walk.row {
+        wall.row -= 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_SOUTH;
+        maze[u_next_row][u_next_col] |= FROM_SOUTH;
+    } else if next.col < walk.col {
+        wall.col -= 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_EAST;
+        maze[u_next_row][u_next_col] |= FROM_EAST;
+    } else if next.col > walk.col {
+        wall.col += 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_WEST;
+        maze[u_next_row][u_next_col] |= FROM_WEST;
+    }
+    flush_mini_backtracker_coordinate(maze, wall);
+    thread::sleep(time::Duration::from_micros(speed));
+    flush_mini_backtracker_coordinate(maze, next);
     thread::sleep(time::Duration::from_micros(speed));
 }
 
@@ -587,8 +684,8 @@ pub fn join_minis_animated(
         print::maze_panic!("Cell join error. Maze won't build");
     }
     carve_mini_walls_animated(maze, cur, speed);
-    carve_mini_walls_animated(maze, wall, speed);
     carve_mini_walls_animated(maze, next, speed);
+    carve_mini_walls_animated(maze, wall, speed);
 }
 
 pub fn build_wall(maze: &mut maze::Maze, p: maze::Point) {
@@ -691,6 +788,58 @@ pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUn
     if p.col + 1 < maze.col_size() && (maze[u_row][u_col + 1] & maze::PATH_BIT) == 0 {
         maze[u_row][u_col + 1] &= !maze::WEST_WALL;
         flush_cursor_maze_coordinate(
+            maze,
+            maze::Point {
+                row: p.row,
+                col: p.col + 1,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+}
+
+pub fn build_mini_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUnit) {
+    let u_row = p.row as usize;
+    let u_col = p.col as usize;
+    maze[u_row][u_col] |= maze::PATH_BIT;
+    flush_mini_coordinate(maze, p);
+    thread::sleep(time::Duration::from_micros(speed));
+    if p.row > 0 && (maze[u_row - 1][u_col] & maze::PATH_BIT) == 0 {
+        maze[u_row - 1][u_col] &= !maze::SOUTH_WALL;
+        flush_mini_coordinate(
+            maze,
+            maze::Point {
+                row: p.row - 1,
+                col: p.col,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+    if p.row + 1 < maze.row_size() && (maze[u_row + 1][u_col] & maze::PATH_BIT) == 0 {
+        maze[u_row + 1][u_col] &= !maze::NORTH_WALL;
+        flush_mini_coordinate(
+            maze,
+            maze::Point {
+                row: p.row + 1,
+                col: p.col,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+    if p.col > 0 && (maze[u_row][u_col - 1] & maze::PATH_BIT) == 0 {
+        maze[u_row][u_col - 1] &= !maze::EAST_WALL;
+        flush_mini_coordinate(
+            maze,
+            maze::Point {
+                row: p.row,
+                col: p.col - 1,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+    if p.col + 1 < maze.col_size() && (maze[u_row][u_col + 1] & maze::PATH_BIT) == 0 {
+        maze[u_row][u_col + 1] &= !maze::WEST_WALL;
+        flush_mini_coordinate(
             maze,
             maze::Point {
                 row: p.row,
@@ -829,6 +978,19 @@ pub fn flush_mini_backtracker_coordinate(maze: &maze::Maze, p: maze::Point) {
     );
     let square = maze[p.row as usize][p.col as usize];
     if square & maze::PATH_BIT == 0 {
+        // Need this for wilson backtracking while random walking.
+        if square & MARKERS_MASK != 0 {
+            execute!(
+                io::stdout(),
+                SetBackgroundColor(Color::AnsiValue(
+                    BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize].ansi
+                )),
+                Print('▀'),
+                ResetColor
+            )
+            .expect("Could not print.");
+            return;
+        }
         let mut color = 0;
         if p.row % 2 != 0 && p.row - 1 >= 0 {
             color = BACKTRACKING_SYMBOLS[((maze[(p.row - 1) as usize][p.col as usize]
@@ -850,6 +1012,7 @@ pub fn flush_mini_backtracker_coordinate(maze: &maze::Maze, p: maze::Point) {
         .expect("Could not print.");
         return;
     }
+    // We know this is a path but because we are half blocks we need to render correctly.
     let path = match p.row - 1 >= 0
         && (maze[(p.row - 1) as usize][p.col as usize] & maze::PATH_BIT) == 0
     {
@@ -921,27 +1084,26 @@ pub fn print_mini_coordinate(maze: &maze::Maze, p: maze::Point) {
 }
 
 pub fn flush_grid(maze: &maze::Maze) {
-    for r in 0..maze.row_size() {
-        for c in 0..maze.col_size() {
-            print_square(maze, maze::Point { row: r, col: c });
+    if maze.style_index() == (maze::MazeStyle::Mini as usize) {
+        for r in 0..maze.row_size() {
+            for c in 0..maze.col_size() {
+                print_mini_coordinate(maze, maze::Point { row: r, col: c });
+            }
+            match queue!(io::stdout(), Print('\n')) {
+                Ok(_) => {}
+                Err(_) => maze_panic!("Couldn't print square."),
+            };
         }
-        match queue!(io::stdout(), Print('\n')) {
-            Ok(_) => {}
-            Err(_) => maze_panic!("Couldn't print square."),
-        };
-    }
-    print::flush();
-}
-
-pub fn flush_mini_walls(maze: &maze::Maze) {
-    for r in 0..maze.row_size() {
-        for c in 0..maze.col_size() {
-            flush_mini_coordinate(maze, maze::Point { row: r, col: c });
+    } else {
+        for r in 0..maze.row_size() {
+            for c in 0..maze.col_size() {
+                print_square(maze, maze::Point { row: r, col: c });
+            }
+            match queue!(io::stdout(), Print('\n')) {
+                Ok(_) => {}
+                Err(_) => maze_panic!("Couldn't print square."),
+            };
         }
-        match queue!(io::stdout(), Print('\n')) {
-            Ok(_) => {}
-            Err(_) => print::maze_panic!("Couldn't print square."),
-        };
     }
     print::flush();
 }

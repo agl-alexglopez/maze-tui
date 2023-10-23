@@ -213,6 +213,78 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     complete_final_row_animated(maze, &mut window, animation);
 }
 
+pub fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
+    let animation = build::BUILDER_SPEEDS[speed as usize];
+    build::fill_maze_with_walls(maze);
+    build::flush_grid(maze);
+    build::print_overlap_key_animated(maze);
+    let mut rng = thread_rng();
+    let coin = Bernoulli::new(0.66);
+    let mut window = SlidingSetWindow::new(maze);
+    let mut sets_in_this_row: HashMap<SetId, Vec<maze::Point>> = HashMap::new();
+    for r in (1..maze.row_size() - 2).step_by(2) {
+        window.generate_sets(window.next_row_i());
+        for c in (1..maze.col_size() - 1).step_by(2) {
+            let cur_id = window.at(window.cur_row, c as usize);
+            let next = maze::Point {
+                row: r,
+                col: c + NEIGHBOR_DIST,
+            };
+            if !build::is_square_within_perimeter_walls(maze, next)
+                || cur_id == window.at(window.cur_row, next.col as usize)
+                || !coin.expect("Bernoulli coin flip broke").sample(&mut rng)
+            {
+                continue;
+            }
+            let neighbor_id = window.at(window.cur_row, next.col as usize);
+            build::join_minis_animated(maze, maze::Point { row: r, col: c }, next, animation);
+            merge_cur_row_sets(
+                &mut window,
+                IdMergeRequest {
+                    winner: cur_id,
+                    loser: neighbor_id,
+                },
+            );
+        }
+
+        if maze.exit() {
+            return;
+        }
+
+        for c in (1..maze.col_size() - 1).step_by(2) {
+            sets_in_this_row
+                .entry(window.at(window.cur_row, c as usize))
+                .or_default()
+                .push(maze::Point { row: r, col: c });
+        }
+
+        for set in sets_in_this_row.iter() {
+            for _drop in 0..rng.gen_range(1..=set.1.len()) {
+                let chose: &maze::Point = &set.1[rng.gen_range(0..set.1.len())];
+                if (maze[(chose.row + DROP_DIST) as usize][chose.col as usize] & build::BUILDER_BIT)
+                    != 0
+                {
+                    continue;
+                }
+                let next_row = window.next_row_i();
+                *window.at_mut(next_row, chose.col as usize) = *set.0;
+                build::join_minis_animated(
+                    maze,
+                    *chose,
+                    maze::Point {
+                        row: chose.row + DROP_DIST,
+                        col: chose.col,
+                    },
+                    animation,
+                );
+            }
+        }
+        window.slide_window();
+        sets_in_this_row.clear();
+    }
+    complete_final_mini_row_animated(maze, &mut window, animation);
+}
+
 // Private helpers--------------------------------------------------------------------------------
 
 fn merge_cur_row_sets(window: &mut SlidingSetWindow, request: IdMergeRequest) {
@@ -264,6 +336,32 @@ fn complete_final_row_animated(
             continue;
         }
         build::join_squares_animated(maze, maze::Point { row: r, col: c }, next, animation);
+        for set_elem in (next.col..maze.col_size() - 1).step_by(2) {
+            if window.at(set_r, set_elem as usize) == neighbor_id {
+                *window.at_mut(set_r, set_elem as usize) = this_id;
+            }
+        }
+    }
+}
+
+fn complete_final_mini_row_animated(
+    maze: &mut maze::Maze,
+    window: &mut SlidingSetWindow,
+    animation: build::SpeedUnit,
+) {
+    let r = maze.row_size() - 2;
+    let set_r = window.cur_row;
+    for c in (1..maze.col_size() - 2).step_by(2) {
+        let this_id = window.at(set_r, c as usize);
+        let next = maze::Point {
+            row: r,
+            col: c + NEIGHBOR_DIST,
+        };
+        let neighbor_id = window.at(set_r, (c + NEIGHBOR_DIST) as usize);
+        if this_id == neighbor_id {
+            continue;
+        }
+        build::join_minis_animated(maze, maze::Point { row: r, col: c }, next, animation);
         for set_elem in (next.col..maze.col_size() - 1).step_by(2) {
             if window.at(set_r, set_elem as usize) == neighbor_id {
                 *window.at_mut(set_r, set_elem as usize) = this_id;
