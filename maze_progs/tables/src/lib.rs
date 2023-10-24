@@ -365,7 +365,7 @@ pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
         (
             distance::paint_distance_from_center,
             distance::animate_distance_from_center,
-            distance::animate_distance_from_center,
+            distance::animate_mini_distance_from_center,
         ),
     ),
     (
@@ -373,7 +373,7 @@ pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
         (
             runs::paint_run_lengths,
             runs::animate_run_lengths,
-            runs::animate_run_lengths,
+            runs::animate_mini_run_lengths,
         ),
     ),
 ];
