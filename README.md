@@ -72,12 +72,13 @@ SOLVER FLAG[-s] Set maze solving algorithm.
     [dark[algorithm]-[game]] - A mystery...
 
 WALL FLAG[-w] Set the wall style for the maze.
+    [mini] - Half size walls and paths.
     [sharp] - The default straight lines.
     [round] - Rounded corners.
     [doubles] - Sharp double lines.
     [bold] - Thicker straight lines.
     [contrast] - Full block width and height walls.
-    [half] - Half block height and full width squares.
+    [half] - Half wall height and full size paths.
     [spikes] - Connected lines with spikes.
 
 SOLVER ANIMATION FLAG[-sa] Watch the maze solution.
@@ -116,7 +117,7 @@ The underlying principles for this program are as follows.
 
 I included as many **interesting** maze building algorithms as I could. The solving algorithms are multi-threaded in many cases. This is not particularly practical or special on its own. However, multithreading allows for more fun and interesting visualizations and can speed up what can sometimes be a slow solving process to watch for a single thread.
 
-While I have not yet put together a testing suite for performance testing of building and solving the mazes, I will be interested to see the performance implications of the solvers. Please read the [wiki](https://github.com/agl-alexglopez/maze-tui/wiki) for a much more in depth discussion of algorithms and design processes. That is likely where you will find documentation of new features or other testing.
+While I have not yet put together a testing suite for performance testing of building and solving the mazes, I will be interested to see the performance implications of the solvers. The [wiki](https://github.com/agl-alexglopez/maze-tui/wiki) is likely where you will find documentation of new features or other testing.
 
 ## Wiki
 

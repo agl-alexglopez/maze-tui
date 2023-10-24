@@ -5,6 +5,7 @@ use crossterm::{
     },
 };
 use key;
+use maze;
 use print::maze_panic;
 use rand::prelude::*;
 use std::io::{self};
@@ -133,6 +134,19 @@ pub fn find_nearest_square(maze: &maze::Maze, choice: maze::Point) -> maze::Poin
 }
 
 pub fn print_paths(maze: &maze::Maze) {
+    if maze.style_index() == (maze::MazeStyle::Mini as usize) {
+        for r in 0..maze.row_size() {
+            for c in 0..maze.col_size() {
+                print_mini_point(maze, maze::Point { row: r, col: c });
+            }
+            match queue!(io::stdout(), Print('\n'),) {
+                Ok(_) => {}
+                Err(_) => maze_panic!("Could not print newline."),
+            }
+        }
+        print::flush();
+        return;
+    }
     for r in 0..maze.row_size() {
         for c in 0..maze.col_size() {
             print_point(maze, maze::Point { row: r, col: c });
@@ -153,7 +167,7 @@ pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         },
         maze.offset(),
     );
-    let square = &maze[point.row as usize][point.col as usize];
+    let square = maze[point.row as usize][point.col as usize];
     // We have some special printing for the finish square. Not here.
     if (square & FINISH_BIT) != 0 {
         let ansi = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
@@ -198,7 +212,7 @@ pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     if (square & maze::PATH_BIT) == 0 {
         match execute!(
             io::stdout(),
-            Print(maze.wall_style()[(square & maze::WALL_MASK) as usize]),
+            Print(maze.wall_char((square & maze::WALL_MASK) as usize)),
         ) {
             Ok(_) => return,
             Err(_) => maze_panic!("Could not print wall."),
@@ -265,7 +279,7 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
     if (square & maze::PATH_BIT) == 0 {
         match queue!(
             io::stdout(),
-            Print(maze.wall_style()[(square & maze::WALL_MASK) as usize]),
+            Print(maze.wall_char((square & maze::WALL_MASK) as usize)),
         ) {
             Ok(_) => return,
             Err(_) => maze_panic!("Could not print wall."),
@@ -280,14 +294,328 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
     maze_panic!("Uncategorized maze square! Check the bits.");
 }
 
+// These printers for the Mini wall style are brutal. If you ever think of something better, fix.
+
+pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
+    print::set_cursor_position(
+        maze::Point {
+            row: point.row / 2,
+            col: point.col,
+        },
+        maze.offset(),
+    );
+    let square = maze[point.row as usize][point.col as usize];
+    let this_color = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+    if (square & (FINISH_BIT | START_BIT)) != 0 {
+        execute!(
+            io::stdout(),
+            SetAttribute(Attribute::SlowBlink),
+            SetBackgroundColor(Color::AnsiValue(this_color)),
+            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            Print('▀'),
+            ResetColor
+        )
+        .expect("printer broke.");
+        return;
+    }
+    // This is a path square. We should never be asked to print a wall from a solver animation?
+    if point.row % 2 != 0 {
+        if (maze[(point.row - 1) as usize][point.col as usize] & maze::PATH_BIT) != 0 {
+            let neighbor_square = maze[(point.row - 1) as usize][point.col as usize];
+            if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
+                execute!(
+                    io::stdout(),
+                    SetAttribute(Attribute::SlowBlink),
+                    SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+                    SetBackgroundColor(Color::AnsiValue(this_color)),
+                    Print('▀'),
+                    ResetColor
+                )
+                .expect("printer broke.");
+                return;
+            }
+            execute!(
+                io::stdout(),
+                SetForegroundColor(Color::AnsiValue(key::thread_color_code(
+                    ((neighbor_square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize,
+                ))),
+                SetBackgroundColor(Color::AnsiValue(this_color)),
+                Print('▀'),
+                ResetColor
+            )
+            .expect("printer broke.");
+            return;
+        }
+        // A wall is above us.
+        execute!(
+            io::stdout(),
+            SetBackgroundColor(Color::AnsiValue(this_color)),
+            Print('▀'),
+            ResetColor
+        )
+        .expect("printer broke.");
+        return;
+    }
+    // Even rows but this still must be a path.
+    if (maze[(point.row + 1) as usize][point.col as usize] & maze::PATH_BIT) != 0 {
+        let neighbor_square = maze[(point.row + 1) as usize][point.col as usize];
+        if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
+            execute!(
+                io::stdout(),
+                SetAttribute(Attribute::SlowBlink),
+                SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+                SetBackgroundColor(Color::AnsiValue(this_color)),
+                Print('▀'),
+                ResetColor
+            )
+            .expect("printer broke.");
+            return;
+        }
+        execute!(
+            io::stdout(),
+            SetForegroundColor(Color::AnsiValue(key::thread_color_code(
+                ((neighbor_square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize
+            ))),
+            SetBackgroundColor(Color::AnsiValue(this_color)),
+            Print('▀'),
+            ResetColor
+        )
+        .expect("printer broke.");
+        return;
+    }
+    // A wall is above us
+    execute!(
+        io::stdout(),
+        SetBackgroundColor(Color::AnsiValue(this_color)),
+        Print('▀'),
+        ResetColor
+    )
+    .expect("printer broke.");
+}
+
+pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
+    print::set_cursor_position(
+        maze::Point {
+            row: point.row / 2,
+            col: point.col,
+        },
+        maze.offset(),
+    );
+    let square = maze[point.row as usize][point.col as usize];
+    let this_color = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+    if (square & (FINISH_BIT | START_BIT)) != 0 {
+        queue!(
+            io::stdout(),
+            SetAttribute(Attribute::SlowBlink),
+            SetBackgroundColor(Color::AnsiValue(this_color)),
+            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            Print('▀'),
+            ResetColor
+        )
+        .expect("printer broke.");
+        return;
+    }
+    if square & maze::PATH_BIT == 0 {
+        queue!(
+            io::stdout(),
+            Print(maze.wall_char((square & maze::WALL_MASK) as usize)),
+        )
+        .expect("printer broke.");
+        return;
+    }
+    if point.row % 2 != 0 {
+        if (maze[(point.row - 1) as usize][point.col as usize] & maze::PATH_BIT) != 0 {
+            let neighbor_square = maze[(point.row - 1) as usize][point.col as usize];
+            if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
+                queue!(
+                    io::stdout(),
+                    SetAttribute(Attribute::SlowBlink),
+                    SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+                    SetBackgroundColor(Color::AnsiValue(this_color)),
+                    Print('▀'),
+                    ResetColor
+                )
+                .expect("printer broke.");
+                return;
+            }
+            queue!(
+                io::stdout(),
+                SetForegroundColor(Color::AnsiValue(key::thread_color_code(
+                    ((neighbor_square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize,
+                ))),
+                SetBackgroundColor(Color::AnsiValue(this_color)),
+                Print('▀'),
+                ResetColor
+            )
+            .expect("printer broke.");
+            return;
+        }
+        // A wall is above us.
+        queue!(
+            io::stdout(),
+            SetBackgroundColor(Color::AnsiValue(this_color)),
+            Print('▀'),
+            ResetColor
+        )
+        .expect("printer broke.");
+        return;
+    }
+    // Even rows but this still must be a path.
+    if (maze[(point.row + 1) as usize][point.col as usize] & maze::PATH_BIT) != 0 {
+        let neighbor_square = maze[(point.row + 1) as usize][point.col as usize];
+        if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
+            queue!(
+                io::stdout(),
+                SetAttribute(Attribute::SlowBlink),
+                SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+                SetBackgroundColor(Color::AnsiValue(this_color)),
+                Print('▀'),
+                ResetColor
+            )
+            .expect("printer broke.");
+            return;
+        }
+        queue!(
+            io::stdout(),
+            SetForegroundColor(Color::AnsiValue(key::thread_color_code(
+                ((neighbor_square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize
+            ))),
+            SetBackgroundColor(Color::AnsiValue(this_color)),
+            Print('▀'),
+            ResetColor
+        )
+        .expect("printer broke.");
+        return;
+    }
+    // A wall is above us.
+    queue!(
+        io::stdout(),
+        SetBackgroundColor(Color::AnsiValue(this_color)),
+        Print('▀'),
+        ResetColor
+    )
+    .expect("printer broke.");
+}
+
+// Because we are using half blocks we need a different function to invert colors for dark mode.
+pub fn flush_dark_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
+    print::set_cursor_position(
+        maze::Point {
+            row: point.row / 2,
+            col: point.col,
+        },
+        maze.offset(),
+    );
+    let square = maze[point.row as usize][point.col as usize];
+    let this_color = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+    if (square & (FINISH_BIT | START_BIT)) != 0 {
+        execute!(
+            io::stdout(),
+            SetAttribute(Attribute::SlowBlink),
+            SetBackgroundColor(Color::AnsiValue(this_color)),
+            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            Print('▀'),
+            ResetColor
+        )
+        .expect("printer broke.");
+        return;
+    }
+    // This is a path square. We should never be asked to print a wall from a solver animation?
+    if point.row % 2 != 0 {
+        if (maze[(point.row - 1) as usize][point.col as usize] & maze::PATH_BIT) != 0 {
+            let neighbor_square = maze[(point.row - 1) as usize][point.col as usize];
+            if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
+                execute!(
+                    io::stdout(),
+                    SetAttribute(Attribute::SlowBlink),
+                    SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+                    SetBackgroundColor(Color::AnsiValue(this_color)),
+                    Print('▀'),
+                    ResetColor
+                )
+                .expect("printer broke.");
+                return;
+            }
+            execute!(
+                io::stdout(),
+                SetForegroundColor(Color::AnsiValue(key::thread_color_code(
+                    ((neighbor_square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize,
+                ))),
+                SetBackgroundColor(Color::AnsiValue(this_color)),
+                Print('▀'),
+                ResetColor
+            )
+            .expect("printer broke.");
+            return;
+        }
+        // A wall above but we are in dark mode so make it black. Path is now square.
+        execute!(
+            io::stdout(),
+            SetForegroundColor(Color::AnsiValue(this_color)),
+            Print('▄'),
+            ResetColor
+        )
+        .expect("printer broke.");
+        return;
+    }
+    // Even rows but this still must be a path.
+    if (maze[(point.row + 1) as usize][point.col as usize] & maze::PATH_BIT) != 0 {
+        let neighbor_square = maze[(point.row + 1) as usize][point.col as usize];
+        if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
+            execute!(
+                io::stdout(),
+                SetAttribute(Attribute::SlowBlink),
+                SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+                SetBackgroundColor(Color::AnsiValue(this_color)),
+                Print('▀'),
+                ResetColor
+            )
+            .expect("printer broke.");
+            return;
+        }
+        execute!(
+            io::stdout(),
+            SetForegroundColor(Color::AnsiValue(key::thread_color_code(
+                ((neighbor_square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize
+            ))),
+            SetBackgroundColor(Color::AnsiValue(this_color)),
+            Print('▀'),
+            ResetColor
+        )
+        .expect("printer broke.");
+        return;
+    }
+    // A wall above but we are in dark mode so make it black. Path is now square.
+    execute!(
+        io::stdout(),
+        SetForegroundColor(Color::AnsiValue(this_color)),
+        Print('▀'),
+        ResetColor
+    )
+    .expect("printer broke.");
+}
+
 pub fn deluminate_maze(maze: &maze::Maze) {
-    for r in 0..maze.row_size() {
-        for c in 0..maze.col_size() {
-            let p = maze::Point { row: r, col: c };
-            print::set_cursor_position(p, maze.offset());
-            match queue!(io::stdout(), Print(' '),) {
-                Ok(_) => {}
-                Err(_) => maze_panic!("Could not print path."),
+    if maze.style_index() == (maze::MazeStyle::Mini as usize) {
+        for r in 0..(maze.row_size() + 1) / 2 {
+            for c in 0..maze.col_size() {
+                let p = maze::Point { row: r, col: c };
+                print::set_cursor_position(p, maze.offset());
+                match queue!(io::stdout(), Print(' '),) {
+                    Ok(_) => {}
+                    Err(_) => maze_panic!("Could not print path."),
+                }
+            }
+        }
+    } else {
+        for r in 0..maze.row_size() {
+            for c in 0..maze.col_size() {
+                let p = maze::Point { row: r, col: c };
+                print::set_cursor_position(p, maze.offset());
+                match queue!(io::stdout(), Print(' '),) {
+                    Ok(_) => {}
+                    Err(_) => maze_panic!("Could not print path."),
+                }
             }
         }
     }

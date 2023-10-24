@@ -60,9 +60,10 @@ pub struct Offset {
     pub add_cols: i32,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum MazeStyle {
-    Sharp = 0,
+    Mini = 0,
+    Sharp,
     Round,
     Doubles,
     Bold,
@@ -105,7 +106,7 @@ impl Maze {
             maze_row_size: (rows),
             maze_col_size: (cols),
             offset: args.offset,
-            wall_style_index: (args.style as usize),
+            wall_style_index: args.style as usize,
             receiver: None,
         }
     }
@@ -118,7 +119,7 @@ impl Maze {
             maze_row_size: (rows),
             maze_col_size: (cols),
             offset: args.offset,
-            wall_style_index: (args.style as usize),
+            wall_style_index: args.style as usize,
             receiver: Some(rec),
         }
     }
@@ -142,13 +143,16 @@ impl Maze {
         self.maze_col_size
     }
 
-    pub fn wall_style(&self) -> &[&'static str] {
-        &WALL_STYLES
-            [(self.wall_style_index * WALL_ROW)..(self.wall_style_index * WALL_ROW + WALL_ROW)]
+    pub fn wall_char(&self, wall_mask_index: usize) -> char {
+        WALL_STYLES[(self.wall_style_index * WALL_ROW) + wall_mask_index]
     }
 
     pub fn style_index(&self) -> usize {
         self.wall_style_index
+    }
+
+    pub fn is_mini(&self) -> bool {
+        self.wall_style_index == (MazeStyle::Mini as usize)
     }
 }
 
@@ -195,23 +199,25 @@ pub const WEST_WALL: WallLine = 0b1000;
 // Walls are constructed in terms of other walls they need to connect to. For example, read
 // 0b0011 as, "this is a wall square that must connect to other walls to the East and North."
 const WALL_ROW: usize = 16;
-pub static WALL_STYLES: [&str; 112] = [
+pub static WALL_STYLES: [char; 128] = [
     // 0bWestSouthEastNorth. Note: 0b0000 is a floating wall with no walls around.
     // Then, count from 0 (0b0000) to 15 (0b1111) in binary to form different wall shapes.
+    // mini
+    '▔', '▀', '▀', '▀', '█', '█', '█', '█', '▀', '▀', '▀', '▀', '█', '█', '█', '█',
     // sharp
-    "■", "╵", "╶", "└", "╷", "│", "┌", "├", "╴", "┘", "─", "┴", "┐", "┤", "┬", "┼",
+    '■', '╵', '╶', '└', '╷', '│', '┌', '├', '╴', '┘', '─', '┴', '┐', '┤', '┬', '┼',
     // rounded
-    "●", "╵", "╶", "╰", "╷", "│", "╭", "├", "╴", "╯", "─", "┴", "╮", "┤", "┬", "┼",
+    '●', '╵', '╶', '╰', '╷', '│', '╭', '├', '╴', '╯', '─', '┴', '╮', '┤', '┬', '┼',
     // doubles
-    "◫", "║", "═", "╚", "║", "║", "╔", "╠", "═", "╝", "═", "╩", "╗", "╣", "╦", "╬",
+    '◫', '║', '═', '╚', '║', '║', '╔', '╠', '═', '╝', '═', '╩', '╗', '╣', '╦', '╬',
     // bold
-    "■", "╹", "╺", "┗", "╻", "┃", "┏", "┣", "╸", "┛", "━", "┻", "┓", "┫", "┳", "╋",
+    '■', '╹', '╺', '┗', '╻', '┃', '┏', '┣', '╸', '┛', '━', '┻', '┓', '┫', '┳', '╋',
     // contrast
-    "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█", "█",
+    '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█',
     // half
-    "▄", "█", "▄", "█", "▄", "█", "▄", "█", "▄", "█", "▄", "█", "▄", "█", "▄", "█",
+    '▄', '█', '▄', '█', '▄', '█', '▄', '█', '▄', '█', '▄', '█', '▄', '█', '▄', '█',
     // spikes
-    "✸", "╀", "┾", "╊", "╁", "╂", "╆", "╊", "┽", "╃", "┿", "╇", "╅", "╉", "╈", "╋",
+    '✸', '╀', '┾', '╊', '╁', '╂', '╆', '╊', '┽', '╃', '┿', '╇', '╅', '╉', '╈', '╋',
 ];
 
 // north, east, south, west provided to any users of a maze for convenience.

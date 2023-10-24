@@ -62,10 +62,10 @@ fn run_channels(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result
                 tables::ViewingMode::StaticImage => {
                     build::print_overlap_key(&lk.maze);
                     this_run.build.0(&mut lk.maze);
-                    build::flush_grid(&lk.maze);
                     if let Some((static_mod, _)) = this_run.modify {
                         static_mod(&mut lk.maze);
                     }
+                    build::flush_grid(&lk.maze);
                 }
                 tables::ViewingMode::AnimatedPlayback => {
                     this_run.build.1(&mut lk.maze, this_run.build_speed);
@@ -205,6 +205,9 @@ fn set_command_args(tui: &mut tui::Tui, cmd: &String) -> Result<tables::MazeRunn
         .expect("Tui error");
         return Err(Quit::new());
     }
+    if run.args.style == maze::MazeStyle::Mini {
+        run.args.odd_rows = run.args.odd_rows * 2;
+    }
     Ok(run)
 }
 
@@ -281,6 +284,9 @@ fn set_random_args(tui: &mut tui::Tui) -> tables::MazeRunner {
             Some(&m) => Some(m.1),
             None => print::maze_panic!("Modification table empty."),
         }
+    }
+    if this_run.args.style == maze::MazeStyle::Mini {
+        this_run.args.odd_rows *= 2;
     }
     this_run
 }

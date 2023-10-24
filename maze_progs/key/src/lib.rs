@@ -80,7 +80,7 @@ pub static THREAD_COLORS: [ThreadColor; 16] = [
     // 0b0110
     ThreadColor {
         block: BLOCK,
-        ansi: ANSI_CYN,
+        ansi: 152,
     },
     // 0b0111
     ThreadColor {

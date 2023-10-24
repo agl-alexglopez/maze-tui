@@ -9,8 +9,8 @@ fn main() {
     let invisible = print::InvisibleCursor::new();
     invisible.hide();
     ctrlc::set_handler(move || {
-        print::clear_screen();
-        print::set_cursor_position(maze::Point::default(), maze::Offset::default());
+        //print::clear_screen();
+        print::set_cursor_position(maze::Point { row: 50, col: 111 }, maze::Offset::default());
         print::unhide_cursor_on_process_exit();
         std::process::exit(0);
     })
@@ -40,12 +40,22 @@ fn main() {
                 process_current = true;
                 prev_flag = flag;
             }
-            None => {
-                quit(&err_string(&tables::FlagArg {
-                    flag: &a,
-                    arg: "[NONE]",
-                }));
-            }
+            None => match &*a {
+                "-r" => {
+                    process_current = true;
+                    prev_flag = "-r";
+                }
+                "-c" => {
+                    process_current = true;
+                    prev_flag = "-c";
+                }
+                _ => {
+                    quit(&err_string(&tables::FlagArg {
+                        flag: &a,
+                        arg: "[NONE]",
+                    }));
+                }
+            },
         }
     }
     if process_current {
@@ -53,6 +63,9 @@ fn main() {
             flag: &prev_flag,
             arg: "[NONE]",
         }));
+    }
+    if run.args.style == maze::MazeStyle::Mini {
+        run.args.odd_rows *= 2;
     }
 
     let mut maze = maze::Maze::new(run.args);
@@ -62,10 +75,10 @@ fn main() {
     match run.build_view {
         tables::ViewingMode::StaticImage => {
             run.build.0(&mut maze);
-            flush_grid(&maze);
             if let Some((static_mod, _)) = run.modify {
                 static_mod(&mut maze)
             }
+            flush_grid(&maze);
         }
         tables::ViewingMode::AnimatedPlayback => {
             run.build.1(&mut maze, run.build_speed);
@@ -76,7 +89,8 @@ fn main() {
     }
 
     // Ensure a smooth transition from build to solve with no flashing.
-    print::set_cursor_position(maze::Point::default(), maze::Offset::default());
+    print::set_cursor_position(maze::Point { row: 50, col: 0 }, maze::Offset::default());
+
     let monitor = solve::Solver::new(maze);
 
     match run.solve_view {
@@ -89,7 +103,11 @@ fn main() {
     if let Ok(lk) = monitor.clone().lock() {
         print::set_cursor_position(
             maze::Point {
-                row: lk.maze.row_size() + 2,
+                row: if lk.maze.style_index() == (maze::MazeStyle::Mini as usize) {
+                    lk.maze.row_size() / 2 + 3
+                } else {
+                    lk.maze.row_size() + 2
+                },
                 col: 0,
             },
             maze::Offset::default(),

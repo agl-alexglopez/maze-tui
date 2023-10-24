@@ -85,6 +85,10 @@ pub fn generate_maze(maze: &mut maze::Maze) {
 }
 
 pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
+    if maze.is_mini() {
+        animate_mini_maze(maze, speed);
+        return;
+    }
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(maze);
     build::flush_grid(maze);
@@ -128,6 +132,59 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         match max_neighbor {
             Some(neighbor) => {
                 build::join_squares_animated(maze, cur.p, neighbor.p, animation);
+                pq.push(neighbor);
+            }
+            None => {
+                pq.pop();
+            }
+        };
+    }
+}
+
+fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
+    let animation = build::BUILDER_SPEEDS[speed as usize];
+    build::fill_maze_with_walls(maze);
+    build::flush_grid(maze);
+    build::print_overlap_key_animated(maze);
+    let mut rng = thread_rng();
+    let weight_range = Uniform::from(1..=100);
+    let start = PriorityPoint {
+        priority: weight_range.sample(&mut rng),
+        p: maze::Point {
+            row: 2 * rng.gen_range(1..((maze.row_size() - 2) / 2)) + 1,
+            col: 2 * rng.gen_range(1..((maze.col_size() - 2) / 2)) + 1,
+        },
+    };
+    let mut lookup_weights: HashMap<maze::Point, u8> = HashMap::from([(start.p, start.priority)]);
+    let mut pq = BinaryHeap::from([start]);
+    while let Some(&cur) = pq.peek() {
+        if maze.exit() {
+            return;
+        }
+        let mut max_neighbor: Option<PriorityPoint> = None;
+        let mut max_weight = 0;
+        for dir in &build::GENERATE_DIRECTIONS {
+            let next = maze::Point {
+                row: cur.p.row + dir.row,
+                col: cur.p.col + dir.col,
+            };
+            if !build::can_build_new_square(maze, next) {
+                continue;
+            }
+            let weight = *lookup_weights
+                .entry(next)
+                .or_insert(weight_range.sample(&mut rng));
+            if weight > max_weight {
+                max_weight = weight;
+                max_neighbor.replace(PriorityPoint {
+                    priority: weight,
+                    p: next,
+                });
+            }
+        }
+        match max_neighbor {
+            Some(neighbor) => {
+                build::join_minis_animated(maze, cur.p, neighbor.p, animation);
                 pq.push(neighbor);
             }
             None => {

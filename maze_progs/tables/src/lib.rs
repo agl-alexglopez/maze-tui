@@ -92,7 +92,8 @@ pub const FLAGS: [(&'static str, &'static str); 6] = [
     ("-ba", "-ba"),
 ];
 
-pub const WALL_STYLES: [(&'static str, maze::MazeStyle); 7] = [
+pub const WALL_STYLES: [(&'static str, maze::MazeStyle); 8] = [
+    ("mini", maze::MazeStyle::Mini),
     ("sharp", maze::MazeStyle::Sharp),
     ("round", maze::MazeStyle::Round),
     ("doubles", maze::MazeStyle::Doubles),
@@ -101,6 +102,7 @@ pub const WALL_STYLES: [(&'static str, maze::MazeStyle); 7] = [
     ("half", maze::MazeStyle::Half),
     ("spikes", maze::MazeStyle::Spikes),
 ];
+
 pub const BUILDERS: [(&'static str, BuildFunction); 9] = [
     ("arena", (arena::generate_maze, arena::animate_maze)),
     (
@@ -130,10 +132,12 @@ pub const BUILDERS: [(&'static str, BuildFunction); 9] = [
     ),
     ("grid", (grid::generate_maze, grid::animate_maze)),
 ];
+
 pub const MODIFICATIONS: [(&'static str, BuildFunction); 2] = [
     ("cross", (modify::add_cross, modify::add_cross_animated)),
     ("x", (modify::add_x, modify::add_x_animated)),
 ];
+
 pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
     ("dfs-hunt", (dfs::hunt, dfs::animate_hunt)),
     ("dfs-gather", (dfs::gather, dfs::animate_gather)),
@@ -177,6 +181,7 @@ pub const SOLVERS: [(&'static str, SolveFunction); 26] = [
     ),
     ("runs", (runs::paint_run_lengths, runs::animate_run_lengths)),
 ];
+
 pub const SPEEDS: [(&'static str, speed::Speed); 7] = [
     ("1", speed::Speed::Speed1),
     ("2", speed::Speed::Speed2),

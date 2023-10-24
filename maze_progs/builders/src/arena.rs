@@ -12,6 +12,10 @@ pub fn generate_maze(maze: &mut maze::Maze) {
 }
 
 pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
+    if maze.is_mini() {
+        animate_mini_maze(maze, speed);
+        return;
+    }
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(maze);
     build::flush_grid(maze);
@@ -22,6 +26,21 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         }
         for c in 1..maze.col_size() - 1 {
             build::carve_path_walls_animated(maze, maze::Point { row: r, col: c }, animation)
+        }
+    }
+}
+
+fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
+    let animation = build::BUILDER_SPEEDS[speed as usize];
+    build::fill_maze_with_walls(maze);
+    build::flush_grid(maze);
+    build::print_overlap_key_animated(maze);
+    for r in 1..maze.row_size() - 1 {
+        if maze.exit() {
+            return;
+        }
+        for c in 1..maze.col_size() - 1 {
+            build::carve_mini_walls_animated(maze, maze::Point { row: r, col: c }, animation)
         }
     }
 }

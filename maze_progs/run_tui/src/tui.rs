@@ -321,6 +321,9 @@ fn ui_bg_maze(f: &mut Frame<'_>) {
         add_rows: inner.y as i32,
         add_cols: inner.x as i32,
     };
+    if background_maze.args.style == maze::MazeStyle::Mini {
+        background_maze.args.odd_rows *= 2;
+    }
     let mut bg_maze = maze::Maze::new(background_maze.args);
     background_maze.build.0(&mut bg_maze);
     match background_maze.modify {
