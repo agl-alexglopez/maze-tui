@@ -1,6 +1,7 @@
 pub use builders::arena;
 pub use builders::eller;
 pub use builders::grid;
+pub use builders::hunt_kill;
 pub use builders::kruskal;
 pub use builders::modify;
 pub use builders::prim;
@@ -109,7 +110,7 @@ pub const WALL_STYLES: [(&str, maze::MazeStyle); 8] = [
     ("spikes", maze::MazeStyle::Spikes),
 ];
 
-pub const BUILDERS: [(&str, BuildFunction); 9] = [
+pub const BUILDERS: [(&str, BuildFunction); 10] = [
     ("arena", (arena::generate_maze, arena::animate_maze)),
     (
         "rdfs",
@@ -117,6 +118,10 @@ pub const BUILDERS: [(&str, BuildFunction); 9] = [
             recursive_backtracker::generate_maze,
             recursive_backtracker::animate_maze,
         ),
+    ),
+    (
+        "hunt-kill",
+        (hunt_kill::generate_maze, hunt_kill::animate_maze),
     ),
     (
         "fractal",
