@@ -17,7 +17,6 @@ use ratatui::{
     widgets::{Block, Borders, Padding, Paragraph, Scrollbar, ScrollbarOrientation},
 };
 use solvers::solve;
-use tables;
 use tui_textarea::{Input, Key, TextArea};
 
 use std::{
@@ -25,7 +24,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub static PLACEHOLDER: &'static str = "Type Command or Press <ENTER> for Random";
+pub static PLACEHOLDER: &str = "Type Command or Press <ENTER> for Random";
 
 pub type CtEvent = crossterm::event::Event;
 pub type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<std::io::Stderr>>;
@@ -216,13 +215,12 @@ impl Tui {
                         Input { key: Key::Up, .. } => self.scroll(ScrollDirection::Backward),
                         Input {
                             key: Key::Enter, ..
-                        } => match run::run_command(&cmd_prompt.lines()[0], self) {
-                            Ok(_) => {
+                        } => {
+                            if run::run_command(&cmd_prompt.lines()[0], self).is_ok() {
                                 self.terminal.clear()?;
                                 self.background_maze()?;
                             }
-                            _ => {}
-                        },
+                        }
                         input => {
                             // TextArea::input returns if the input modified its text
                             let _ = cmd_prompt.input(input);
@@ -326,9 +324,8 @@ fn ui_bg_maze(f: &mut Frame<'_>) {
     }
     let mut bg_maze = maze::Maze::new(background_maze.args);
     background_maze.build.0(&mut bg_maze);
-    match background_maze.modify {
-        Some(m) => m.0(&mut bg_maze),
-        _ => {}
+    if let Some(m) = background_maze.modify {
+        m.0(&mut bg_maze);
     }
     let monitor = solve::Solver::new(bg_maze);
     background_maze.solve.0(monitor.clone());
@@ -369,7 +366,7 @@ fn ui_home(cmd: &mut TextArea, scroll: &mut Scroller, f: &mut Frame<'_>) {
         .alignment(Alignment::Left)
         .scroll((scroll.pos as u16, 0));
     f.render_widget(popup_instructions, popup_layout_h);
-    scroll.state = scroll.state.content_length(INSTRUCTIONS_LINE_COUNT as u16);
+    scroll.state = scroll.state.content_length(INSTRUCTIONS_LINE_COUNT);
     f.render_stateful_widget(
         Scrollbar::default()
             .orientation(ScrollbarOrientation::VerticalRight)
@@ -561,6 +558,6 @@ fn ui_err(msg: &str, f: &mut Frame<'_>) {
     f.render_widget(err_instructions, err_layout_h);
 }
 
-static INSTRUCTIONS: &'static str = include_str!("../../res/instructions.txt");
+static INSTRUCTIONS: &str = include_str!("../../res/instructions.txt");
 static INSTRUCTIONS_LINE_COUNT: u16 = 70;
 static DESCRIPTION_LINE_COUNT: u16 = 50;

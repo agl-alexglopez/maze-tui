@@ -2,14 +2,11 @@ use crate::tui;
 use builders::build;
 use crossbeam_channel::bounded;
 use crossterm::event::KeyCode;
-use maze;
-use print;
 use rand::{distributions::Bernoulli, distributions::Distribution, seq::SliceRandom, thread_rng};
 use solvers::solve;
 use std::error;
 use std::fmt;
 use std::thread;
-use tables;
 
 #[derive(Debug)]
 pub struct Quit {
@@ -35,7 +32,7 @@ pub fn run_command(cmd: &String, tui: &mut tui::Tui) -> tui::Result<()> {
         rand_with_channels(tui)?;
         return Ok(());
     }
-    match set_command_args(tui, &cmd) {
+    match set_command_args(tui, cmd) {
         Ok(run) => {
             run_channels(run, tui)?;
         }
@@ -115,7 +112,7 @@ fn handle_waiting_user(
     let description = load_desc(builder);
     'looking_at_maze: loop {
         if info_popup {
-            tui.info_popup(&mut scroll, &description)?;
+            tui.info_popup(&mut scroll, description)?;
         }
         match tui.events.next()? {
             tui::Pack::Press(ke) => match ke.code {
@@ -150,7 +147,7 @@ fn handle_waiting_user(
     Ok(())
 }
 
-fn set_command_args(tui: &mut tui::Tui, cmd: &String) -> Result<tables::MazeRunner, Quit> {
+fn set_command_args(tui: &mut tui::Tui, cmd: &str) -> Result<tables::MazeRunner, Quit> {
     let mut run = tables::MazeRunner::new();
     let dimensions = tui.inner_dimensions();
     run.args.odd_rows = (dimensions.rows as f64 / 1.2) as i32;
@@ -158,13 +155,13 @@ fn set_command_args(tui: &mut tui::Tui, cmd: &String) -> Result<tables::MazeRunn
     run.args.offset = dimensions.offset;
     let mut prev_flag: &str = "";
     let mut process_current = false;
-    for a in cmd.split_whitespace().into_iter() {
+    for a in cmd.split_whitespace() {
         if process_current {
             match set_arg(
                 &mut run,
                 &tables::FlagArg {
                     flag: prev_flag,
-                    arg: &a,
+                    arg: a,
                 },
             ) {
                 Ok(_) => {}
@@ -172,7 +169,7 @@ fn set_command_args(tui: &mut tui::Tui, cmd: &String) -> Result<tables::MazeRunn
                     tui.error_popup(format!(
                         "{}\n{}\npress any key to continue",
                         msg,
-                        get_arg_section(&prev_flag)
+                        get_arg_section(prev_flag)
                     ))
                     .expect("Tui error");
                     return Err(Quit::new());
@@ -181,7 +178,7 @@ fn set_command_args(tui: &mut tui::Tui, cmd: &String) -> Result<tables::MazeRunn
             process_current = false;
             continue;
         }
-        match tables::search_table(&a, &tables::FLAGS) {
+        match tables::search_table(a, &tables::FLAGS) {
             Some(flag) => {
                 process_current = true;
                 prev_flag = flag;
@@ -189,7 +186,7 @@ fn set_command_args(tui: &mut tui::Tui, cmd: &String) -> Result<tables::MazeRunn
             None => {
                 tui.error_popup(format!(
                     "unknown flag[{}].\n{}\npress any key to continue",
-                    &a, VALID_FLAGS
+                    a, VALID_FLAGS
                 ))
                 .expect("Tui error");
                 return Err(Quit::new());
@@ -199,14 +196,14 @@ fn set_command_args(tui: &mut tui::Tui, cmd: &String) -> Result<tables::MazeRunn
     if process_current {
         tui.error_popup(format!(
             "flag[{}] with missing arg[?]\n{}\npress any key to continue",
-            &prev_flag,
-            get_arg_section(&prev_flag)
+            prev_flag,
+            get_arg_section(prev_flag)
         ))
         .expect("Tui error");
         return Err(Quit::new());
     }
     if run.args.style == maze::MazeStyle::Mini {
-        run.args.odd_rows = run.args.odd_rows * 2;
+        run.args.odd_rows *= 2;
     }
     Ok(run)
 }
@@ -292,15 +289,12 @@ fn set_random_args(tui: &mut tui::Tui) -> tables::MazeRunner {
 }
 
 pub fn err_string(args: &tables::FlagArg) -> String {
-    String::from(format!(
-        "invalid flag[{}] arg[{}] combo",
-        args.flag, args.arg
-    ))
+    format!("invalid flag[{}] arg[{}] combo", args.flag, args.arg)
 }
 
 pub fn load_desc(cur_builder: &tables::BuildFunction) -> &'static str {
     match DESCRIPTIONS.iter().find(|(func, _)| func == cur_builder) {
-        Some(&(_, desc)) => &desc,
+        Some(&(_, desc)) => desc,
         None => "Coming Soon!",
     }
 }
@@ -313,8 +307,8 @@ fn get_arg_section(flag: &str) -> &'static str {
         .1
 }
 
-pub static VALID_FLAGS: &'static str = "VALID FLAGS:[-b][-ba][-s][-sa][-w][-m]";
-pub static VALID_ARGS: [(&'static str, &'static str); 6] = [
+pub static VALID_FLAGS: &str = "VALID FLAGS:[-b][-ba][-s][-sa][-w][-m]";
+pub static VALID_ARGS: [(&str, &str); 6] = [
     ("-b", "see BUILDER FLAG section"),
     ("-m", "see MODIFICATION FLAG section"),
     ("-w", "see WALL FLAG section"),
@@ -323,7 +317,7 @@ pub static VALID_ARGS: [(&'static str, &'static str); 6] = [
     ("-ba", "see BUILDER ANIMATION section"),
 ];
 
-pub static DESCRIPTIONS: [(tables::BuildFunction, &'static str); 9] = [
+pub static DESCRIPTIONS: [(tables::BuildFunction, &str); 9] = [
     (
         (
             builders::arena::generate_maze,

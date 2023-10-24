@@ -1,6 +1,5 @@
 use builders::build::{self, flush_grid};
 use solvers::solve;
-use tables;
 
 use std::env;
 
@@ -60,7 +59,7 @@ fn main() {
     }
     if process_current {
         quit(&err_string(&tables::FlagArg {
-            flag: &prev_flag,
+            flag: prev_flag,
             arg: "[NONE]",
         }));
     }
@@ -117,7 +116,7 @@ fn main() {
 
 fn set_arg(run: &mut tables::MazeRunner, args: &tables::FlagArg) -> Result<(), String> {
     match args.flag {
-        "-h" => return Err("".to_string()),
+        "-h" => Err("".to_string()),
         "-r" => {
             run.args.odd_rows = set_dimension(args);
             Ok(())
@@ -159,10 +158,7 @@ fn set_arg(run: &mut tables::MazeRunner, args: &tables::FlagArg) -> Result<(), S
 }
 
 pub fn err_string(args: &tables::FlagArg) -> String {
-    String::from(format!(
-        "invalid flag[{}] arg[{}] combo",
-        args.flag, args.arg
-    ))
+    format!("invalid flag[{}] arg[{}] combo", args.flag, args.arg)
 }
 
 fn set_dimension(pairs: &tables::FlagArg) -> i32 {

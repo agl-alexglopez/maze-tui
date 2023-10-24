@@ -1000,7 +1000,7 @@ pub fn flush_mini_backtracker_coordinate(maze: &maze::Maze, p: maze::Point) {
             return;
         }
         let mut color = 0;
-        if p.row % 2 != 0 && p.row - 1 >= 0 {
+        if p.row % 2 != 0 && p.row > 0 {
             color = BACKTRACKING_SYMBOLS[((maze[(p.row - 1) as usize][p.col as usize]
                 & MARKERS_MASK)
                 >> MARKER_SHIFT) as usize]
@@ -1021,8 +1021,7 @@ pub fn flush_mini_backtracker_coordinate(maze: &maze::Maze, p: maze::Point) {
         return;
     }
     // We know this is a path but because we are half blocks we need to render correctly.
-    let path = match p.row - 1 >= 0
-        && (maze[(p.row - 1) as usize][p.col as usize] & maze::PATH_BIT) == 0
+    let path = match p.row > 0 && (maze[(p.row - 1) as usize][p.col as usize] & maze::PATH_BIT) == 0
     {
         true => '▀',
         false => ' ',
@@ -1055,8 +1054,7 @@ pub fn flush_mini_coordinate(maze: &maze::Maze, p: maze::Point) {
         .expect("Could not print.");
         return;
     }
-    let path = match p.row - 1 >= 0
-        && (maze[(p.row - 1) as usize][p.col as usize] & maze::PATH_BIT) == 0
+    let path = match p.row > 0 && (maze[(p.row - 1) as usize][p.col as usize] & maze::PATH_BIT) == 0
     {
         true => '▀',
         false => ' ',
@@ -1082,8 +1080,7 @@ pub fn print_mini_coordinate(maze: &maze::Maze, p: maze::Point) {
         .expect("Could not print.");
         return;
     }
-    let path = match p.row - 1 >= 0
-        && (maze[(p.row - 1) as usize][p.col as usize] & maze::PATH_BIT) == 0
+    let path = match p.row > 0 && (maze[(p.row - 1) as usize][p.col as usize] & maze::PATH_BIT) == 0
     {
         true => '▀',
         false => ' ',
