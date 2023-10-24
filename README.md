@@ -72,7 +72,7 @@ SOLVER FLAG[-s] Set maze solving algorithm.
     [dark[algorithm]-[game]] - A mystery...
 
 WALL FLAG[-w] Set the wall style for the maze.
-    [sharp] - Half size walls and paths.
+    [mini] - Half size walls and paths.
     [sharp] - The default straight lines.
     [round] - Rounded corners.
     [doubles] - Sharp double lines.
