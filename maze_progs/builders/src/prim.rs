@@ -85,6 +85,10 @@ pub fn generate_maze(maze: &mut maze::Maze) {
 }
 
 pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
+    if maze.is_mini() {
+        animate_mini_maze(maze, speed);
+        return;
+    }
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(maze);
     build::flush_grid(maze);
@@ -137,7 +141,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     }
 }
 
-pub fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
+fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(maze);
     build::flush_grid(maze);

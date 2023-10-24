@@ -160,6 +160,15 @@ pub fn corner(monitor: solve::SolverMonitor) {
 }
 
 pub fn animate_hunt(monitor: solve::SolverMonitor, speed: speed::Speed) {
+    if monitor
+        .lock()
+        .unwrap_or_else(|_| print::maze_panic!("Thread panicked"))
+        .maze
+        .is_mini()
+    {
+        animate_mini_hunt(monitor, speed);
+        return;
+    }
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let all_start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         if lk.maze.exit() {
@@ -205,7 +214,7 @@ pub fn animate_hunt(monitor: solve::SolverMonitor, speed: speed::Speed) {
     }
 }
 
-pub fn animate_mini_hunt(monitor: solve::SolverMonitor, speed: speed::Speed) {
+fn animate_mini_hunt(monitor: solve::SolverMonitor, speed: speed::Speed) {
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let all_start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         if lk.maze.exit() {
@@ -252,6 +261,15 @@ pub fn animate_mini_hunt(monitor: solve::SolverMonitor, speed: speed::Speed) {
 }
 
 pub fn animate_gather(monitor: solve::SolverMonitor, speed: speed::Speed) {
+    if monitor
+        .lock()
+        .unwrap_or_else(|_| print::maze_panic!("Thread panicked"))
+        .maze
+        .is_mini()
+    {
+        animate_mini_gather(monitor, speed);
+        return;
+    }
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let all_start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         if lk.maze.exit() {
@@ -299,7 +317,7 @@ pub fn animate_gather(monitor: solve::SolverMonitor, speed: speed::Speed) {
     }
 }
 
-pub fn animate_mini_gather(monitor: solve::SolverMonitor, speed: speed::Speed) {
+fn animate_mini_gather(monitor: solve::SolverMonitor, speed: speed::Speed) {
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let all_start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         if lk.maze.exit() {
@@ -348,6 +366,15 @@ pub fn animate_mini_gather(monitor: solve::SolverMonitor, speed: speed::Speed) {
 }
 
 pub fn animate_corner(monitor: solve::SolverMonitor, speed: speed::Speed) {
+    if monitor
+        .lock()
+        .unwrap_or_else(|_| print::maze_panic!("Thread panicked"))
+        .maze
+        .is_mini()
+    {
+        animate_mini_corner(monitor, speed);
+        return;
+    }
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let mut corner_starts: [maze::Point; 4] = if let Ok(mut lk) = monitor.lock() {
         if lk.maze.exit() {
@@ -412,7 +439,7 @@ pub fn animate_corner(monitor: solve::SolverMonitor, speed: speed::Speed) {
     }
 }
 
-pub fn animate_mini_corner(monitor: solve::SolverMonitor, speed: speed::Speed) {
+fn animate_mini_corner(monitor: solve::SolverMonitor, speed: speed::Speed) {
     let animation = solve::SOLVER_SPEEDS[speed as usize];
     let mut corner_starts: [maze::Point; 4] = if let Ok(mut lk) = monitor.lock() {
         if lk.maze.exit() {

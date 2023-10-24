@@ -33,9 +33,6 @@ fn main() {
         }
         process_current = true;
     }
-    let mut run = tables::MazeRunner::new();
-    run.args.odd_rows = dimensions.0;
-    run.args.odd_cols = dimensions.1;
     let mut rng = thread_rng();
     let modification_probability = Bernoulli::new(0.2);
     let invisible = print::InvisibleCursor::new();
@@ -54,10 +51,16 @@ fn main() {
     })
     .expect("Could not set quit handler.");
     loop {
+        let mut run = tables::MazeRunner::new();
+        run.args.odd_rows = dimensions.0;
+        run.args.odd_cols = dimensions.1;
         print::clear_screen();
         match tables::WALL_STYLES.choose(&mut rng) {
             Some(&(_key, val)) => run.args.style = val,
             None => print::maze_panic!("Styles not set for loop, broken"),
+        }
+        if run.args.style == maze::MazeStyle::Mini {
+            run.args.odd_rows *= 2;
         }
         let mut maze = maze::Maze::new(run.args);
         let build_speed = match tables::SPEEDS.choose(&mut rng) {
@@ -98,7 +101,7 @@ fn main() {
         solve_algo(monitor, solve_speed);
         print::set_cursor_position(
             maze::Point {
-                row: dimensions.0 + 2,
+                row: dimensions.0 + 3,
                 col: 0,
             },
             maze::Offset::default(),

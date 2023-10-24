@@ -66,6 +66,15 @@ pub fn paint_run_lengths(monitor: solve::SolverMonitor) {
 }
 
 pub fn animate_run_lengths(monitor: solve::SolverMonitor, speed: speed::Speed) {
+    if monitor
+        .lock()
+        .unwrap_or_else(|_| print::maze_panic!("Thread panicked"))
+        .maze
+        .is_mini()
+    {
+        animate_mini_run_lengths(monitor, speed);
+        return;
+    }
     let start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         let row_mid = lk.maze.row_size() / 2;
         let col_mid = lk.maze.col_size() / 2;
@@ -149,7 +158,7 @@ pub fn animate_run_lengths(monitor: solve::SolverMonitor, speed: speed::Speed) {
     }
 }
 
-pub fn animate_mini_run_lengths(monitor: solve::SolverMonitor, speed: speed::Speed) {
+fn animate_mini_run_lengths(monitor: solve::SolverMonitor, speed: speed::Speed) {
     let start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         let row_mid = lk.maze.row_size() / 2;
         let col_mid = lk.maze.col_size() / 2;

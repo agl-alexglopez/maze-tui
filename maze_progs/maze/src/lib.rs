@@ -150,6 +150,10 @@ impl Maze {
     pub fn style_index(&self) -> usize {
         self.wall_style_index
     }
+
+    pub fn is_mini(&self) -> bool {
+        self.wall_style_index == (MazeStyle::Mini as usize)
+    }
 }
 
 impl Index<usize> for Maze {

@@ -62,35 +62,22 @@ fn run_channels(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result
                 tables::ViewingMode::StaticImage => {
                     build::print_overlap_key(&lk.maze);
                     this_run.build.0(&mut lk.maze);
-                    if let Some((static_mod, _, _)) = this_run.modify {
+                    if let Some((static_mod, _)) = this_run.modify {
                         static_mod(&mut lk.maze);
                     }
                     build::flush_grid(&lk.maze);
                 }
                 tables::ViewingMode::AnimatedPlayback => {
-                    if this_run.args.style == maze::MazeStyle::Mini {
-                        this_run.build.2(&mut lk.maze, this_run.build_speed);
-                        if let Some((_, _, mini_mod)) = this_run.modify {
-                            mini_mod(&mut lk.maze, this_run.build_speed);
-                        }
-                    } else {
-                        this_run.build.1(&mut lk.maze, this_run.build_speed);
-                        if let Some((_, animated_mod, _)) = this_run.modify {
-                            animated_mod(&mut lk.maze, this_run.build_speed);
-                        }
+                    this_run.build.1(&mut lk.maze, this_run.build_speed);
+                    if let Some((_, animated_mod)) = this_run.modify {
+                        animated_mod(&mut lk.maze, this_run.build_speed);
                     }
                 }
             }
         }
         match this_run.solve_view {
             tables::ViewingMode::StaticImage => this_run.solve.0(mc),
-            tables::ViewingMode::AnimatedPlayback => {
-                if this_run.args.style == maze::MazeStyle::Mini {
-                    this_run.solve.2(mc, this_run.solve_speed);
-                } else {
-                    this_run.solve.1(mc, this_run.solve_speed);
-                }
-            }
+            tables::ViewingMode::AnimatedPlayback => this_run.solve.1(mc, this_run.solve_speed),
         }
         match finished_worker.send(true) {
             Ok(_) => {}
@@ -341,7 +328,6 @@ pub static DESCRIPTIONS: [(tables::BuildFunction, &'static str); 9] = [
         (
             builders::arena::generate_maze,
             builders::arena::animate_maze,
-            builders::arena::animate_mini_maze,
         ),
         include_str!("../../res/arena.txt"),
     ),
@@ -349,39 +335,28 @@ pub static DESCRIPTIONS: [(tables::BuildFunction, &'static str); 9] = [
         (
             builders::eller::generate_maze,
             builders::eller::animate_maze,
-            builders::eller::animate_mini_maze,
         ),
         include_str!("../../res/eller.txt"),
     ),
     (
-        (
-            builders::grid::generate_maze,
-            builders::grid::animate_maze,
-            builders::grid::animate_mini_maze,
-        ),
+        (builders::grid::generate_maze, builders::grid::animate_maze),
         include_str!("../../res/grid.txt"),
     ),
     (
         (
             builders::kruskal::generate_maze,
             builders::kruskal::animate_maze,
-            builders::kruskal::animate_mini_maze,
         ),
         include_str!("../../res/kruskal.txt"),
     ),
     (
-        (
-            builders::prim::generate_maze,
-            builders::prim::animate_maze,
-            builders::prim::animate_mini_maze,
-        ),
+        (builders::prim::generate_maze, builders::prim::animate_maze),
         include_str!("../../res/prim.txt"),
     ),
     (
         (
             builders::recursive_backtracker::generate_maze,
             builders::recursive_backtracker::animate_maze,
-            builders::recursive_backtracker::animate_mini_maze,
         ),
         include_str!("../../res/recursive_backtracker.txt"),
     ),
@@ -389,7 +364,6 @@ pub static DESCRIPTIONS: [(tables::BuildFunction, &'static str); 9] = [
         (
             builders::recursive_subdivision::generate_maze,
             builders::recursive_subdivision::animate_maze,
-            builders::recursive_subdivision::animate_mini_maze,
         ),
         include_str!("../../res/recursive_subdivision.txt"),
     ),
@@ -397,7 +371,6 @@ pub static DESCRIPTIONS: [(tables::BuildFunction, &'static str); 9] = [
         (
             builders::wilson_adder::generate_maze,
             builders::wilson_adder::animate_maze,
-            builders::wilson_adder::animate_mini_maze,
         ),
         include_str!("../../res/wilson_adder.txt"),
     ),
@@ -405,7 +378,6 @@ pub static DESCRIPTIONS: [(tables::BuildFunction, &'static str); 9] = [
         (
             builders::wilson_carver::generate_maze,
             builders::wilson_carver::animate_maze,
-            builders::wilson_carver::animate_mini_maze,
         ),
         include_str!("../../res/wilson_carver.txt"),
     ),

@@ -18,6 +18,10 @@ pub fn add_cross(maze: &mut maze::Maze) {
 }
 
 pub fn add_cross_animated(maze: &mut maze::Maze, speed: speed::Speed) {
+    if maze.is_mini() {
+        add_mini_cross_animated(maze, speed);
+        return;
+    }
     let animation = build::BUILDER_SPEEDS[speed as usize];
     for r in 0..maze.row_size() {
         for c in 0..maze.col_size() {
@@ -36,7 +40,7 @@ pub fn add_cross_animated(maze: &mut maze::Maze, speed: speed::Speed) {
     }
 }
 
-pub fn add_mini_cross_animated(maze: &mut maze::Maze, speed: speed::Speed) {
+fn add_mini_cross_animated(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     for r in 0..maze.row_size() {
         for c in 0..maze.col_size() {
@@ -69,6 +73,10 @@ pub fn add_x(maze: &mut maze::Maze) {
 }
 
 pub fn add_x_animated(maze: &mut maze::Maze, speed: speed::Speed) {
+    if maze.is_mini() {
+        add_mini_x_animated(maze, speed);
+        return;
+    }
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
     for r in 1..maze.row_size() - 1 {
         for c in 1..maze.col_size() - 1 {
@@ -81,7 +89,7 @@ pub fn add_x_animated(maze: &mut maze::Maze, speed: speed::Speed) {
     }
 }
 
-pub fn add_mini_x_animated(maze: &mut maze::Maze, speed: speed::Speed) {
+fn add_mini_x_animated(maze: &mut maze::Maze, speed: speed::Speed) {
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
     for r in 1..maze.row_size() - 1 {
         for c in 1..maze.col_size() - 1 {
