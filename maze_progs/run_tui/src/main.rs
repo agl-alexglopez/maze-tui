@@ -8,7 +8,8 @@ fn main() -> tui::Result<()> {
     let events = tui::EventHandler::new(250);
     let mut tui = tui::Tui::new(terminal, events);
     tui.enter()?;
-    let _status = tui.run()?;
+    let status = tui.run();
     tui.exit()?;
+    status?;
     Ok(())
 }

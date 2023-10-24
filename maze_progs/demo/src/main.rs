@@ -1,7 +1,5 @@
 use builders::build;
-use maze;
 use solvers::solve;
-use tables;
 
 use std::env;
 use std::{thread, time};

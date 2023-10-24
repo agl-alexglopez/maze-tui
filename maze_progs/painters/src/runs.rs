@@ -62,7 +62,7 @@ pub fn paint_run_lengths(monitor: solve::SolverMonitor) {
             });
         }
     }
-    painter(&mut lk.maze, &map);
+    painter(&lk.maze, &map);
 }
 
 pub fn animate_run_lengths(monitor: solve::SolverMonitor, speed: speed::Speed) {
@@ -296,7 +296,7 @@ fn painter(maze: &maze::Maze, map: &solve::MaxMap) {
                         channels[rand_color_choice] = bright;
                         rgb::print_rgb(channels, cur, maze.offset());
                     }
-                    None => print_square(&maze, cur),
+                    None => print_square(maze, cur),
                 }
             }
         }
@@ -405,29 +405,28 @@ fn painter_mini_animated(
                         } else {
                             rgb::animate_mini_rgb(Some(channels), None, cur, lk.maze.offset());
                         }
+                    } else if (lk.maze[(cur.row - 1) as usize][cur.col as usize] & maze::PATH_BIT)
+                        != 0
+                    {
+                        let neighbor = maze::Point {
+                            row: cur.row - 1,
+                            col: cur.col,
+                        };
+                        lk.maze[neighbor.row as usize][neighbor.col as usize] |= rgb::PAINT;
+                        let neighbor_dist = lk.map.distances.get(&neighbor).expect("Empty map");
+                        let intensity = (lk.map.max - neighbor_dist) as f64 / lk.map.max as f64;
+                        let dark = (255f64 * intensity) as u8;
+                        let bright = 128 + (127f64 * intensity) as u8;
+                        let mut neighbor_channels: rgb::Rgb = [dark, dark, dark];
+                        neighbor_channels[guide.color_i] = bright;
+                        rgb::animate_mini_rgb(
+                            Some(neighbor_channels),
+                            Some(channels),
+                            cur,
+                            lk.maze.offset(),
+                        );
                     } else {
-                        if (lk.maze[(cur.row - 1) as usize][cur.col as usize] & maze::PATH_BIT) != 0
-                        {
-                            let neighbor = maze::Point {
-                                row: cur.row - 1,
-                                col: cur.col,
-                            };
-                            lk.maze[neighbor.row as usize][neighbor.col as usize] |= rgb::PAINT;
-                            let neighbor_dist = lk.map.distances.get(&neighbor).expect("Empty map");
-                            let intensity = (lk.map.max - neighbor_dist) as f64 / lk.map.max as f64;
-                            let dark = (255f64 * intensity) as u8;
-                            let bright = 128 + (127f64 * intensity) as u8;
-                            let mut neighbor_channels: rgb::Rgb = [dark, dark, dark];
-                            neighbor_channels[guide.color_i] = bright;
-                            rgb::animate_mini_rgb(
-                                Some(neighbor_channels),
-                                Some(channels),
-                                cur,
-                                lk.maze.offset(),
-                            );
-                        } else {
-                            rgb::animate_mini_rgb(None, Some(channels), cur, lk.maze.offset());
-                        }
+                        rgb::animate_mini_rgb(None, Some(channels), cur, lk.maze.offset());
                     }
                 }
             }

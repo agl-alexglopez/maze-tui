@@ -26,6 +26,7 @@ pub struct ThreadGuide {
     pub speed: SolveSpeedUnit,
 }
 
+#[derive(Default)]
 pub struct MaxMap {
     pub max: u64,
     pub distances: HashMap<maze::Point, u64>,
@@ -36,12 +37,6 @@ impl MaxMap {
         Self {
             max: m,
             distances: HashMap::from([(p, m)]),
-        }
-    }
-    pub fn default() -> Self {
-        Self {
-            max: 0,
-            distances: HashMap::default(),
         }
     }
 }
