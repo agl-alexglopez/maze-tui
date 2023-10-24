@@ -317,7 +317,7 @@ pub static VALID_ARGS: [(&str, &str); 6] = [
     ("-ba", "see BUILDER ANIMATION section"),
 ];
 
-pub static DESCRIPTIONS: [(tables::BuildFunction, &str); 9] = [
+pub static DESCRIPTIONS: [(tables::BuildFunction, &str); 10] = [
     (
         (
             builders::arena::generate_maze,
@@ -335,6 +335,13 @@ pub static DESCRIPTIONS: [(tables::BuildFunction, &str); 9] = [
     (
         (builders::grid::generate_maze, builders::grid::animate_maze),
         include_str!("../../res/grid.txt"),
+    ),
+    (
+        (
+            builders::hunt_kill::generate_maze,
+            builders::hunt_kill::animate_maze,
+        ),
+        include_str!("../../res/hunt_kill.txt"),
     ),
     (
         (
