@@ -109,7 +109,7 @@ fn handle_waiting_user(
     tui.info_prompt()?;
     let mut scroll = tui::Scroller::default();
     let mut info_popup = false;
-    let description = load_desc(builder);
+    let description = tables::load_desc(builder);
     'looking_at_maze: loop {
         if info_popup {
             tui.info_popup(&mut scroll, description)?;
@@ -292,13 +292,6 @@ pub fn err_string(args: &tables::FlagArg) -> String {
     format!("invalid flag[{}] arg[{}] combo", args.flag, args.arg)
 }
 
-pub fn load_desc(cur_builder: &tables::BuildFunction) -> &'static str {
-    match DESCRIPTIONS.iter().find(|(func, _)| func == cur_builder) {
-        Some(&(_, desc)) => desc,
-        None => "Coming Soon!",
-    }
-}
-
 fn get_arg_section(flag: &str) -> &'static str {
     VALID_ARGS
         .iter()
@@ -315,64 +308,4 @@ pub static VALID_ARGS: [(&str, &str); 6] = [
     ("-s", "see SOLVER FLAG section"),
     ("-sa", "see SOLVER ANIMATION section"),
     ("-ba", "see BUILDER ANIMATION section"),
-];
-
-pub static DESCRIPTIONS: [(tables::BuildFunction, &str); 9] = [
-    (
-        (
-            builders::arena::generate_maze,
-            builders::arena::animate_maze,
-        ),
-        include_str!("../../res/arena.txt"),
-    ),
-    (
-        (
-            builders::eller::generate_maze,
-            builders::eller::animate_maze,
-        ),
-        include_str!("../../res/eller.txt"),
-    ),
-    (
-        (builders::grid::generate_maze, builders::grid::animate_maze),
-        include_str!("../../res/grid.txt"),
-    ),
-    (
-        (
-            builders::kruskal::generate_maze,
-            builders::kruskal::animate_maze,
-        ),
-        include_str!("../../res/kruskal.txt"),
-    ),
-    (
-        (builders::prim::generate_maze, builders::prim::animate_maze),
-        include_str!("../../res/prim.txt"),
-    ),
-    (
-        (
-            builders::recursive_backtracker::generate_maze,
-            builders::recursive_backtracker::animate_maze,
-        ),
-        include_str!("../../res/recursive_backtracker.txt"),
-    ),
-    (
-        (
-            builders::recursive_subdivision::generate_maze,
-            builders::recursive_subdivision::animate_maze,
-        ),
-        include_str!("../../res/recursive_subdivision.txt"),
-    ),
-    (
-        (
-            builders::wilson_adder::generate_maze,
-            builders::wilson_adder::animate_maze,
-        ),
-        include_str!("../../res/wilson_adder.txt"),
-    ),
-    (
-        (
-            builders::wilson_carver::generate_maze,
-            builders::wilson_carver::animate_maze,
-        ),
-        include_str!("../../res/wilson_carver.txt"),
-    ),
 ];

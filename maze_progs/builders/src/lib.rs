@@ -3,6 +3,7 @@ pub mod build;
 pub(crate) mod disjoint;
 pub mod eller;
 pub mod grid;
+pub mod hunt_kill;
 pub mod kruskal;
 pub mod modify;
 pub mod prim;

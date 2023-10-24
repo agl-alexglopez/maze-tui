@@ -42,12 +42,13 @@ Press <ENTER> to confirm your flag choices.
 (scroll with <↓>/<↑>, exit with <ESC>)
 
 BUILDER FLAG[-b] Set maze building algorithm.
-    [rdfs] - Randomized Depth First Search.
+    [rdfs] - Randomized depth first search.
+    [hunt-kill] - Randomized walks and scans.
     [kruskal] - Randomized Kruskal's algorithm.
     [prim] - Randomized Prim's algorithm.
     [eller] - Randomized Eller's algorithm.
-    [wilson] - Loop-Erased Random Path Carver.
-    [wilson-walls] - Loop-Erased Random Wall Adder.
+    [wilson] - Loop-erased random path carver.
+    [wilson-walls] - Loop-erased random wall adder.
     [fractal] - Randomized recursive subdivision.
     [grid] - A random grid pattern.
     [arena] - Open floor with no walls.

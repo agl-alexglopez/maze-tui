@@ -1,0 +1,33 @@
+│▁▁▁▁▁▁  ▁▁             ▁▁▁▁▁               ▁▁▁▁▁▁▁▁▁  ▁▁▁▁ ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+│▁▁▁  ╱ ╱ ╱▁▁▁  ▁▁▁▁▁▁▁▁▁▁  ╱▁ ▁▁▁▁▁▁ ▁▁▁▁▁▁▁▁▁▁▁▁▁  ╱ ▁▁  ╱╱▁╱ ▁▁(▁)▁▁  ╱▁▁  ╱
+│▁▁  ╱▁╱ ╱▁  ╱ ╱ ╱▁  ▁▁ \  ▁▁╱ ▁  ▁▁ `╱▁  ▁▁ \  ▁▁  ╱ ▁▁   < ▁▁▁▁  ╱▁▁  ╱▁▁  ╱ 
+│▁  ╱▁▁ ╱ ╱ ╱▁╱ ╱▁  ╱ ╱ ╱ ╱▁   ╱ ╱▁╱ ╱▁  ╱ ╱ ╱ ╱▁╱ ╱ ▁▁  ╱╲ ╲ ▁▁  ╱ ▁  ╱ ▁  ╱  
+│╱▁╱ ╱▁╱  ╲▁▁▁▁╱ ╱▁╱ ╱▁╱╲▁▁╱   ╲__,_╱ ╱_╱ ╱_╱╲__,_╱   ╱▁╱  ╲▁╲ ╱▁╱  ╱▁╱  ╱▁╱   
+                                                                                  
+The hunt and kill algorithm does not seem that interesting when first encountering it. It seems so much like a standard recursive backtracking algorithm that it is tempting to leave it out of a maze algorithm collection. However, there are some interesting details that make this algorithm worth inclusion in the set. First, it is efficient. We do not need any auxiliary storage to complete the building process. In fact, even though this algorithm behaves like a recursive backtracker in appearance, we actually don't need to remember any steps for backtracking. This is a straigtforward path carver that is also very fast.
+
+There are two phases: hunt and kill. While "killing," we are carving paths into the maze. While "hunting" we are searching for an un-built cell adjacent to a built cell so that we can form a path between the two. If we remember the last row with an un-built cell we can speed things up, instead of scanning the entire maze to search for a new start. 
+
+│select a random starting point
+│
+│while we can find an unvisited cell adjacent to a path cell
+│
+│     for all neighbors in random order
+│
+│         if a neighbor is valid and unvisited
+│
+│             break the wall and join the squares
+│
+│             continue outer while loop
+│
+│     for each row starting at the last we found with unbuilt cells
+│
+│         if an unbuilt cell is adjacent to a built cell
+│
+│             join the squares
+│
+│             start a new random walk from the previously unbuilt
+│
+│             continue the outer while loop
+
+		 	

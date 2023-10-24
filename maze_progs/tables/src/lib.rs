@@ -1,6 +1,7 @@
 pub use builders::arena;
 pub use builders::eller;
 pub use builders::grid;
+pub use builders::hunt_kill;
 pub use builders::kruskal;
 pub use builders::modify;
 pub use builders::prim;
@@ -89,6 +90,13 @@ where
         .map(|(_, t)| t.clone())
 }
 
+pub fn load_desc(cur_builder: &BuildFunction) -> &'static str {
+    match DESCRIPTIONS.iter().find(|(func, _)| func == cur_builder) {
+        Some(&(_, desc)) => desc,
+        None => "Coming Soon!",
+    }
+}
+
 pub const FLAGS: [(&str, &str); 6] = [
     ("-b", "-b"),
     ("-m", "-m"),
@@ -109,7 +117,7 @@ pub const WALL_STYLES: [(&str, maze::MazeStyle); 8] = [
     ("spikes", maze::MazeStyle::Spikes),
 ];
 
-pub const BUILDERS: [(&str, BuildFunction); 9] = [
+pub const BUILDERS: [(&str, BuildFunction); 10] = [
     ("arena", (arena::generate_maze, arena::animate_maze)),
     (
         "rdfs",
@@ -117,6 +125,10 @@ pub const BUILDERS: [(&str, BuildFunction); 9] = [
             recursive_backtracker::generate_maze,
             recursive_backtracker::animate_maze,
         ),
+    ),
+    (
+        "hunt-kill",
+        (hunt_kill::generate_maze, hunt_kill::animate_maze),
     ),
     (
         "fractal",
@@ -196,4 +208,71 @@ pub const SPEEDS: [(&str, speed::Speed); 7] = [
     ("5", speed::Speed::Speed5),
     ("6", speed::Speed::Speed6),
     ("7", speed::Speed::Speed7),
+];
+
+pub static DESCRIPTIONS: [(BuildFunction, &str); 10] = [
+    (
+        (
+            builders::arena::generate_maze,
+            builders::arena::animate_maze,
+        ),
+        include_str!("../../res/arena.txt"),
+    ),
+    (
+        (
+            builders::eller::generate_maze,
+            builders::eller::animate_maze,
+        ),
+        include_str!("../../res/eller.txt"),
+    ),
+    (
+        (builders::grid::generate_maze, builders::grid::animate_maze),
+        include_str!("../../res/grid.txt"),
+    ),
+    (
+        (
+            builders::hunt_kill::generate_maze,
+            builders::hunt_kill::animate_maze,
+        ),
+        include_str!("../../res/hunt_kill.txt"),
+    ),
+    (
+        (
+            builders::kruskal::generate_maze,
+            builders::kruskal::animate_maze,
+        ),
+        include_str!("../../res/kruskal.txt"),
+    ),
+    (
+        (builders::prim::generate_maze, builders::prim::animate_maze),
+        include_str!("../../res/prim.txt"),
+    ),
+    (
+        (
+            builders::recursive_backtracker::generate_maze,
+            builders::recursive_backtracker::animate_maze,
+        ),
+        include_str!("../../res/recursive_backtracker.txt"),
+    ),
+    (
+        (
+            builders::recursive_subdivision::generate_maze,
+            builders::recursive_subdivision::animate_maze,
+        ),
+        include_str!("../../res/recursive_subdivision.txt"),
+    ),
+    (
+        (
+            builders::wilson_adder::generate_maze,
+            builders::wilson_adder::animate_maze,
+        ),
+        include_str!("../../res/wilson_adder.txt"),
+    ),
+    (
+        (
+            builders::wilson_carver::generate_maze,
+            builders::wilson_carver::animate_maze,
+        ),
+        include_str!("../../res/wilson_carver.txt"),
+    ),
 ];
