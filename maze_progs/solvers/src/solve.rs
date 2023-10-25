@@ -378,11 +378,11 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         .expect("printer broke.");
         return;
     }
-    // A wall is above us
+    // A wall is below us
     execute!(
         io::stdout(),
         SetBackgroundColor(Color::AnsiValue(this_color)),
-        Print('▀'),
+        Print('▄'),
         ResetColor
     )
     .expect("printer broke.");
@@ -482,11 +482,11 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
         .expect("printer broke.");
         return;
     }
-    // A wall is above us.
+    // A wall is below
     queue!(
         io::stdout(),
         SetBackgroundColor(Color::AnsiValue(this_color)),
-        Print('▀'),
+        Print('▄'),
         ResetColor
     )
     .expect("printer broke.");

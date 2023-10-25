@@ -348,6 +348,7 @@ fn painter_mini_animated(
                         } else {
                             rgb::animate_mini_rgb(Some(channels), None, cur, lk.maze.offset());
                         }
+                    // This is an odd row.
                     } else if (lk.maze[(cur.row - 1) as usize][cur.col as usize] & maze::PATH_BIT)
                         != 0
                     {

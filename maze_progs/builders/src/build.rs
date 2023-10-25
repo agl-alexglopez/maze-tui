@@ -1021,16 +1021,34 @@ pub fn flush_mini_backtracker_coordinate(maze: &maze::Maze, p: maze::Point) {
         return;
     }
     // We know this is a path but because we are half blocks we need to render correctly.
-    let path = match p.row > 0 && (maze[(p.row - 1) as usize][p.col as usize] & maze::PATH_BIT) == 0
-    {
-        true => '▀',
-        false => ' ',
-    };
-    let color = BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize].ansi;
+    if p.row % 2 == 0 {
+        execute!(
+            io::stdout(),
+            SetBackgroundColor(Color::AnsiValue(
+                BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize].ansi
+            )),
+            Print(
+                match (maze[(p.row + 1) as usize][p.col as usize] & maze::PATH_BIT) == 0 {
+                    true => '▄',
+                    false => ' ',
+                }
+            ),
+            ResetColor
+        )
+        .expect("Could not print.");
+        return;
+    }
     execute!(
         io::stdout(),
-        SetBackgroundColor(Color::AnsiValue(color)),
-        Print(path),
+        SetBackgroundColor(Color::AnsiValue(
+            BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize].ansi
+        )),
+        Print(
+            match (maze[(p.row - 1) as usize][p.col as usize] & maze::PATH_BIT) == 0 {
+                true => '▀',
+                false => ' ',
+            }
+        ),
         ResetColor
     )
     .expect("Could not print.");
@@ -1046,6 +1064,18 @@ pub fn flush_mini_coordinate(maze: &maze::Maze, p: maze::Point) {
     );
     let square = maze[p.row as usize][p.col as usize];
     if square & maze::PATH_BIT == 0 {
+        if p.row % 2 != 0 {
+            // By defenition of 0 indexing row - 1 is safe now.
+            execute!(
+                io::stdout(),
+                Print(maze.wall_char(
+                    (maze[(p.row - 1) as usize][p.col as usize] & maze::WALL_MASK) as usize
+                )),
+                ResetColor
+            )
+            .expect("Could not print.");
+            return;
+        }
         execute!(
             io::stdout(),
             Print(maze.wall_char((square & maze::WALL_MASK) as usize)),
@@ -1054,12 +1084,31 @@ pub fn flush_mini_coordinate(maze: &maze::Maze, p: maze::Point) {
         .expect("Could not print.");
         return;
     }
-    let path = match p.row > 0 && (maze[(p.row - 1) as usize][p.col as usize] & maze::PATH_BIT) == 0
-    {
-        true => '▀',
-        false => ' ',
-    };
-    execute!(io::stdout(), Print(path), ResetColor).expect("Could not print.");
+    if p.row % 2 == 0 {
+        execute!(
+            io::stdout(),
+            Print(
+                match (maze[(p.row + 1) as usize][p.col as usize] & maze::PATH_BIT) == 0 {
+                    true => '▄',
+                    false => ' ',
+                }
+            ),
+            ResetColor
+        )
+        .expect("Could not print.");
+        return;
+    }
+    execute!(
+        io::stdout(),
+        Print(
+            match p.row > 0 && (maze[(p.row - 1) as usize][p.col as usize] & maze::PATH_BIT) == 0 {
+                true => '▀',
+                false => ' ',
+            }
+        ),
+        ResetColor
+    )
+    .expect("Could not print.");
 }
 
 pub fn print_mini_coordinate(maze: &maze::Maze, p: maze::Point) {
@@ -1072,6 +1121,17 @@ pub fn print_mini_coordinate(maze: &maze::Maze, p: maze::Point) {
     );
     let square = maze[p.row as usize][p.col as usize];
     if square & maze::PATH_BIT == 0 {
+        if p.row % 2 != 0 {
+            queue!(
+                io::stdout(),
+                Print(maze.wall_char(
+                    (maze[(p.row - 1) as usize][p.col as usize] & maze::WALL_MASK) as usize
+                )),
+                ResetColor
+            )
+            .expect("Could not print.");
+            return;
+        }
         queue!(
             io::stdout(),
             Print(maze.wall_char((square & maze::WALL_MASK) as usize)),
@@ -1080,12 +1140,32 @@ pub fn print_mini_coordinate(maze: &maze::Maze, p: maze::Point) {
         .expect("Could not print.");
         return;
     }
-    let path = match p.row > 0 && (maze[(p.row - 1) as usize][p.col as usize] & maze::PATH_BIT) == 0
-    {
-        true => '▀',
-        false => ' ',
-    };
-    queue!(io::stdout(), Print(path), ResetColor).expect("Could not print.");
+    // We are now in an even or odd row path.
+    if p.row % 2 == 0 {
+        queue!(
+            io::stdout(),
+            Print(
+                match (maze[(p.row + 1) as usize][p.col as usize] & maze::PATH_BIT) == 0 {
+                    true => '▄',
+                    false => ' ',
+                }
+            ),
+            ResetColor
+        )
+        .expect("Could not print.");
+        return;
+    }
+    queue!(
+        io::stdout(),
+        Print(
+            match p.row > 0 && (maze[(p.row - 1) as usize][p.col as usize] & maze::PATH_BIT) == 0 {
+                true => '▀',
+                false => ' ',
+            }
+        ),
+        ResetColor
+    )
+    .expect("Could not print.");
 }
 
 pub fn flush_grid(maze: &maze::Maze) {
@@ -1111,6 +1191,25 @@ pub fn flush_grid(maze: &maze::Maze) {
         }
     }
     print::flush();
+}
+
+// Debug function
+
+pub fn flush_bit_vals(maze: &maze::Maze) {
+    for r in 0..maze.row_size() {
+        for c in 0..maze.col_size() {
+            let square = maze[r as usize][c as usize];
+            eprint!(
+                "{},{:2}|",
+                match square & maze::PATH_BIT != 0 {
+                    true => 1,
+                    false => 0,
+                },
+                square & maze::WALL_MASK
+            );
+        }
+        eprintln!();
+    }
 }
 
 const KEY_ENTRY_LEN: i32 = 5;
