@@ -4,19 +4,7 @@ use solvers::solve;
 use std::env;
 
 fn main() {
-    // RAII approach to cursor hiding. Call hide and on scope drop it unhides, no call needed.
-    let invisible = print::InvisibleCursor::new();
-    invisible.hide();
-    ctrlc::set_handler(move || {
-        //print::clear_screen();
-        print::set_cursor_position(maze::Point { row: 50, col: 111 }, maze::Offset::default());
-        print::unhide_cursor_on_process_exit();
-        std::process::exit(0);
-    })
-    .expect("Could not set quit handler.");
-
     let mut run = tables::MazeRunner::new();
-
     let mut prev_flag: &str = "";
     let mut process_current = false;
     for a in env::args().skip(1) {
@@ -63,6 +51,22 @@ fn main() {
             arg: "[NONE]",
         }));
     }
+    // RAII approach to cursor hiding. Call hide and on scope drop it unhides, no call needed.
+    let invisible = print::InvisibleCursor::new();
+    invisible.hide();
+    ctrlc::set_handler(move || {
+        //print::clear_screen();
+        print::set_cursor_position(
+            maze::Point {
+                row: run.args.odd_rows + 3,
+                col: 0,
+            },
+            maze::Offset::default(),
+        );
+        print::unhide_cursor_on_process_exit();
+        std::process::exit(0);
+    })
+    .expect("Could not set quit handler.");
     if run.args.style == maze::MazeStyle::Mini {
         run.args.odd_rows *= 2;
     }
