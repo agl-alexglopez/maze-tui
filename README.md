@@ -60,16 +60,16 @@ MODIFICATION FLAG[-m] Add shortcuts to the maze.
 SOLVER FLAG[-s] Set maze solving algorithm.
     [dfs-hunt] - Depth First Search
     [dfs-gather] - Depth First Search
-    [dfs-corners] - Depth First Search
+    [dfs-corner] - Depth First Search
     [floodfs-hunt] - Depth First Search
     [floodfs-gather] - Depth First Search
-    [floodfs-corners] - Depth First Search
+    [floodfs-corner] - Depth First Search
     [rdfs-hunt] - Randomized Depth First Search
     [rdfs-gather] - Randomized Depth First Search
-    [rdfs-corners] - Randomized Depth First Search
+    [rdfs-corner] - Randomized Depth First Search
     [bfs-hunt] - Breadth First Search
     [bfs-gather] - Breadth First Search
-    [bfs-corners] - Breadth First Search
+    [bfs-corner] - Breadth First Search
     [dark[algorithm]-[game]] - A mystery...
 
 WALL FLAG[-w] Set the wall style for the maze.
@@ -97,7 +97,7 @@ EXAMPLES:
 
 -b rdfs -s bfs-hunt
 -s bfs-gather -b prim
--s bfs-corners -d round -b fractal
+-s bfs-corner -d round -b fractal
 -s dfs-hunt -ba 4 -sa 5 -b wilson-walls -m x
 
 ASCII lettering for this title and algorithm
