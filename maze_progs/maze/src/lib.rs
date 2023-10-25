@@ -203,7 +203,7 @@ pub static WALL_STYLES: [char; 128] = [
     // 0bWestSouthEastNorth. Note: 0b0000 is a floating wall with no walls around.
     // Then, count from 0 (0b0000) to 15 (0b1111) in binary to form different wall shapes.
     // mini
-    '▔', '▀', '▀', '▀', '█', '█', '█', '█', '▀', '▀', '▀', '▀', '█', '█', '█', '█',
+    '▀', '▀', '▀', '▀', '█', '█', '█', '█', '▀', '▀', '▀', '▀', '█', '█', '█', '█',
     // sharp
     '■', '╵', '╶', '└', '╷', '│', '┌', '├', '╴', '┘', '─', '┴', '┐', '┤', '┬', '┼',
     // rounded
