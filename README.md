@@ -6,7 +6,7 @@
 
 ## Requirements
 
-- Rustc >= 1.73.0 or as new as possible `rustup update`. An earlier version may work but if you receive an error regarding the equality operator `==` a newer Rustc version fixes that issue. 
+- Rustc >= 1.73.0 or as new as possible `rustup update`. An earlier version may work but if you receive an error regarding the equality operator `==` a newer rustc version fixes that issue. 
 - A terminal with full font support for special Unicode characters. This project leverages Unicode Box-Drawing characters.
 - A terminal with support for RGB colors as defined by Crossterm's compatibility specifications. ANSI color codes are also used.
 - Cargo to build and run the project.   
