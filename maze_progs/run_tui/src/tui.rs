@@ -25,7 +25,7 @@ use std::{
 pub static PLACEHOLDER: &str = "Type Command or Press <ENTER> for Random";
 
 pub type CtEvent = crossterm::event::Event;
-pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stderr>>;
+pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stdout>>;
 pub type Err = Box<dyn std::error::Error>;
 pub type Result<T> = std::result::Result<T, Err>;
 
