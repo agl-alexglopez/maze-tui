@@ -25,7 +25,7 @@ use std::{
 pub static PLACEHOLDER: &str = "Type Command or Press <ENTER> for Random";
 
 pub type CtEvent = crossterm::event::Event;
-pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stderr>>;
+pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stdout>>;
 pub type Err = Box<dyn std::error::Error>;
 pub type Result<T> = std::result::Result<T, Err>;
 
@@ -99,7 +99,7 @@ impl Tui {
     /// It enables the raw mode and sets terminal properties.
     pub fn enter(&mut self) -> Result<()> {
         crossterm::terminal::enable_raw_mode()?;
-        crossterm::execute!(std::io::stderr(), EnterAlternateScreen, EnableMouseCapture)?;
+        crossterm::execute!(std::io::stdout(), EnterAlternateScreen, EnableMouseCapture)?;
 
         // Define a custom panic hook to reset the terminal properties.
         // This way, you won't have your terminal messed up if an unexpected error happens.
@@ -137,7 +137,7 @@ impl Tui {
     /// the terminal properties if unexpected errors occur.
     fn reset() -> Result<()> {
         crossterm::terminal::disable_raw_mode()?;
-        crossterm::execute!(std::io::stderr(), LeaveAlternateScreen, DisableMouseCapture)?;
+        crossterm::execute!(std::io::stdout(), LeaveAlternateScreen, DisableMouseCapture)?;
         Ok(())
     }
 
