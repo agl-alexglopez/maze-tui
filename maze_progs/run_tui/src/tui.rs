@@ -453,6 +453,7 @@ fn ui_info(msg: &str, scroll: &mut Scroller, f: &mut Frame<'_>) {
         .block(
             Block::default()
                 .borders(Borders::ALL)
+                .border_type(BorderType::Double)
                 .border_style(Style::new().fg(Color::Yellow))
                 .style(Style::default().bg(Color::Black)),
         )

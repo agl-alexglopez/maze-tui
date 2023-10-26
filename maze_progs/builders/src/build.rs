@@ -1122,6 +1122,7 @@ pub fn print_mini_coordinate(maze: &maze::Maze, p: maze::Point) {
     let square = maze[p.row as usize][p.col as usize];
     if square & maze::PATH_BIT == 0 {
         if p.row % 2 != 0 {
+            // By defenition of 0 indexing row - 1 is safe now.
             queue!(
                 io::stdout(),
                 Print(maze.wall_char(
@@ -1140,7 +1141,6 @@ pub fn print_mini_coordinate(maze: &maze::Maze, p: maze::Point) {
         .expect("Could not print.");
         return;
     }
-    // We are now in an even or odd row path.
     if p.row % 2 == 0 {
         queue!(
             io::stdout(),
