@@ -14,8 +14,8 @@ tables = { path = "../tables" }
 print = { path = "../print" }
 speed = { path = "../speed" }
 crossterm = "0.27"
-ratatui = "0.23"
-tui-textarea = { version = "*", features = ["ratatui-crossterm"], default-features = false }
+ratatui = "0.24"
+tui-textarea = "0.3"
 rand = "0.8.5"
 ctrlc = "3.4.0"
 crossbeam-channel = "0.5"

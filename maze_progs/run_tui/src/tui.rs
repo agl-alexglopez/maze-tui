@@ -5,16 +5,14 @@ use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use rand::distributions::Bernoulli;
 use rand::prelude::Distribution;
 use rand::{seq::SliceRandom, thread_rng};
-use ratatui::prelude::Alignment;
-use ratatui::widgets::Clear;
-use ratatui::widgets::ScrollDirection;
-use ratatui::widgets::ScrollbarState;
-use ratatui::widgets::Wrap;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
-    prelude::{Color, CrosstermBackend, Modifier},
+    prelude::{Alignment, Color, Frame, Modifier},
     style::Style,
-    widgets::{Block, Borders, Padding, Paragraph, Scrollbar, ScrollbarOrientation},
+    widgets::{
+        Block, BorderType, Borders, Clear, Padding, Paragraph, ScrollDirection, Scrollbar,
+        ScrollbarOrientation, ScrollbarState, Wrap,
+    },
 };
 use solvers::solve;
 use tui_textarea::{Input, Key, TextArea};
@@ -27,7 +25,6 @@ use std::{
 pub static PLACEHOLDER: &str = "Type Command or Press <ENTER> for Random";
 
 pub type CtEvent = crossterm::event::Event;
-pub type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<std::io::Stderr>>;
 pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stderr>>;
 pub type Err = Box<dyn std::error::Error>;
 pub type Result<T> = std::result::Result<T, Err>;
@@ -77,11 +74,11 @@ impl Scroller {
         match dir {
             ScrollDirection::Forward => {
                 self.pos = self.pos.saturating_add(2);
-                self.state = self.state.position(self.pos as u16);
+                self.state = self.state.position(self.pos);
             }
             ScrollDirection::Backward => {
                 self.pos = self.pos.saturating_sub(2);
-                self.state = self.state.position(self.pos as u16);
+                self.state = self.state.position(self.pos);
             }
         }
     }
@@ -197,6 +194,7 @@ impl Tui {
         cmd_prompt.set_placeholder_text(PLACEHOLDER);
         let text_block = Block::default()
             .borders(Borders::ALL)
+            .border_type(BorderType::Double)
             .border_style(Style::new().fg(Color::Yellow))
             .style(Style::default().bg(Color::Black));
         cmd_prompt.set_block(text_block);
@@ -360,6 +358,7 @@ fn ui_home(cmd: &mut TextArea, scroll: &mut Scroller, f: &mut Frame<'_>) {
         .block(
             Block::default()
                 .borders(Borders::ALL)
+                .border_type(BorderType::Double)
                 .border_style(Style::new().fg(Color::Yellow))
                 .style(Style::default().bg(Color::Black)),
         )
@@ -421,6 +420,7 @@ fn ui_info_prompt(f: &mut Frame<'_>) {
         .block(
             Block::default()
                 .borders(Borders::ALL)
+                .border_type(BorderType::Double)
                 .border_style(Style::new().fg(Color::Yellow))
                 .style(Style::default().bg(Color::Black)),
         )
@@ -454,6 +454,7 @@ fn ui_info(msg: &str, scroll: &mut Scroller, f: &mut Frame<'_>) {
         .block(
             Block::default()
                 .borders(Borders::ALL)
+                .border_type(BorderType::Double)
                 .border_style(Style::new().fg(Color::Yellow))
                 .style(Style::default().bg(Color::Black)),
         )
@@ -559,5 +560,5 @@ fn ui_err(msg: &str, f: &mut Frame<'_>) {
 }
 
 static INSTRUCTIONS: &str = include_str!("../../res/instructions.txt");
-static INSTRUCTIONS_LINE_COUNT: u16 = 70;
-static DESCRIPTION_LINE_COUNT: u16 = 50;
+static INSTRUCTIONS_LINE_COUNT: usize = 70;
+static DESCRIPTION_LINE_COUNT: usize = 50;

@@ -12,3 +12,4 @@ members = [
     "print",
     "speed",
 ]
+resolver = "2"
