@@ -99,7 +99,7 @@ impl Tui {
     /// It enables the raw mode and sets terminal properties.
     pub fn enter(&mut self) -> Result<()> {
         crossterm::terminal::enable_raw_mode()?;
-        crossterm::execute!(std::io::stderr(), EnterAlternateScreen, EnableMouseCapture)?;
+        crossterm::execute!(std::io::stdout(), EnterAlternateScreen, EnableMouseCapture)?;
 
         // Define a custom panic hook to reset the terminal properties.
         // This way, you won't have your terminal messed up if an unexpected error happens.
@@ -137,7 +137,7 @@ impl Tui {
     /// the terminal properties if unexpected errors occur.
     fn reset() -> Result<()> {
         crossterm::terminal::disable_raw_mode()?;
-        crossterm::execute!(std::io::stderr(), LeaveAlternateScreen, DisableMouseCapture)?;
+        crossterm::execute!(std::io::stdout(), LeaveAlternateScreen, DisableMouseCapture)?;
         Ok(())
     }
 
