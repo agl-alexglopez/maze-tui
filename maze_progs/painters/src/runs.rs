@@ -1,5 +1,5 @@
 use crate::rgb;
-use builders::build::{self, print_square};
+use builders::build;
 use maze;
 use solvers::solve;
 use speed;
@@ -317,7 +317,7 @@ fn painter(maze: &maze::Maze, map: &solve::MaxMap) {
                         channels[rand_color_choice] = bright;
                         rgb::print_rgb(channels, cur, maze.offset());
                     }
-                    None => print_square(maze, cur),
+                    None => build::print_square(maze, cur),
                 }
             }
         }
