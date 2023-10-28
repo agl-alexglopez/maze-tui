@@ -1,13 +1,20 @@
 use crate::run;
+use builders;
+use builders::build;
 use crossbeam_channel::{self, unbounded};
+use crossbeam_channel::{select, tick};
+use crossterm::event::KeyCode;
 use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyEvent};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use rand::distributions::Bernoulli;
 use rand::prelude::Distribution;
+use rand::Rng;
 use rand::{seq::SliceRandom, thread_rng};
+use ratatui::widgets::Widget;
 use ratatui::{
+    buffer::Buffer,
     layout::{Constraint, Direction, Layout},
-    prelude::{Alignment, Color, Frame, Modifier},
+    prelude::{Alignment, Color, Frame, Modifier, Rect},
     style::Style,
     widgets::{
         Block, BorderType, Borders, Clear, Padding, Paragraph, ScrollDirection, Scrollbar,
@@ -15,12 +22,59 @@ use ratatui::{
     },
 };
 use solvers::solve;
+use std::error;
+use std::fmt;
 use tui_textarea::{Input, Key, TextArea};
 
 use std::{
     thread,
     time::{Duration, Instant},
 };
+
+#[derive(Debug)]
+pub struct Quit {
+    pub q: bool,
+}
+
+pub struct MazeFrame<'a> {
+    maze: &'a maze::Maze,
+}
+
+impl<'a> Widget for MazeFrame<'a> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        for r in 0..self.row_size() {
+            for c in 0..self.col_size() {
+                build::update_buffer(&self.maze, &area, buf, maze::Point { row: r, col: c });
+            }
+        }
+    }
+}
+
+impl<'a> MazeFrame<'a> {
+    fn new(m: &'a maze::Maze) -> Self {
+        Self { maze: m }
+    }
+    fn row_size(&self) -> i32 {
+        self.maze.row_size()
+    }
+    fn col_size(&self) -> i32 {
+        self.maze.col_size()
+    }
+}
+
+impl Quit {
+    pub fn new() -> Self {
+        Quit { q: false }
+    }
+}
+
+impl fmt::Display for Quit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Quit: {}", self.q)
+    }
+}
+
+impl error::Error for Quit {}
 
 pub static PLACEHOLDER: &str = "Type Command or Press <ENTER> for Random";
 
@@ -131,6 +185,15 @@ impl Tui {
         }
     }
 
+    pub fn inner_maze_rect(&mut self) -> Rect {
+        let f = self.terminal.get_frame();
+        let overall_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![Constraint::Percentage(90), Constraint::Percentage(10)])
+            .split(f.size());
+        overall_layout[0]
+    }
+
     /// Resets the terminal interface.
     ///
     /// This function is also used for the panic hook to revert
@@ -214,7 +277,7 @@ impl Tui {
                         Input {
                             key: Key::Enter, ..
                         } => {
-                            if run::run_command(&cmd_prompt.lines()[0], self).is_ok() {
+                            if run::render_command(&cmd_prompt.lines()[0], self).is_ok() {
                                 self.terminal.clear()?;
                                 self.background_maze()?;
                             }
@@ -228,6 +291,13 @@ impl Tui {
                 Pack::Tick => {}
             }
         }
+        Ok(())
+    }
+
+    pub fn render_builder_frame(&mut self, maze: &maze::Maze, rect: Rect) -> Result<()> {
+        self.terminal.draw(|f| {
+            f.render_widget(MazeFrame::new(&maze), rect);
+        })?;
         Ok(())
     }
 }

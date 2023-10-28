@@ -47,6 +47,7 @@ dependencies = [
  "maze",
  "print",
  "rand",
+ "ratatui",
  "speed",
 ]
 

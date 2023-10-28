@@ -8,6 +8,11 @@ use key;
 use maze;
 use print;
 use print::maze_panic;
+use ratatui::{
+    buffer::Buffer,
+    prelude::Rect,
+    style::{Color as RatColor, Modifier, Style},
+};
 use std::io::{self};
 
 use std::{thread, time};
@@ -537,15 +542,19 @@ pub fn carve_path_markings(maze: &mut maze::Maze, cur: maze::Point, next: maze::
     let mut wall: maze::Point = cur;
     if next.row < cur.row {
         wall.row -= 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_SOUTH;
         maze[u_next_row][u_next_col] |= FROM_SOUTH;
     } else if next.row > cur.row {
         wall.row += 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_NORTH;
         maze[u_next_row][u_next_col] |= FROM_NORTH;
     } else if next.col < cur.col {
         wall.col -= 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_EAST;
         maze[u_next_row][u_next_col] |= FROM_EAST;
     } else if next.col > cur.col {
         wall.col += 1;
+        maze[wall.row as usize][wall.col as usize] |= FROM_WEST;
         maze[u_next_row][u_next_col] |= FROM_WEST;
     } else {
         print::maze_panic!("Wall break error. Cur: {:?} Next: {:?}", cur, next);
@@ -922,8 +931,30 @@ pub fn print_overlap_key_animated(maze: &maze::Maze) {
 
 // Terminal Printing Helpers
 
+pub fn update_buffer(maze: &maze::Maze, area: &Rect, buf: &mut Buffer, p: maze::Point) {
+    let square = maze[p.row as usize][p.col as usize];
+    let x = area.left() + p.col as u16;
+    let y = area.top() + p.row as u16;
+    if square & MARKERS_MASK != 0 {
+        let mark = BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize];
+        buf.get_mut(x, y).set_char(mark.arrow).set_style(
+            Style::default()
+                .fg(RatColor::Indexed(ANSI_WHITE))
+                .bg(RatColor::Indexed(mark.ansi))
+                .add_modifier(Modifier::BOLD),
+        );
+    } else if square & maze::PATH_BIT == 0 {
+        buf.get_mut(x, y)
+            .set_char(maze.wall_char((square & maze::WALL_MASK) as usize));
+    } else if square & maze::PATH_BIT != 0 {
+        buf.get_mut(x, y).set_char(' ');
+    } else {
+        print::maze_panic!("Printed a maze square without a category.");
+    }
+}
+
 pub fn flush_cursor_maze_coordinate(maze: &maze::Maze, p: maze::Point) {
-    let square = &maze[p.row as usize][p.col as usize];
+    let square = maze[p.row as usize][p.col as usize];
     print::set_cursor_position(p, maze.offset());
     if square & MARKERS_MASK != 0 {
         let mark = BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize];
@@ -950,7 +981,7 @@ pub fn flush_cursor_maze_coordinate(maze: &maze::Maze, p: maze::Point) {
 }
 
 pub fn print_square(maze: &maze::Maze, p: maze::Point) {
-    let square = &maze[p.row as usize][p.col as usize];
+    let square = maze[p.row as usize][p.col as usize];
     print::set_cursor_position(p, maze.offset());
     if square & MARKERS_MASK != 0 {
         let mark = BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize];

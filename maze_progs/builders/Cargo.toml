@@ -11,5 +11,6 @@ key = { path = "../key" }
 maze = { path = "../maze" }
 print = { path = "../print" }
 rand = "0.8.5"
+ratatui = "0.24"
 crossterm = "0.26.1"
 

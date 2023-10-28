@@ -1,12 +1,15 @@
 use crate::tui;
 use builders::build;
 use crossbeam_channel::bounded;
+use crossbeam_channel::{select, tick};
 use crossterm::event::KeyCode;
-use rand::{distributions::Bernoulli, distributions::Distribution, seq::SliceRandom, thread_rng};
+use rand::{
+    distributions::Bernoulli, distributions::Distribution, seq::SliceRandom, thread_rng, Rng,
+};
 use solvers::solve;
 use std::error;
 use std::fmt;
-use std::thread;
+use std::{thread, time::Duration};
 
 #[derive(Debug)]
 pub struct Quit {
@@ -35,6 +38,21 @@ pub fn run_command(cmd: &String, tui: &mut tui::Tui) -> tui::Result<()> {
     match set_command_args(tui, cmd) {
         Ok(run) => {
             run_channels(run, tui)?;
+        }
+        Err(_) => return Err(Box::new(Quit::new())),
+    };
+    Ok(())
+}
+
+pub fn render_command(cmd: &String, tui: &mut tui::Tui) -> tui::Result<()> {
+    if cmd.is_empty() {
+        //rand_with_channels(tui)?;
+        render_maze(set_command_args(tui, cmd).unwrap(), tui)?;
+        return Ok(());
+    }
+    match set_command_args(tui, cmd) {
+        Ok(run) => {
+            render_maze(run, tui)?;
         }
         Err(_) => return Err(Box::new(Quit::new())),
     };
@@ -101,6 +119,41 @@ fn run_channels(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result
     handle_waiting_user(&this_run.build, maze.clone(), tui)
 }
 
+fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<()> {
+    tui.terminal.clear()?;
+    //let t_start = Instant::now();
+    let render_space = tui.inner_maze_rect();
+    let ticker = tick(Duration::from_millis(10));
+    let maze = solve::Solver::new(maze::Maze::new(this_run.args));
+    let mc = maze.clone();
+    if let Ok(mut lk) = mc.lock() {
+        build::fill_maze_with_walls(&mut lk.maze);
+        let mut gen = thread_rng();
+        let start: maze::Point = maze::Point {
+            row: 2 * (gen.gen_range(1..lk.maze.row_size() - 2) / 2) + 1,
+            col: 2 * (gen.gen_range(1..lk.maze.col_size() - 2) / 2) + 1,
+        };
+        let mut cur = start;
+        'building: loop {
+            select! {
+                recv(ticker) -> _ => {
+                    cur
+                    = builders::recursive_backtracker::generate_delta(&mut lk.maze, cur);
+                    tui.render_builder_frame(&lk.maze, render_space)?;
+                    if cur == start {
+                        break 'building;
+                    }
+                }
+            }
+        }
+        // if let Some((_, animated_mod)) = this_run.modify {
+        //     animated_mod(&mut lk.maze, this_run.build_speed);
+        // }
+        // this_run.solve.1(maze.clone(), this_run.solve_speed);
+    }
+    handle_waiting_user(&this_run.build, maze.clone(), tui)
+}
+
 fn handle_waiting_user(
     builder: &tables::BuildFunction,
     maze: solve::SolverMonitor,
@@ -147,7 +200,7 @@ fn handle_waiting_user(
     Ok(())
 }
 
-fn set_command_args(tui: &mut tui::Tui, cmd: &str) -> Result<tables::MazeRunner, Quit> {
+pub fn set_command_args(tui: &mut tui::Tui, cmd: &str) -> Result<tables::MazeRunner, Quit> {
     let mut run = tables::MazeRunner::new();
     let dimensions = tui.inner_dimensions();
     run.args.odd_rows = (dimensions.rows as f64 / 1.2) as i32;

@@ -7,6 +7,37 @@ use std::{thread, time};
 // Backtracking was too fast because it just clears square. Slow down for animation.
 const BACKTRACK_DELAY: build::SpeedUnit = 8;
 
+pub fn generate_delta(maze: &mut maze::Maze, mut cur: maze::Point) -> maze::Point {
+    let mut gen = thread_rng();
+    let mut random_direction_indices: [usize; build::NUM_DIRECTIONS] = [0, 1, 2, 3];
+    random_direction_indices.shuffle(&mut gen);
+    for &i in random_direction_indices.iter() {
+        let direction = &build::GENERATE_DIRECTIONS[i];
+        let branch = maze::Point {
+            row: cur.row + direction.row,
+            col: cur.col + direction.col,
+        };
+        if build::can_build_new_square(maze, branch) {
+            build::carve_path_markings(maze, cur, branch);
+            return branch;
+        }
+    }
+    let dir: build::BacktrackMarker =
+        (maze[cur.row as usize][cur.col as usize] & build::MARKERS_MASK) >> build::MARKER_SHIFT;
+    // The solvers will need these bits later so we need to clear bits.
+    let backtracking: &maze::Point = &build::BACKTRACKING_POINTS[dir as usize];
+    let half: &maze::Point = &build::BACKTRACKING_HALF_POINTS[dir as usize];
+    let half_step = maze::Point {
+        row: cur.row + half.row,
+        col: cur.col + half.col,
+    };
+    maze[cur.row as usize][cur.col as usize] &= !build::MARKERS_MASK;
+    maze[half_step.row as usize][half_step.col as usize] &= !build::MARKERS_MASK;
+    cur.row += backtracking.row;
+    cur.col += backtracking.col;
+    cur
+}
+
 pub fn generate_maze(maze: &mut maze::Maze) {
     build::fill_maze_with_walls(maze);
     let mut gen = thread_rng();
@@ -14,7 +45,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
         row: 2 * (gen.gen_range(1..maze.row_size() - 2) / 2) + 1,
         col: 2 * (gen.gen_range(1..maze.col_size() - 2) / 2) + 1,
     };
-    let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
+    let mut random_direction_indices: [usize; build::NUM_DIRECTIONS] = [0, 1, 2, 3];
     let mut cur: maze::Point = start;
     'branching: loop {
         random_direction_indices.shuffle(&mut gen);
@@ -33,8 +64,14 @@ pub fn generate_maze(maze: &mut maze::Maze) {
         let dir: build::BacktrackMarker =
             (maze[cur.row as usize][cur.col as usize] & build::MARKERS_MASK) >> build::MARKER_SHIFT;
         // The solvers will need these bits later so we need to clear bits.
-        maze[cur.row as usize][cur.col as usize] &= !build::MARKERS_MASK;
+        let half: &maze::Point = &build::BACKTRACKING_HALF_POINTS[dir as usize];
         let backtracking: &maze::Point = &build::BACKTRACKING_POINTS[dir as usize];
+        let half_step = maze::Point {
+            row: cur.row + half.row,
+            col: cur.col + half.col,
+        };
+        maze[cur.row as usize][cur.col as usize] &= !build::MARKERS_MASK;
+        maze[half_step.row as usize][half_step.col as usize] &= !build::MARKERS_MASK;
         cur.row += backtracking.row;
         cur.col += backtracking.col;
 
@@ -58,7 +95,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         row: 2 * (gen.gen_range(1..maze.row_size() - 2) / 2) + 1,
         col: 2 * (gen.gen_range(1..maze.col_size() - 2) / 2) + 1,
     };
-    let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
+    let mut random_direction_indices: [usize; build::NUM_DIRECTIONS] = [0, 1, 2, 3];
     let mut cur: maze::Point = start;
     'branching: loop {
         if maze.exit() {
@@ -111,7 +148,7 @@ fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         row: 2 * (gen.gen_range(1..maze.row_size() - 2) / 2) + 1,
         col: 2 * (gen.gen_range(1..maze.col_size() - 2) / 2) + 1,
     };
-    let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
+    let mut random_direction_indices: [usize; build::NUM_DIRECTIONS] = [0, 1, 2, 3];
     let mut cur: maze::Point = start;
     'branching: loop {
         if maze.exit() {
