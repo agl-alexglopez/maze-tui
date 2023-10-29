@@ -1,5 +1,4 @@
 use builders::build::{self, flush_grid};
-use solvers::solve;
 
 use std::env;
 
@@ -94,7 +93,7 @@ fn main() {
     // Ensure a smooth transition from build to solve with no flashing.
     print::set_cursor_position(maze::Point::default(), maze::Offset::default());
 
-    let monitor = solve::Solver::new(maze);
+    let monitor = monitor::Solver::new(maze);
 
     match run.solve_view {
         tables::ViewingMode::StaticImage => {

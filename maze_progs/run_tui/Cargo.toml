@@ -9,6 +9,7 @@ edition = "2021"
 maze = { path = "../maze" }
 builders = { path = "../builders" }
 solvers = { path = "../solvers" }
+monitor = { path = "../monitor" }
 painters = { path = "../painters" }
 tables = { path = "../tables" }
 print = { path = "../print" }

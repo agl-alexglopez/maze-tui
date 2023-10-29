@@ -9,10 +9,6 @@ use maze;
 use print::maze_panic;
 use rand::prelude::*;
 use std::io::{self};
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
 
 // Types available to all solvers.
 pub type ThreadPaint = u16;
@@ -25,43 +21,6 @@ pub struct ThreadGuide {
     pub start: maze::Point,
     pub speed: SolveSpeedUnit,
 }
-
-#[derive(Default)]
-pub struct MaxMap {
-    pub max: u64,
-    pub distances: HashMap<maze::Point, u64>,
-}
-
-impl MaxMap {
-    pub fn new(p: maze::Point, m: u64) -> Self {
-        Self {
-            max: m,
-            distances: HashMap::from([(p, m)]),
-        }
-    }
-}
-
-pub struct Solver {
-    pub maze: maze::Maze,
-    pub win: Option<usize>,
-    pub win_path: Vec<(maze::Point, ThreadPaint)>,
-    pub map: MaxMap,
-    pub count: usize,
-}
-
-impl Solver {
-    pub fn new(boxed_maze: maze::Maze) -> Arc<Mutex<Self>> {
-        Arc::new(Mutex::new(Self {
-            maze: boxed_maze,
-            win: None,
-            win_path: Vec::default(),
-            map: MaxMap::default(),
-            count: 0,
-        }))
-    }
-}
-
-pub type SolverMonitor = Arc<Mutex<Solver>>;
 
 // Public Module Functions
 

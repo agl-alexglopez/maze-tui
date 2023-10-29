@@ -1,14 +1,10 @@
-use crate::run;
 use builders;
 use builders::build;
 use crossbeam_channel::{self, unbounded};
-use crossbeam_channel::{select, tick};
-use crossterm::event::KeyCode;
 use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyEvent};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use rand::distributions::Bernoulli;
 use rand::prelude::Distribution;
-use rand::Rng;
 use rand::{seq::SliceRandom, thread_rng};
 use ratatui::widgets::Widget;
 use ratatui::{
@@ -22,32 +18,21 @@ use ratatui::{
     },
 };
 use solvers::solve;
-use std::error;
-use std::fmt;
-use tui_textarea::{Input, Key, TextArea};
+use tui_textarea::{Input, TextArea};
 
 use std::{
     thread,
     time::{Duration, Instant},
 };
 
-#[derive(Debug)]
-pub struct Quit {
-    pub q: bool,
-}
+pub static PLACEHOLDER: &str = "Type Command or Press <ENTER> for Random";
+pub type CtEvent = crossterm::event::Event;
+pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stdout>>;
+pub type Err = Box<dyn std::error::Error>;
+pub type Result<T> = std::result::Result<T, Err>;
 
 pub struct MazeFrame<'a> {
     maze: &'a maze::Maze,
-}
-
-impl<'a> Widget for MazeFrame<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        for r in 0..self.row_size() {
-            for c in 0..self.col_size() {
-                build::update_buffer(&self.maze, &area, buf, maze::Point { row: r, col: c });
-            }
-        }
-    }
 }
 
 impl<'a> MazeFrame<'a> {
@@ -62,26 +47,15 @@ impl<'a> MazeFrame<'a> {
     }
 }
 
-impl Quit {
-    pub fn new() -> Self {
-        Quit { q: false }
+impl<'a> Widget for MazeFrame<'a> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        for r in 0..self.row_size() {
+            for c in 0..self.col_size() {
+                build::update_buffer(&self.maze, &area, buf, maze::Point { row: r, col: c });
+            }
+        }
     }
 }
-
-impl fmt::Display for Quit {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Quit: {}", self.q)
-    }
-}
-
-impl error::Error for Quit {}
-
-pub static PLACEHOLDER: &str = "Type Command or Press <ENTER> for Random";
-
-pub type CtEvent = crossterm::event::Event;
-pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stdout>>;
-pub type Err = Box<dyn std::error::Error>;
-pub type Result<T> = std::result::Result<T, Err>;
 
 // Event is a crowded name so we'll call it a pack.
 #[derive(Debug)]
@@ -98,10 +72,11 @@ pub struct EventHandler {
     pub handler: thread::JoinHandle<()>,
 }
 
-pub struct Tui {
+pub struct Tui<'a> {
     pub terminal: CrosstermTerminal,
     pub events: EventHandler,
     pub scroll: Scroller,
+    pub cmd: TextArea<'a>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -116,14 +91,16 @@ pub struct Scroller {
     pub pos: usize,
 }
 
-impl Scroller {
-    pub fn default() -> Self {
+impl Default for Scroller {
+    fn default() -> Self {
         Scroller {
             state: ScrollbarState::default(),
             pos: 0,
         }
     }
+}
 
+impl Scroller {
     pub fn scroll(&mut self, dir: ScrollDirection) {
         match dir {
             ScrollDirection::Forward => {
@@ -138,13 +115,24 @@ impl Scroller {
     }
 }
 
-impl Tui {
+impl<'a> Tui<'a> {
     /// Constructs a new instance of [`Tui`].
     pub fn new(terminal: CrosstermTerminal, events: EventHandler) -> Self {
+        let mut cmd_prompt = TextArea::default();
+        cmd_prompt.set_cursor_line_style(Style::default());
+        cmd_prompt.set_placeholder_text(PLACEHOLDER);
+        let text_block = Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Double)
+            .border_style(Style::new().fg(Color::Yellow))
+            .style(Style::default().bg(Color::Black));
+        cmd_prompt.set_block(text_block);
+        cmd_prompt.set_alignment(Alignment::Center);
         Self {
             terminal,
             events,
             scroll: Scroller::default(),
+            cmd: cmd_prompt,
         }
     }
 
@@ -213,9 +201,9 @@ impl Tui {
         Ok(())
     }
 
-    pub fn home(&mut self, cmd: &mut TextArea) -> Result<()> {
+    pub fn home(&mut self) -> Result<()> {
         self.terminal
-            .draw(|frame| ui_home(cmd, &mut self.scroll, frame))?;
+            .draw(|frame| ui_home(&mut self.cmd, &mut self.scroll, frame))?;
         Ok(())
     }
 
@@ -251,47 +239,8 @@ impl Tui {
         Ok(())
     }
 
-    pub fn run(&mut self) -> Result<()> {
-        let mut cmd_prompt = TextArea::default();
-        cmd_prompt.set_cursor_line_style(Style::default());
-        cmd_prompt.set_placeholder_text(PLACEHOLDER);
-        let text_block = Block::default()
-            .borders(Borders::ALL)
-            .border_type(BorderType::Double)
-            .border_style(Style::new().fg(Color::Yellow))
-            .style(Style::default().bg(Color::Black));
-        cmd_prompt.set_block(text_block);
-        cmd_prompt.set_alignment(Alignment::Center);
-        self.background_maze()?;
-        'render: loop {
-            self.home(&mut cmd_prompt)?;
-            match self.events.next()? {
-                Pack::Resize(_, _) => {
-                    self.background_maze()?;
-                }
-                Pack::Press(ev) => {
-                    match ev.into() {
-                        Input { key: Key::Esc, .. } => break 'render,
-                        Input { key: Key::Down, .. } => self.scroll(ScrollDirection::Forward),
-                        Input { key: Key::Up, .. } => self.scroll(ScrollDirection::Backward),
-                        Input {
-                            key: Key::Enter, ..
-                        } => {
-                            if run::render_command(&cmd_prompt.lines()[0], self).is_ok() {
-                                self.terminal.clear()?;
-                                self.background_maze()?;
-                            }
-                        }
-                        input => {
-                            // TextArea::input returns if the input modified its text
-                            let _ = cmd_prompt.input(input);
-                        }
-                    }
-                }
-                Pack::Tick => {}
-            }
-        }
-        Ok(())
+    pub fn cmd_input(&mut self, input: Input) -> bool {
+        self.cmd.input(input)
     }
 
     pub fn render_builder_frame(&mut self, maze: &maze::Maze, rect: Rect) -> Result<()> {
@@ -331,7 +280,7 @@ impl EventHandler {
                     }
                     // Ticks are important for some submodule channel communications.
                     if last_tick.elapsed() >= tick_rate {
-                        sender.send(Pack::Tick).expect("failed to send tick event");
+                        //sender.send(Pack::Tick).expect("failed to send tick event");
                         last_tick = Instant::now();
                     }
                 }
@@ -350,6 +299,10 @@ impl EventHandler {
     /// there is no data available and it's possible for more data to be sent.
     pub fn next(&self) -> Result<Pack> {
         Ok(self.receiver.recv()?)
+    }
+
+    pub fn try_next(&self) -> Option<Pack> {
+        self.receiver.try_recv().ok()
     }
 }
 
@@ -395,7 +348,7 @@ fn ui_bg_maze(f: &mut Frame<'_>) {
     if let Some(m) = background_maze.modify {
         m.0(&mut bg_maze);
     }
-    let monitor = solve::Solver::new(bg_maze);
+    let monitor = monitor::Solver::new(bg_maze);
     background_maze.solve.0(monitor.clone());
     match monitor.clone().lock() {
         Ok(lk) => solve::print_paths(&lk.maze),

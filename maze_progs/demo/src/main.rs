@@ -1,5 +1,4 @@
 use builders::build;
-use solvers::solve;
 
 use std::env;
 use std::{thread, time};
@@ -95,7 +94,7 @@ fn main() {
 
         print::set_cursor_position(maze::Point::default(), maze::Offset::default());
 
-        let monitor = solve::Solver::new(maze);
+        let monitor = monitor::Solver::new(maze);
         solve_algo(monitor, solve_speed);
         print::set_cursor_position(
             maze::Point {

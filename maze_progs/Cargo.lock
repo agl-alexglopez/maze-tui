@@ -42,9 +42,11 @@ checksum = "327762f6e5a765692301e5bb513e0d9fef63be86bbc14528052b1cd3e6f03e07"
 name = "builders"
 version = "0.1.0"
 dependencies = [
+ "crossbeam-channel",
  "crossterm 0.26.1",
  "key",
  "maze",
+ "monitor",
  "print",
  "rand",
  "ratatui",
@@ -141,6 +143,7 @@ dependencies = [
  "crossterm 0.26.1",
  "ctrlc",
  "maze",
+ "monitor",
  "painters",
  "print",
  "rand",
@@ -256,6 +259,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "monitor"
+version = "0.1.0"
+dependencies = [
+ "maze",
+]
+
+[[package]]
 name = "nix"
 version = "0.27.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -279,6 +289,7 @@ dependencies = [
  "builders",
  "crossterm 0.26.1",
  "maze",
+ "monitor",
  "print",
  "rand",
  "solvers",
@@ -411,6 +422,7 @@ dependencies = [
  "crossterm 0.26.1",
  "ctrlc",
  "maze",
+ "monitor",
  "print",
  "rand",
  "solvers",
@@ -427,6 +439,7 @@ dependencies = [
  "crossterm 0.27.0",
  "ctrlc",
  "maze",
+ "monitor",
  "painters",
  "print",
  "rand",
@@ -493,6 +506,7 @@ dependencies = [
  "crossterm 0.26.1",
  "key",
  "maze",
+ "monitor",
  "print",
  "rand",
  "speed",
@@ -541,6 +555,7 @@ version = "0.1.0"
 dependencies = [
  "builders",
  "maze",
+ "monitor",
  "painters",
  "solvers",
  "speed",

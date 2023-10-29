@@ -9,6 +9,7 @@ pub use builders::recursive_backtracker;
 pub use builders::recursive_subdivision;
 pub use builders::wilson_adder;
 pub use builders::wilson_carver;
+pub use monitor;
 pub use painters::distance;
 pub use painters::rgb;
 pub use painters::runs;
@@ -24,8 +25,8 @@ pub use solvers::solve;
 
 pub type BuildFunction = (fn(&mut maze::Maze), fn(&mut maze::Maze, speed::Speed));
 pub type SolveFunction = (
-    fn(solve::SolverMonitor),
-    fn(solve::SolverMonitor, speed::Speed),
+    fn(monitor::SolverMonitor),
+    fn(monitor::SolverMonitor, speed::Speed),
 );
 
 pub struct FlagArg<'a, 'b> {

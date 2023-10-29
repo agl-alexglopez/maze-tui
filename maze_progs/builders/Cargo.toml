@@ -9,8 +9,10 @@ edition = "2021"
 speed = { path = "../speed" }
 key = { path = "../key" }
 maze = { path = "../maze" }
+monitor = { path = "../monitor" }
 print = { path = "../print" }
 rand = "0.8.5"
+crossbeam-channel = "0.5"
 ratatui = "0.24"
 crossterm = "0.26.1"
 

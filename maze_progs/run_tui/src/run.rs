@@ -3,13 +3,16 @@ use builders::build;
 use crossbeam_channel::bounded;
 use crossbeam_channel::{select, tick};
 use crossterm::event::KeyCode;
-use rand::{
-    distributions::Bernoulli, distributions::Distribution, seq::SliceRandom, thread_rng, Rng,
+use rand::{distributions::Bernoulli, distributions::Distribution, seq::SliceRandom, thread_rng};
+use ratatui::{
+    prelude::{CrosstermBackend, Terminal},
+    widgets::ScrollDirection,
 };
 use solvers::solve;
 use std::error;
 use std::fmt;
 use std::{thread, time::Duration};
+use tui_textarea::{Input, Key};
 
 #[derive(Debug)]
 pub struct Quit {
@@ -30,6 +33,45 @@ impl fmt::Display for Quit {
 
 impl error::Error for Quit {}
 
+pub fn run() -> tui::Result<()> {
+    let backend = CrosstermBackend::new(std::io::stdout());
+    let terminal = Terminal::new(backend)?;
+    let events = tui::EventHandler::new(250);
+    let mut tui = tui::Tui::new(terminal, events);
+    tui.enter()?;
+    tui.background_maze()?;
+    'render: loop {
+        tui.home()?;
+        match tui.events.next()? {
+            tui::Pack::Resize(_, _) => {
+                tui.background_maze()?;
+            }
+            tui::Pack::Press(ev) => {
+                match ev.into() {
+                    Input { key: Key::Esc, .. } => break 'render,
+                    Input { key: Key::Down, .. } => tui.scroll(ScrollDirection::Forward),
+                    Input { key: Key::Up, .. } => tui.scroll(ScrollDirection::Backward),
+                    Input {
+                        key: Key::Enter, ..
+                    } => {
+                        if render_command(tui.cmd.lines()[0].to_string(), &mut tui).is_ok() {
+                            tui.terminal.clear()?;
+                            tui.background_maze()?;
+                        }
+                    }
+                    input => {
+                        // TextArea::input returns if the input modified its text
+                        let _ = tui.cmd_input(input);
+                    }
+                }
+            }
+            tui::Pack::Tick => {}
+        }
+    }
+    tui.exit()?;
+    Ok(())
+}
+
 pub fn run_command(cmd: &String, tui: &mut tui::Tui) -> tui::Result<()> {
     if cmd.is_empty() {
         rand_with_channels(tui)?;
@@ -44,13 +86,13 @@ pub fn run_command(cmd: &String, tui: &mut tui::Tui) -> tui::Result<()> {
     Ok(())
 }
 
-pub fn render_command(cmd: &String, tui: &mut tui::Tui) -> tui::Result<()> {
+pub fn render_command(cmd: String, tui: &mut tui::Tui) -> tui::Result<()> {
     if cmd.is_empty() {
         //rand_with_channels(tui)?;
-        render_maze(set_command_args(tui, cmd).unwrap(), tui)?;
+        render_maze(set_command_args(tui, cmd.as_str()).unwrap(), tui)?;
         return Ok(());
     }
-    match set_command_args(tui, cmd) {
+    match set_command_args(tui, cmd.as_str()) {
         Ok(run) => {
             render_maze(run, tui)?;
         }
@@ -69,7 +111,7 @@ fn run_channels(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result
     let (impatient_user, worker) = bounded::<bool>(1);
     let (finished_worker, patient_user) = bounded::<bool>(1);
     let mut should_quit = false;
-    let maze = solve::Solver::new(maze::Maze::new_channel(&this_run.args, worker));
+    let maze = monitor::Solver::new(maze::Maze::new_channel(&this_run.args, worker));
     let mc = maze.clone();
     let worker_thread = thread::spawn(move || {
         if let Ok(mut lk) = mc.lock() {
@@ -123,26 +165,34 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
     tui.terminal.clear()?;
     //let t_start = Instant::now();
     let render_space = tui.inner_maze_rect();
+    let (finished_worker, patient_user) = bounded::<bool>(1);
+    let (impatient_user, slow_worker) = bounded::<bool>(1);
+    let (wait_for_builder, builder) = bounded::<bool>(1);
     let ticker = tick(Duration::from_millis(10));
-    let maze = solve::Solver::new(maze::Maze::new(this_run.args));
+    let maze = monitor::Solver::new(maze::Maze::new_channel(&this_run.args, slow_worker));
+    let mut quit_early = false;
     let mc = maze.clone();
-    if let Ok(mut lk) = mc.lock() {
-        build::fill_maze_with_walls(&mut lk.maze);
-        let mut gen = thread_rng();
-        let start: maze::Point = maze::Point {
-            row: 2 * (gen.gen_range(1..lk.maze.row_size() - 2) / 2) + 1,
-            col: 2 * (gen.gen_range(1..lk.maze.col_size() - 2) / 2) + 1,
-        };
-        let mut cur = start;
-        'building: loop {
-            select! {
-                recv(ticker) -> _ => {
-                    cur
-                    = builders::recursive_backtracker::generate_delta(&mut lk.maze, cur);
+    let worker_thread = thread::spawn(move || {
+        builders::recursive_backtracker::generate_deltas(mc, builder, finished_worker);
+    });
+    'building: loop {
+        select! {
+            recv(patient_user) -> _ => break 'building,
+            recv(ticker) -> _ => {
+                wait_for_builder.send(true).expect("Sending to worker blocked");
+                if let Ok(lk) = maze.lock() {
                     tui.render_builder_frame(&lk.maze, render_space)?;
-                    if cur == start {
+                }
+            }
+            default() => {
+                match tui.events.try_next() {
+                    Some(_) => {
+                        impatient_user.send(true).expect("Failed to kill builder");
+                        wait_for_builder.send(true).expect("Step to quit message failed.");
+                        quit_early = true;
                         break 'building;
                     }
+                    None => {},
                 }
             }
         }
@@ -151,12 +201,16 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
         // }
         // this_run.solve.1(maze.clone(), this_run.solve_speed);
     }
-    handle_waiting_user(&this_run.build, maze.clone(), tui)
+    worker_thread.join().expect("Joining thread failed.");
+    if !quit_early {
+        return handle_waiting_user(&this_run.build, maze.clone(), tui);
+    }
+    Ok(())
 }
 
 fn handle_waiting_user(
     builder: &tables::BuildFunction,
-    maze: solve::SolverMonitor,
+    maze: monitor::SolverMonitor,
     tui: &mut tui::Tui,
 ) -> tui::Result<()> {
     tui.info_prompt()?;

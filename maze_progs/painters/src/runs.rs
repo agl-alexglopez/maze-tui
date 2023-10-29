@@ -1,7 +1,6 @@
 use crate::rgb;
 use builders::build;
 use maze;
-use solvers::solve;
 use speed;
 
 use std::collections::{HashSet, VecDeque};
@@ -15,7 +14,7 @@ struct RunPoint {
     cur: maze::Point,
 }
 
-pub fn paint_run_lengths(monitor: solve::SolverMonitor) {
+pub fn paint_run_lengths(monitor: monitor::SolverMonitor) {
     let mut lk = match monitor.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("Lock panic."),
@@ -26,7 +25,7 @@ pub fn paint_run_lengths(monitor: solve::SolverMonitor) {
         row: row_mid + 1 - (row_mid % 2),
         col: col_mid + 1 - (col_mid % 2),
     };
-    let mut map = solve::MaxMap::new(start, 0);
+    let mut map = monitor::MaxMap::new(start, 0);
     let mut bfs = VecDeque::from([RunPoint {
         len: 0,
         prev: start,
@@ -65,7 +64,7 @@ pub fn paint_run_lengths(monitor: solve::SolverMonitor) {
     painter(&lk.maze, &map);
 }
 
-pub fn animate_run_lengths(monitor: solve::SolverMonitor, speed: speed::Speed) {
+pub fn animate_run_lengths(monitor: monitor::SolverMonitor, speed: speed::Speed) {
     if monitor
         .lock()
         .unwrap_or_else(|_| print::maze_panic!("Thread panicked"))
@@ -158,7 +157,7 @@ pub fn animate_run_lengths(monitor: solve::SolverMonitor, speed: speed::Speed) {
     }
 }
 
-fn animate_mini_run_lengths(monitor: solve::SolverMonitor, speed: speed::Speed) {
+fn animate_mini_run_lengths(monitor: monitor::SolverMonitor, speed: speed::Speed) {
     let start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         let row_mid = lk.maze.row_size() / 2;
         let col_mid = lk.maze.col_size() / 2;
@@ -244,7 +243,7 @@ fn animate_mini_run_lengths(monitor: solve::SolverMonitor, speed: speed::Speed) 
 
 // Private Helper Functions-----------------------------------------------------------------------
 
-fn painter(maze: &maze::Maze, map: &solve::MaxMap) {
+fn painter(maze: &maze::Maze, map: &monitor::MaxMap) {
     let mut rng = thread_rng();
     let rand_color_choice: usize = rng.gen_range(0..3);
     if maze.style_index() == (maze::MazeStyle::Mini as usize) {
@@ -326,7 +325,7 @@ fn painter(maze: &maze::Maze, map: &solve::MaxMap) {
 }
 
 fn painter_animated(
-    monitor: solve::SolverMonitor,
+    monitor: monitor::SolverMonitor,
     guide: rgb::ThreadGuide,
     animation: rgb::SpeedUnit,
 ) {
@@ -379,7 +378,7 @@ fn painter_animated(
 }
 
 fn painter_mini_animated(
-    monitor: solve::SolverMonitor,
+    monitor: monitor::SolverMonitor,
     guide: rgb::ThreadGuide,
     animation: rgb::SpeedUnit,
 ) {
