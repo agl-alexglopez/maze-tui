@@ -57,25 +57,14 @@ pub fn hunt_deltas(monitor: monitor::SolverReceiver, done: Sender<bool>, step: R
         done.send(true).expect("solver sender disconnected.");
     }
 
-    let mut cur = 0;
-    'path: loop {
-        if step.recv().is_ok() {
-            if monitor.exit() {
-                break 'path;
-            }
-            if let Ok(mut lk) = monitor.solver.lock() {
-                if cur != lk.win_path.len() {
-                    let p = lk.win_path[cur];
-                    lk.maze[p.0.row as usize][p.0.col as usize] &= !solve::THREAD_MASK;
-                    lk.maze[p.0.row as usize][p.0.col as usize] |= p.1;
-                    cur += 1;
-                    continue 'path;
-                }
-                break 'path;
-            } else {
-                print::maze_panic!("Thread panicked with the lock!");
-            }
+    if let Ok(mut lk) = monitor.solver.lock() {
+        for i in 0..lk.win_path.len() {
+            let p = lk.win_path[i];
+            lk.maze[p.0.row as usize][p.0.col as usize] &= !solve::THREAD_MASK;
+            lk.maze[p.0.row as usize][p.0.col as usize] |= p.1;
         }
+    } else {
+        print::maze_panic!("Thread panicked with the lock!");
     }
     done.send(true).expect("solver sender disconnected.");
 }

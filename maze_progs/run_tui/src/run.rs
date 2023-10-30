@@ -217,19 +217,22 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
         }
         select! {
             recv(ticker) -> _ => {
-                for _ in 0..solve::NUM_THREADS {
-                    wait_for_solvers.send(true).expect("Sending to solver disconnect");
+                for _ in 0..solve::NUM_THREADS - patient_solver_waiter.len() {
+                    let _ = wait_for_solvers.try_send(true);
                 }
                 if let Ok(lk) = maze.solver.lock() {
                     tui.render_solver_frame(&lk.maze, &render_space)?;
                 }
             }
             default() => {
+                if let Ok(lk) = maze.solver.lock() {
+                    tui.render_solver_frame(&lk.maze, &render_space)?;
+                }
                 match tui.events.try_next() {
                     Some(_) => {
                         impatient_user.send(true).expect("Failed to kill builder");
                         for _ in 0..solve::NUM_THREADS + 1 {
-                            wait_for_solvers.send(true).expect("Sending to solver disconnect");
+                            let _ = wait_for_solvers.try_send(true);
                         }
                         quit_early = true;
                         break 'solving;
