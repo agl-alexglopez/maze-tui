@@ -262,6 +262,7 @@ dependencies = [
 name = "monitor"
 version = "0.1.0"
 dependencies = [
+ "crossbeam-channel",
  "maze",
 ]
 
@@ -503,12 +504,14 @@ name = "solvers"
 version = "0.1.0"
 dependencies = [
  "builders",
+ "crossbeam-channel",
  "crossterm 0.26.1",
  "key",
  "maze",
  "monitor",
  "print",
  "rand",
+ "ratatui",
  "speed",
 ]
 

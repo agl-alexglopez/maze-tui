@@ -20,6 +20,7 @@ use ratatui::{
 use solvers::solve;
 use tui_textarea::{Input, TextArea};
 
+use std::rc::Rc;
 use std::{
     thread,
     time::{Duration, Instant},
@@ -31,11 +32,15 @@ pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBacken
 pub type Err = Box<dyn std::error::Error>;
 pub type Result<T> = std::result::Result<T, Err>;
 
-pub struct MazeFrame<'a> {
+pub struct BuildFrame<'a> {
     maze: &'a maze::Maze,
 }
 
-impl<'a> MazeFrame<'a> {
+pub struct SolveFrame<'a> {
+    maze: &'a maze::Maze,
+}
+
+impl<'a> BuildFrame<'a> {
     fn new(m: &'a maze::Maze) -> Self {
         Self { maze: m }
     }
@@ -47,11 +52,33 @@ impl<'a> MazeFrame<'a> {
     }
 }
 
-impl<'a> Widget for MazeFrame<'a> {
+impl<'a> SolveFrame<'a> {
+    fn new(m: &'a maze::Maze) -> Self {
+        Self { maze: m }
+    }
+    fn row_size(&self) -> i32 {
+        self.maze.row_size()
+    }
+    fn col_size(&self) -> i32 {
+        self.maze.col_size()
+    }
+}
+
+impl<'a> Widget for BuildFrame<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         for r in 0..self.row_size() {
             for c in 0..self.col_size() {
                 build::update_buffer(&self.maze, &area, buf, maze::Point { row: r, col: c });
+            }
+        }
+    }
+}
+
+impl<'a> Widget for SolveFrame<'a> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        for r in 0..self.row_size() {
+            for c in 0..self.col_size() {
+                solve::update_buffer(&self.maze, &area, buf, maze::Point { row: r, col: c });
             }
         }
     }
@@ -173,13 +200,13 @@ impl<'a> Tui<'a> {
         }
     }
 
-    pub fn inner_maze_rect(&mut self) -> Rect {
+    pub fn inner_maze_rect(&mut self) -> Rc<[Rect]> {
         let f = self.terminal.get_frame();
         let overall_layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![Constraint::Percentage(90), Constraint::Percentage(10)])
             .split(f.size());
-        overall_layout[0]
+        overall_layout
     }
 
     /// Resets the terminal interface.
@@ -243,9 +270,70 @@ impl<'a> Tui<'a> {
         self.cmd.input(input)
     }
 
-    pub fn render_builder_frame(&mut self, maze: &maze::Maze, rect: Rect) -> Result<()> {
+    pub fn render_builder_frame(&mut self, maze: &maze::Maze, rect: &Rc<[Rect]>) -> Result<()> {
+        let popup_layout_v = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage((100 - 17) / 2),
+                Constraint::Min(3),
+                Constraint::Percentage((100 - 17) / 2),
+            ])
+            .split(rect[1]);
+        let popup_layout_h = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage((100 - 50) / 2),
+                Constraint::Percentage(50),
+                Constraint::Percentage((100 - 50) / 2),
+            ])
+            .split(popup_layout_v[1])[1];
+        let popup_instructions = Paragraph::new("Toggle <i> for more <i>nfo. Exit <esc>.")
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Double)
+                    .border_style(Style::new().fg(Color::Yellow))
+                    .style(Style::default().bg(Color::Black)),
+            )
+            .wrap(Wrap { trim: true })
+            .alignment(Alignment::Center);
         self.terminal.draw(|f| {
-            f.render_widget(MazeFrame::new(&maze), rect);
+            f.render_widget(BuildFrame::new(&maze), rect[0]);
+            f.render_widget(popup_instructions, popup_layout_h);
+        })?;
+        Ok(())
+    }
+
+    pub fn render_solver_frame(&mut self, maze: &maze::Maze, rect: &Rc<[Rect]>) -> Result<()> {
+        let popup_layout_v = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage((100 - 15) / 2),
+                Constraint::Min(3),
+                Constraint::Percentage((100 - 15) / 2),
+            ])
+            .split(rect[1]);
+        let popup_layout_h = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage((100 - 50) / 2),
+                Constraint::Percentage(50),
+                Constraint::Percentage((100 - 50) / 2),
+            ])
+            .split(popup_layout_v[1])[1];
+        let popup_instructions = Paragraph::new("Toggle <i> for more <i>nfo. Exit <esc>.")
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Double)
+                    .border_style(Style::new().fg(Color::Yellow))
+                    .style(Style::default().bg(Color::Black)),
+            )
+            .wrap(Wrap { trim: true })
+            .alignment(Alignment::Center);
+        self.terminal.draw(|f| {
+            f.render_widget(SolveFrame::new(&maze), rect[0]);
+            f.render_widget(popup_instructions, popup_layout_h);
         })?;
         Ok(())
     }

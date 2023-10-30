@@ -3,11 +3,82 @@ use maze;
 use print;
 use speed;
 
+use crossbeam_channel::{Receiver, Sender};
 use rand::prelude::*;
 use std::collections::{HashMap, VecDeque};
 use std::{thread, time};
 
 // Public Solver Functions-------------------------------------------------------------------------
+
+pub fn hunt_deltas(monitor: monitor::SolverReceiver, done: Sender<bool>, step: Receiver<bool>) {
+    if monitor.exit() {
+        return;
+    }
+    let all_start: maze::Point = if let Ok(mut lk) = monitor.solver.lock() {
+        let start = solve::pick_random_point(&lk.maze);
+        lk.maze[start.row as usize][start.col as usize] |= solve::START_BIT;
+        let finish: maze::Point = solve::pick_random_point(&lk.maze);
+        lk.maze[finish.row as usize][finish.col as usize] |= solve::FINISH_BIT;
+        start
+    } else {
+        print::maze_panic!("Thread panic.");
+    };
+
+    let mut handles = Vec::with_capacity(solve::NUM_THREADS - 1);
+    for (i_thread, &mask) in solve::THREAD_MASKS.iter().skip(1).enumerate() {
+        let monitor_clone = monitor.clone();
+        let stepper = step.clone();
+        handles.push(thread::spawn(move || {
+            hunter_delta(
+                monitor_clone,
+                solve::ThreadGuide {
+                    index: i_thread + 1,
+                    paint: mask,
+                    start: all_start,
+                    speed: 0,
+                },
+                stepper,
+            );
+        }));
+    }
+    hunter_delta(
+        monitor.clone(),
+        solve::ThreadGuide {
+            index: 0,
+            paint: solve::THREAD_MASKS[0],
+            start: all_start,
+            speed: 0,
+        },
+        step.clone(),
+    );
+
+    for handle in handles {
+        handle.join().unwrap();
+        done.send(true).expect("solver sender disconnected.");
+    }
+
+    let mut cur = 0;
+    'path: loop {
+        if step.recv().is_ok() {
+            if monitor.exit() {
+                break 'path;
+            }
+            if let Ok(mut lk) = monitor.solver.lock() {
+                if cur != lk.win_path.len() {
+                    let p = lk.win_path[cur];
+                    lk.maze[p.0.row as usize][p.0.col as usize] &= !solve::THREAD_MASK;
+                    lk.maze[p.0.row as usize][p.0.col as usize] |= p.1;
+                    cur += 1;
+                    continue 'path;
+                }
+                break 'path;
+            } else {
+                print::maze_panic!("Thread panicked with the lock!");
+            }
+        }
+    }
+    done.send(true).expect("solver sender disconnected.");
+}
 
 pub fn hunt(monitor: monitor::SolverMonitor) {
     let all_start: maze::Point = if let Ok(mut lk) = monitor.lock() {
@@ -578,6 +649,61 @@ fn animate_mini_corner(monitor: monitor::SolverMonitor, speed: speed::Speed) {
 }
 
 // Dispatch Functions for each Thread--------------------------------------------------------------
+
+fn hunter_delta(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide, step: Receiver<bool>) {
+    let mut parents = HashMap::from([(guide.start, maze::Point { row: -1, col: -1 })]);
+    let mut bfs: VecDeque<maze::Point> = VecDeque::from([guide.start]);
+    while let Some(mut cur) = bfs.pop_front() {
+        match step.recv() {
+            Ok(_) => {
+                if monitor.exit() {
+                    return;
+                }
+                if let Ok(mut lk) = monitor.solver.lock() {
+                    if lk.win.is_some() {
+                        return;
+                    }
+                    if (lk.maze[cur.row as usize][cur.col as usize] & solve::FINISH_BIT) != 0 {
+                        lk.maze[cur.row as usize][cur.col as usize] |= guide.paint;
+                        lk.win.get_or_insert(guide.index);
+                        while cur.row > 0 {
+                            lk.win_path.push((cur, guide.paint));
+                            cur = match parents.get(&cur) {
+                                Some(parent) => *parent,
+                                None => print::maze_panic!("Bfs could not find parent."),
+                            };
+                        }
+                        return;
+                    }
+                    lk.maze[cur.row as usize][cur.col as usize] |= guide.paint;
+                } else {
+                    print::maze_panic!("Thread panicked!");
+                }
+
+                let mut i = guide.index;
+                for _ in 0..solve::NUM_DIRECTIONS {
+                    let p = &maze::CARDINAL_DIRECTIONS[i];
+                    let next = maze::Point {
+                        row: cur.row + p.row,
+                        col: cur.col + p.col,
+                    };
+                    if match monitor.solver.lock() {
+                        Err(p) => print::maze_panic!("Thread panicked: {}", p),
+                        Ok(lk) => {
+                            (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0
+                        }
+                    } && !parents.contains_key(&next)
+                    {
+                        parents.insert(next, cur);
+                        bfs.push_back(next);
+                    }
+                    i = (i + 1) % solve::NUM_DIRECTIONS;
+                }
+            }
+            Err(_) => print::maze_panic!("solver thread receiver disconnected"),
+        }
+    }
+}
 
 fn hunter(monitor: monitor::SolverMonitor, guide: solve::ThreadGuide) {
     let mut parents = HashMap::from([(guide.start, maze::Point { row: -1, col: -1 })]);
