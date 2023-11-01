@@ -9,7 +9,7 @@ use maze;
 use print::maze_panic;
 use rand::prelude::*;
 use ratatui::{
-    buffer::Buffer,
+    buffer::{Buffer, Cell},
     prelude::Rect,
     style::{Color as RatColor, Modifier, Style},
 };
@@ -118,50 +118,61 @@ pub fn print_paths(maze: &maze::Maze) {
     print::flush();
 }
 
-pub fn update_buffer(maze: &maze::Maze, area: &Rect, buf: &mut Buffer, p: maze::Point) {
-    let square = maze[p.row as usize][p.col as usize];
-    let x = area.left() + p.col as u16;
-    let y = area.top() + p.row as u16;
+pub fn decode_square(maze: &maze::Maze, square: maze::Square) -> Cell {
     // We have some special printing for the finish square. Not here.
     if (square & FINISH_BIT) != 0 {
         let ansi = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
-        buf.get_mut(x, y).set_char('F').set_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .add_modifier(Modifier::SLOW_BLINK)
-                .fg(RatColor::Indexed(key::ANSI_CYN))
-                .bg(RatColor::Indexed(ansi)),
-        );
-        return;
-    }
-    if (square & START_BIT) != 0 {
-        buf.get_mut(x, y).set_char('S').set_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .fg(RatColor::Indexed(key::ANSI_CYN)),
-        );
-        return;
-    }
-    if (square & THREAD_MASK) != 0 {
+        Cell {
+            symbol: 'F'.to_string(),
+            fg: RatColor::Indexed(key::ANSI_CYN),
+            bg: RatColor::Indexed(ansi),
+            underline_color: RatColor::Reset,
+            modifier: Modifier::BOLD | Modifier::SLOW_BLINK,
+            skip: false,
+        }
+    } else if (square & START_BIT) != 0 {
+        Cell {
+            symbol: 'S'.to_string(),
+            fg: RatColor::Indexed(key::ANSI_CYN),
+            bg: RatColor::Reset,
+            underline_color: RatColor::Reset,
+            modifier: Modifier::BOLD,
+            skip: false,
+        }
+    } else if (square & THREAD_MASK) != 0 {
         let thread_color: key::ThreadColor =
             key::thread_color(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
-        buf.get_mut(x, y).set_char(thread_color.block).set_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .fg(RatColor::Indexed(thread_color.ansi)),
-        );
-        return;
+        Cell {
+            symbol: thread_color.block.to_string(),
+            fg: RatColor::Indexed(thread_color.ansi),
+            bg: RatColor::Reset,
+            underline_color: RatColor::Reset,
+            modifier: Modifier::BOLD,
+            skip: false,
+        }
+    } else if (square & maze::PATH_BIT) == 0 {
+        Cell {
+            symbol: maze
+                .wall_char((square & maze::WALL_MASK) as usize)
+                .to_string(),
+            fg: RatColor::Reset,
+            bg: RatColor::Reset,
+            underline_color: RatColor::Reset,
+            modifier: Modifier::empty(),
+            skip: false,
+        }
+    } else if (square & maze::PATH_BIT) != 0 {
+        Cell {
+            symbol: ' '.to_string(),
+            fg: RatColor::Reset,
+            bg: RatColor::Reset,
+            underline_color: RatColor::Reset,
+            modifier: Modifier::empty(),
+            skip: false,
+        }
+    } else {
+        maze_panic!("Uncategorized maze square! Check the bits.");
     }
-    if (square & maze::PATH_BIT) == 0 {
-        buf.get_mut(x, y)
-            .set_char(maze.wall_char((square & maze::WALL_MASK) as usize));
-        return;
-    }
-    if (square & maze::PATH_BIT) != 0 {
-        buf.get_mut(x, y).set_char(' ');
-        return;
-    }
-    maze_panic!("Uncategorized maze square! Check the bits.");
 }
 
 pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {

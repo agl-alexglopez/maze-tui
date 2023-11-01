@@ -67,7 +67,10 @@ impl<'a> Widget for BuildFrame<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         for r in 0..self.row_size() {
             for c in 0..self.col_size() {
-                build::update_buffer(self.maze, &area, buf, maze::Point { row: r, col: c });
+                let square = self.maze[r as usize][c as usize];
+                let x = area.left() + c as u16;
+                let y = area.top() + r as u16;
+                *buf.get_mut(x, y) = build::decode_square(self.maze, square);
             }
         }
     }
@@ -77,7 +80,10 @@ impl<'a> Widget for SolveFrame<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         for r in 0..self.row_size() {
             for c in 0..self.col_size() {
-                solve::update_buffer(self.maze, &area, buf, maze::Point { row: r, col: c });
+                let square = self.maze[r as usize][c as usize];
+                let x = area.left() + c as u16;
+                let y = area.top() + r as u16;
+                *buf.get_mut(x, y) = solve::decode_square(self.maze, square);
             }
         }
     }

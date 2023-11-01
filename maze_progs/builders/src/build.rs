@@ -9,7 +9,7 @@ use maze;
 use print;
 use print::maze_panic;
 use ratatui::{
-    buffer::Buffer,
+    buffer::Cell,
     prelude::Rect,
     style::{Color as RatColor, Modifier, Style},
 };
@@ -1026,23 +1026,37 @@ pub fn print_overlap_key_animated(maze: &maze::Maze) {
 
 // Terminal Printing Helpers
 
-pub fn update_buffer(maze: &maze::Maze, area: &Rect, buf: &mut Buffer, p: maze::Point) {
-    let square = maze[p.row as usize][p.col as usize];
-    let x = area.left() + p.col as u16;
-    let y = area.top() + p.row as u16;
+pub fn decode_square(maze: &maze::Maze, square: maze::Square) -> Cell {
     if square & MARKERS_MASK != 0 {
         let mark = BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize];
-        buf.get_mut(x, y).set_char(mark.arrow).set_style(
-            Style::default()
-                .fg(RatColor::Indexed(ANSI_WHITE))
-                .bg(RatColor::Indexed(mark.ansi))
-                .add_modifier(Modifier::BOLD),
-        );
+        Cell {
+            symbol: mark.arrow.to_string(),
+            fg: RatColor::Indexed(ANSI_WHITE),
+            bg: RatColor::Indexed(mark.ansi),
+            underline_color: RatColor::Reset,
+            modifier: Modifier::BOLD,
+            skip: false,
+        }
     } else if square & maze::PATH_BIT == 0 {
-        buf.get_mut(x, y)
-            .set_char(maze.wall_char((square & maze::WALL_MASK) as usize));
+        Cell {
+            symbol: maze
+                .wall_char((square & maze::WALL_MASK) as usize)
+                .to_string(),
+            fg: RatColor::Reset,
+            bg: RatColor::Reset,
+            underline_color: RatColor::Reset,
+            modifier: Modifier::empty(),
+            skip: false,
+        }
     } else if square & maze::PATH_BIT != 0 {
-        buf.get_mut(x, y).set_char(' ');
+        Cell {
+            symbol: ' '.to_string(),
+            fg: RatColor::Reset,
+            bg: RatColor::Reset,
+            underline_color: RatColor::Reset,
+            modifier: Modifier::empty(),
+            skip: false,
+        }
     } else {
         print::maze_panic!("Printed a maze square without a category.");
     }
