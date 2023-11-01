@@ -1,5 +1,3 @@
-use maze;
-
 use crossbeam_channel::Receiver;
 use std::{
     collections::HashMap,

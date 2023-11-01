@@ -80,6 +80,124 @@ pub struct MazeArgs {
     pub style: MazeStyle,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Delta {
+    pub p: Point,
+    pub before: Square,
+    pub after: Square,
+    pub burst: usize,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct Tape {
+    steps: Vec<Delta>,
+    i: usize,
+}
+
+impl Tape {
+    pub fn is_empty(&self) -> bool {
+        self.steps.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.steps.len()
+    }
+
+    pub fn cur_step(&self) -> Option<&[Delta]> {
+        if self.steps.is_empty() {
+            return None;
+        }
+        Some(&self.steps[self.i..self.i + self.steps[self.i].burst])
+    }
+
+    pub fn cur_index(&self) -> Option<usize> {
+        if self.steps.is_empty() {
+            return None;
+        }
+        Some(self.i)
+    }
+
+    pub fn peek_next_index(&self) -> Option<usize> {
+        if self.steps.is_empty() || self.i + self.steps[self.i].burst >= self.steps.len() {
+            return None;
+        }
+        Some(self.i + self.steps[self.i].burst)
+    }
+
+    pub fn peek_prev_index(&self) -> Option<usize> {
+        if self.steps.is_empty()
+            || self.i == 0
+            || self.i.overflowing_sub(self.i - self.steps[self.i].burst).1
+        {
+            return None;
+        }
+        Some(self.i - self.steps[self.i].burst)
+    }
+
+    pub fn peek_next(&self) -> Option<&[Delta]> {
+        if self.i + self.steps[self.i].burst >= self.steps.len() {
+            return None;
+        }
+        Some(&self.steps[self.i..self.i + self.steps[self.i].burst])
+    }
+
+    pub fn peek_prev(&self) -> Option<&[Delta]> {
+        if self.i == 0 || self.i.overflowing_sub(self.i - self.steps[self.i].burst).1 {
+            return None;
+        }
+        Some(&self.steps[self.i..self.i - self.steps[self.i].burst])
+    }
+
+    pub fn get_next(&mut self) -> Option<&[Delta]> {
+        if self.steps.is_empty() || self.i + self.steps[self.i].burst >= self.steps.len() {
+            return None;
+        }
+        self.i += self.steps[self.i].burst;
+        Some(&self.steps[self.i..self.i + self.steps[self.i].burst])
+    }
+
+    pub fn get_prev(&mut self) -> Option<&[Delta]> {
+        if self.i == 0 || self.i.overflowing_sub(self.i - self.steps[self.i].burst).1 {
+            return None;
+        }
+        self.i -= self.steps[self.i].burst;
+        Some(&self.steps[self.i..self.i - self.steps[self.i].burst])
+    }
+
+    pub fn step_next_index(&mut self) -> usize {
+        if let Some(i) = self.peek_next_index() {
+            self.i = i;
+        }
+        self.i
+    }
+
+    pub fn step_prev(&mut self) -> usize {
+        if let Some(i) = self.peek_prev_index() {
+            self.i = i;
+        }
+        self.i
+    }
+
+    pub fn push_burst(&mut self, steps: &[Delta]) {
+        if steps.is_empty()
+            || steps[0].burst != steps.len()
+            || steps[steps.len() - 1].burst != steps.len()
+        {
+            panic!("ill formed burst input");
+        }
+        for s in steps.iter() {
+            self.steps.push(*s);
+        }
+    }
+
+    pub fn push(&mut self, s: Delta) {
+        if s.burst != 1 {
+            panic!("single delta has burst length of {}", s.burst);
+        }
+        self.steps.push(s);
+    }
+}
+
 // Model a ROWxCOLUMN maze in a flat Vec. Implement tricky indexing in Index impls.
 #[derive(Debug, Clone)]
 pub struct Maze {
@@ -89,6 +207,8 @@ pub struct Maze {
     offset: Offset,
     wall_style_index: usize,
     receiver: Option<Receiver<bool>>,
+    pub build_history: Tape,
+    pub solve_history: Tape,
 }
 
 // Core Maze Object Implementation
@@ -108,6 +228,8 @@ impl Maze {
             offset: args.offset,
             wall_style_index: args.style as usize,
             receiver: None,
+            build_history: Tape::default(),
+            solve_history: Tape::default(),
         }
     }
 
@@ -121,6 +243,8 @@ impl Maze {
             offset: args.offset,
             wall_style_index: args.style as usize,
             receiver: Some(rec),
+            build_history: Tape::default(),
+            solve_history: Tape::default(),
         }
     }
 
@@ -179,6 +303,19 @@ impl Default for MazeArgs {
             style: MazeStyle::Sharp,
             offset: Offset::default(),
         }
+    }
+}
+
+impl Index<usize> for Tape {
+    type Output = Delta;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.steps[index]
+    }
+}
+
+impl IndexMut<usize> for Tape {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.steps[index]
     }
 }
 

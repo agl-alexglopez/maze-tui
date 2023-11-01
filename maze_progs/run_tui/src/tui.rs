@@ -1,4 +1,3 @@
-use builders;
 use builders::build;
 use crossbeam_channel::{self, unbounded};
 use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyEvent};
@@ -68,7 +67,7 @@ impl<'a> Widget for BuildFrame<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         for r in 0..self.row_size() {
             for c in 0..self.col_size() {
-                build::update_buffer(&self.maze, &area, buf, maze::Point { row: r, col: c });
+                build::update_buffer(self.maze, &area, buf, maze::Point { row: r, col: c });
             }
         }
     }
@@ -78,7 +77,7 @@ impl<'a> Widget for SolveFrame<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         for r in 0..self.row_size() {
             for c in 0..self.col_size() {
-                solve::update_buffer(&self.maze, &area, buf, maze::Point { row: r, col: c });
+                solve::update_buffer(self.maze, &area, buf, maze::Point { row: r, col: c });
             }
         }
     }
@@ -113,18 +112,10 @@ pub struct Dimension {
     pub offset: maze::Offset,
 }
 
+#[derive(Default)]
 pub struct Scroller {
     pub state: ScrollbarState,
     pub pos: usize,
-}
-
-impl Default for Scroller {
-    fn default() -> Self {
-        Scroller {
-            state: ScrollbarState::default(),
-            pos: 0,
-        }
-    }
 }
 
 impl Scroller {
@@ -202,11 +193,10 @@ impl<'a> Tui<'a> {
 
     pub fn inner_maze_rect(&mut self) -> Rc<[Rect]> {
         let f = self.terminal.get_frame();
-        let overall_layout = Layout::default()
+        Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![Constraint::Percentage(90), Constraint::Percentage(10)])
-            .split(f.size());
-        overall_layout
+            .split(f.size())
     }
 
     /// Resets the terminal interface.
@@ -270,7 +260,12 @@ impl<'a> Tui<'a> {
         self.cmd.input(input)
     }
 
-    pub fn render_builder_frame(&mut self, maze: &maze::Maze, rect: &Rc<[Rect]>) -> Result<()> {
+    pub fn render_builder_frame(
+        &mut self,
+        maze: &maze::Maze,
+        replay_maze: &mut maze::Maze,
+        rect: &Rc<[Rect]>,
+    ) -> Result<()> {
         let popup_layout_v = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -297,8 +292,13 @@ impl<'a> Tui<'a> {
             )
             .wrap(Wrap { trim: true })
             .alignment(Alignment::Center);
+        if let Some(history) = maze.build_history.cur_step() {
+            for delta in history {
+                replay_maze[delta.p.row as usize][delta.p.col as usize] = delta.after;
+            }
+        }
         self.terminal.draw(|f| {
-            f.render_widget(BuildFrame::new(&maze), rect[0]);
+            f.render_widget(BuildFrame::new(replay_maze), rect[0]);
             f.render_widget(popup_instructions, popup_layout_h);
         })?;
         Ok(())
@@ -332,7 +332,7 @@ impl<'a> Tui<'a> {
             .wrap(Wrap { trim: true })
             .alignment(Alignment::Center);
         self.terminal.draw(|f| {
-            f.render_widget(SolveFrame::new(&maze), rect[0]);
+            f.render_widget(SolveFrame::new(maze), rect[0]);
             f.render_widget(popup_instructions, popup_layout_h);
         })?;
         Ok(())

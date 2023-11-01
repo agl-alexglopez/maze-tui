@@ -11,6 +11,7 @@ use ratatui::{
 use solvers::solve;
 use std::error;
 use std::fmt;
+use std::time::Instant;
 use std::{thread, time::Duration};
 use tui_textarea::{Input, Key};
 
@@ -165,42 +166,33 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
     tui.terminal.clear()?;
     //let t_start = Instant::now();
     let render_space = tui.inner_maze_rect();
-    let (finished_worker, patient_user) = bounded::<bool>(1);
-    let (impatient_user, slow_worker) = bounded::<bool>(1);
-    let (wait_for_builder, builder) = bounded::<bool>(1);
-    let ticker = tick(Duration::from_millis(10));
-    let maze = monitor::SolverReceiver::new(maze::Maze::new(this_run.args), slow_worker);
-    let mut quit_early = false;
-    let mc = maze.clone();
-    let solver_mc = maze.clone();
-    let (wait_for_solvers, solvers) = bounded::<bool>(solve::NUM_THREADS);
-    let (finished_solvers, patient_solver_waiter) = bounded::<bool>(solve::NUM_THREADS);
-    let worker_thread = thread::spawn(move || {
-        builders::recursive_backtracker::generate_deltas(mc, builder, finished_worker);
-        solvers::bfs::hunt_deltas(solver_mc, finished_solvers, solvers);
-    });
-    'building: loop {
-        if patient_user.is_full() {
-            break 'building;
+    let maze = monitor::Solver::new(maze::Maze::new(this_run.args));
+    let mut replay_copy = match maze.lock() {
+        Ok(mut lk) => {
+            let mut maze_copy = lk.maze.clone();
+            build::fill_maze_with_walls(&mut lk.maze);
+            build::fill_maze_with_walls(&mut maze_copy);
+            maze_copy
         }
-        select! {
-            recv(ticker) -> _ => {
-                wait_for_builder.send(true).expect("Sending to worker blocked");
-                if let Ok(lk) = maze.solver.lock() {
-                    tui.render_builder_frame(&lk.maze, &render_space)?;
+        Err(_) => print::maze_panic!("Could not obtain lock."),
+    };
+    builders::recursive_backtracker::generate_history(maze.clone());
+    let mut quit_early = false;
+    let frame_time = Duration::from_millis(5);
+    let mut last_render = Instant::now();
+    'building: loop {
+        let now = Instant::now();
+        if now - last_render >= frame_time {
+            if let Ok(mut lk) = maze.lock() {
+                tui.render_builder_frame(&lk.maze, &mut replay_copy, &render_space)?;
+                if lk.maze.build_history.get_next().is_none() {
+                    break 'building;
                 }
             }
-            default() => {
-                match tui.events.try_next() {
-                    Some(_) => {
-                        impatient_user.send(true).expect("Failed to kill builder");
-                        wait_for_builder.send(true).expect("Step to quit message failed.");
-                        quit_early = true;
-                        break 'building;
-                    }
-                    None => {},
-                }
-            }
+            last_render = now;
+        } else if tui.events.try_next().is_some() {
+            quit_early = true;
+            break 'building;
         }
         // if let Some((_, animated_mod)) = this_run.modify {
         //     animated_mod(&mut lk.maze, this_run.build_speed);
@@ -208,61 +200,19 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
         // this_run.solve.1(maze.clone(), this_run.solve_speed);
     }
     if quit_early {
-        worker_thread.join().expect("Joining thread failed.");
         return Ok(());
     }
-    'solving: loop {
-        if patient_solver_waiter.is_full() {
-            break 'solving;
-        }
-        select! {
-            recv(ticker) -> _ => {
-                for _ in 0..solve::NUM_THREADS - patient_solver_waiter.len() {
-                    let _ = wait_for_solvers.try_send(true);
-                }
-                if let Ok(lk) = maze.solver.lock() {
-                    tui.render_solver_frame(&lk.maze, &render_space)?;
-                }
-            }
-            default() => {
-                if let Ok(lk) = maze.solver.lock() {
-                    tui.render_solver_frame(&lk.maze, &render_space)?;
-                }
-                match tui.events.try_next() {
-                    Some(_) => {
-                        impatient_user.send(true).expect("Failed to kill builder");
-                        for _ in 0..solve::NUM_THREADS + 1 {
-                            let _ = wait_for_solvers.try_send(true);
-                        }
-                        quit_early = true;
-                        break 'solving;
-                    }
-                    None => {},
-                }
-            }
-        }
-    }
-    worker_thread.join().expect("Joining thread failed.");
-    if quit_early {
-        return Ok(());
-    }
-    let maze_lk = match maze.solver.lock() {
+    let maze_lk = match maze.lock() {
         Ok(lk) => lk,
         Err(_) => print::maze_panic!("Lock lost."),
     };
     'waiting: loop {
-        select! {
-            recv(ticker) -> _ => {
-                tui.render_solver_frame(&maze_lk.maze, &render_space)?;
-            }
-            default() => {
-                match tui.events.try_next() {
-                    Some(_) => {
-                        break 'waiting;
-                    }
-                    None => {},
-                }
-            }
+        let now = Instant::now();
+        if now - last_render >= frame_time {
+            tui.render_builder_frame(&maze_lk.maze, &mut replay_copy, &render_space)?;
+            last_render = now;
+        } else if tui.events.try_next().is_some() {
+            break 'waiting;
         }
     }
     Ok(())
