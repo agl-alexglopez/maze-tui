@@ -183,7 +183,7 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
         Ok(l) => l,
         Err(_) => print::maze_panic!("rendering cannot progress without lock"),
     };
-    let frame_time = Duration::from_millis(1);
+    let frame_time = Duration::from_micros(50);
     let mut last_render = Instant::now();
     let mut play_forward = true;
     'rendering: loop {
@@ -194,6 +194,9 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
                 &mut replay_copy,
                 &render_space,
             )?;
+            if tui.events.try_next().is_some() {
+                break 'rendering;
+            }
             let now = Instant::now();
             if now - last_render >= frame_time {
                 if play_forward {
@@ -204,11 +207,8 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
                     play_forward = !playback.maze.build_history.move_tape_prev();
                 }
                 last_render = now;
-            } else if tui.events.try_next().is_some() {
-                break 'rendering;
             }
         }
-
         'solving: loop {
             tui.render_solver_frame(
                 play_forward,
@@ -216,6 +216,9 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
                 &mut replay_copy,
                 &render_space,
             )?;
+            if tui.events.try_next().is_some() {
+                break 'rendering;
+            }
             let now = Instant::now();
             if now - last_render >= frame_time {
                 if play_forward {
@@ -224,8 +227,6 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
                     break 'solving;
                 }
                 last_render = now;
-            } else if tui.events.try_next().is_some() {
-                break 'rendering;
             }
         }
     }
