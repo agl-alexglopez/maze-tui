@@ -177,21 +177,33 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
         Err(_) => print::maze_panic!("Could not obtain lock."),
     };
     builders::recursive_backtracker::generate_history(maze.clone());
-    let mut quit_early = false;
-    let frame_time = Duration::from_millis(5);
+    // let mut quit_early = false;
+    let mut playback = match maze.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("rendering cannot progress without lock"),
+    };
+    let frame_time = Duration::from_millis(10);
     let mut last_render = Instant::now();
+    let mut play_forward = true;
     'building: loop {
+        tui.render_builder_frame(
+            playback.maze.build_history.cur_step(),
+            &mut replay_copy,
+            play_forward,
+            &render_space,
+        )?;
         let now = Instant::now();
         if now - last_render >= frame_time {
-            if let Ok(mut lk) = maze.lock() {
-                tui.render_builder_frame(&lk.maze, &mut replay_copy, &render_space)?;
-                if lk.maze.build_history.get_next().is_none() {
-                    break 'building;
+            if play_forward {
+                if playback.maze.build_history.get_next().is_none() {
+                    play_forward = false;
                 }
+            } else if playback.maze.build_history.get_prev().is_none() {
+                play_forward = true;
             }
             last_render = now;
         } else if tui.events.try_next().is_some() {
-            quit_early = true;
+            // quit_early = true;
             break 'building;
         }
         // if let Some((_, animated_mod)) = this_run.modify {
@@ -199,22 +211,22 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
         // }
         // this_run.solve.1(maze.clone(), this_run.solve_speed);
     }
-    if quit_early {
-        return Ok(());
-    }
-    let maze_lk = match maze.lock() {
-        Ok(lk) => lk,
-        Err(_) => print::maze_panic!("Lock lost."),
-    };
-    'waiting: loop {
-        let now = Instant::now();
-        if now - last_render >= frame_time {
-            tui.render_builder_frame(&maze_lk.maze, &mut replay_copy, &render_space)?;
-            last_render = now;
-        } else if tui.events.try_next().is_some() {
-            break 'waiting;
-        }
-    }
+    // if quit_early {
+    //     return Ok(());
+    // }
+    // let maze_lk = match maze.lock() {
+    //     Ok(lk) => lk,
+    //     Err(_) => print::maze_panic!("Lock lost."),
+    // };
+    // 'waiting: loop {
+    //     let now = Instant::now();
+    //     if now - last_render >= frame_time {
+    //         tui.render_builder_frame(&maze_lk.maze, &mut replay_copy, &render_space)?;
+    //         last_render = now;
+    //     } else if tui.events.try_next().is_some() {
+    //         break 'waiting;
+    //     }
+    // }
     Ok(())
 }
 

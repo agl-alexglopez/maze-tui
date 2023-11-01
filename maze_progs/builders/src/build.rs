@@ -428,17 +428,17 @@ pub fn carve_path_walls(maze: &mut maze::Maze, p: maze::Point) {
 pub fn carve_wall_history(maze: &mut maze::Maze, p: maze::Point, backtracking: BacktrackMarker) {
     let u_row = p.row as usize;
     let u_col = p.col as usize;
-    let mut wall_changes = Vec::new();
+    let mut wall_changes = [maze::Delta::default(); 5];
     let mut burst = 1;
-    wall_changes.push(maze::Delta {
+    wall_changes[0] = maze::Delta {
         p,
         before: maze[u_row][u_col],
         after: maze[u_row][u_col] | maze::PATH_BIT | BUILDER_BIT | backtracking,
         burst,
-    });
+    };
     maze[u_row][u_col] |= maze::PATH_BIT | BUILDER_BIT | backtracking;
     if p.row > 0 {
-        wall_changes.push(maze::Delta {
+        wall_changes[burst] = maze::Delta {
             p: maze::Point {
                 row: p.row - 1,
                 col: p.col,
@@ -446,12 +446,12 @@ pub fn carve_wall_history(maze: &mut maze::Maze, p: maze::Point, backtracking: B
             before: maze[u_row - 1][u_col],
             after: maze[u_row - 1][u_col] & !maze::SOUTH_WALL,
             burst: 1,
-        });
+        };
         burst += 1;
         maze[u_row - 1][u_col] &= !maze::SOUTH_WALL;
     }
     if p.row + 1 < maze.row_size() {
-        wall_changes.push(maze::Delta {
+        wall_changes[burst] = maze::Delta {
             p: maze::Point {
                 row: p.row + 1,
                 col: p.col,
@@ -459,12 +459,12 @@ pub fn carve_wall_history(maze: &mut maze::Maze, p: maze::Point, backtracking: B
             before: maze[u_row + 1][u_col],
             after: maze[u_row + 1][u_col] & !maze::NORTH_WALL,
             burst: 1,
-        });
+        };
         burst += 1;
         maze[u_row + 1][u_col] &= !maze::NORTH_WALL;
     }
     if p.col > 0 {
-        wall_changes.push(maze::Delta {
+        wall_changes[burst] = maze::Delta {
             p: maze::Point {
                 row: p.row,
                 col: p.col - 1,
@@ -472,12 +472,12 @@ pub fn carve_wall_history(maze: &mut maze::Maze, p: maze::Point, backtracking: B
             before: maze[u_row][u_col - 1],
             after: maze[u_row][u_col - 1] & !maze::EAST_WALL,
             burst: 1,
-        });
+        };
         burst += 1;
         maze[u_row][u_col - 1] &= !maze::EAST_WALL;
     }
     if p.col + 1 < maze.col_size() {
-        wall_changes.push(maze::Delta {
+        wall_changes[burst] = maze::Delta {
             p: maze::Point {
                 row: p.row,
                 col: p.col + 1,
@@ -485,16 +485,13 @@ pub fn carve_wall_history(maze: &mut maze::Maze, p: maze::Point, backtracking: B
             before: maze[u_row][u_col + 1],
             after: maze[u_row][u_col + 1] & !maze::WEST_WALL,
             burst: 1,
-        });
+        };
         burst += 1;
         maze[u_row][u_col + 1] &= !maze::WEST_WALL;
     }
     wall_changes[0].burst = burst;
-    wall_changes
-        .last_mut()
-        .expect("empty wall change burst not possible.")
-        .burst = burst;
-    maze.build_history.push_burst(wall_changes.as_slice());
+    wall_changes[burst - 1].burst = burst;
+    maze.build_history.push_burst(&wall_changes[0..burst]);
 }
 
 pub fn carve_path_walls_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUnit) {

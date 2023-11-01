@@ -80,7 +80,7 @@ pub struct MazeArgs {
     pub style: MazeStyle,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Delta {
     pub p: Point,
     pub before: Square,
@@ -142,10 +142,10 @@ impl Tape {
     }
 
     pub fn peek_prev(&self) -> Option<&[Delta]> {
-        if self.i == 0 || self.i.overflowing_sub(self.i - self.steps[self.i].burst).1 {
+        if self.i == 0 || self.i.overflowing_sub(self.steps[self.i].burst).1 {
             return None;
         }
-        Some(&self.steps[self.i..self.i - self.steps[self.i].burst])
+        Some(&self.steps[self.i - self.steps[self.i].burst..self.i])
     }
 
     pub fn get_next(&mut self) -> Option<&[Delta]> {
@@ -157,11 +157,12 @@ impl Tape {
     }
 
     pub fn get_prev(&mut self) -> Option<&[Delta]> {
-        if self.i == 0 || self.i.overflowing_sub(self.i - self.steps[self.i].burst).1 {
+        let (_, overflowed) = self.i.overflowing_sub(self.steps[self.i].burst);
+        if self.i == 0 || overflowed {
             return None;
         }
         self.i -= self.steps[self.i].burst;
-        Some(&self.steps[self.i..self.i - self.steps[self.i].burst])
+        Some(&self.steps[self.i..self.i + self.steps[self.i].burst])
     }
 
     pub fn step_next_index(&mut self) -> usize {
@@ -183,7 +184,7 @@ impl Tape {
             || steps[0].burst != steps.len()
             || steps[steps.len() - 1].burst != steps.len()
         {
-            panic!("ill formed burst input");
+            panic!("ill formed burst input burst, specified burst: {:?}", steps);
         }
         for s in steps.iter() {
             self.steps.push(*s);
