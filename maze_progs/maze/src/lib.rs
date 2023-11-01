@@ -110,45 +110,38 @@ impl Tape {
         Some(&self.steps[self.i..self.i + self.steps[self.i].burst])
     }
 
-    pub fn cur_index(&self) -> Option<usize> {
-        if self.steps.is_empty() {
-            return None;
-        }
-        Some(self.i)
-    }
-
-    pub fn peek_next_index(&self) -> Option<usize> {
+    fn peek_next_index(&self) -> usize {
         if self.steps.is_empty() || self.i + self.steps[self.i].burst >= self.steps.len() {
-            return None;
+            return self.i;
         }
-        Some(self.i + self.steps[self.i].burst)
+        self.i + self.steps[self.i].burst
     }
 
-    pub fn peek_prev_index(&self) -> Option<usize> {
+    fn peek_prev_index(&self) -> usize {
         if self.steps.is_empty()
             || self.i == 0
             || self.i.overflowing_sub(self.i - self.steps[self.i].burst).1
         {
-            return None;
+            return self.i;
         }
-        Some(self.i - self.steps[self.i].burst)
+        self.i - self.steps[self.i].burst
     }
 
-    pub fn peek_next(&self) -> Option<&[Delta]> {
+    pub fn peek_next_delta(&self) -> Option<&[Delta]> {
         if self.i + self.steps[self.i].burst >= self.steps.len() {
             return None;
         }
         Some(&self.steps[self.i..self.i + self.steps[self.i].burst])
     }
 
-    pub fn peek_prev(&self) -> Option<&[Delta]> {
+    pub fn peek_prev_delta(&self) -> Option<&[Delta]> {
         if self.i == 0 || self.i.overflowing_sub(self.steps[self.i].burst).1 {
             return None;
         }
         Some(&self.steps[self.i - self.steps[self.i].burst..self.i])
     }
 
-    pub fn get_next(&mut self) -> Option<&[Delta]> {
+    pub fn next_delta(&mut self) -> Option<&[Delta]> {
         if self.steps.is_empty() || self.i + self.steps[self.i].burst >= self.steps.len() {
             return None;
         }
@@ -156,27 +149,13 @@ impl Tape {
         Some(&self.steps[self.i..self.i + self.steps[self.i].burst])
     }
 
-    pub fn get_prev(&mut self) -> Option<&[Delta]> {
+    pub fn prev_delta(&mut self) -> Option<&[Delta]> {
         let (_, overflowed) = self.i.overflowing_sub(self.steps[self.i].burst);
         if self.i == 0 || overflowed {
             return None;
         }
         self.i -= self.steps[self.i].burst;
         Some(&self.steps[self.i..self.i + self.steps[self.i].burst])
-    }
-
-    pub fn step_next_index(&mut self) -> usize {
-        if let Some(i) = self.peek_next_index() {
-            self.i = i;
-        }
-        self.i
-    }
-
-    pub fn step_prev(&mut self) -> usize {
-        if let Some(i) = self.peek_prev_index() {
-            self.i = i;
-        }
-        self.i
     }
 
     pub fn push_burst(&mut self, steps: &[Delta]) {
@@ -196,6 +175,26 @@ impl Tape {
             panic!("single delta has burst length of {}", s.burst);
         }
         self.steps.push(s);
+    }
+
+    pub fn at_end(&self) -> bool {
+        self.i == self.peek_next_index()
+    }
+
+    pub fn at_start(&self) -> bool {
+        self.i == self.peek_prev_index()
+    }
+
+    pub fn move_tape_prev(&mut self) -> bool {
+        let prev = self.i;
+        self.i = self.peek_prev_index();
+        self.i != prev
+    }
+
+    pub fn move_tape_next(&mut self) -> bool {
+        let prev = self.i;
+        self.i = self.peek_next_index();
+        self.i != prev
     }
 }
 

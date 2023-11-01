@@ -177,32 +177,51 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
         Err(_) => print::maze_panic!("Could not obtain lock."),
     };
     builders::recursive_backtracker::generate_history(maze.clone());
+    solvers::bfs::hunt_history(maze.clone());
     // let mut quit_early = false;
     let mut playback = match maze.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("rendering cannot progress without lock"),
     };
-    let frame_time = Duration::from_millis(10);
+    let frame_time = Duration::from_millis(5);
     let mut last_render = Instant::now();
     let mut play_forward = true;
     'building: loop {
         tui.render_builder_frame(
+            play_forward,
             playback.maze.build_history.cur_step(),
             &mut replay_copy,
-            play_forward,
             &render_space,
         )?;
         let now = Instant::now();
         if now - last_render >= frame_time {
-            if play_forward {
-                play_forward = playback.maze.build_history.get_next().is_some();
-            } else {
-                play_forward = playback.maze.build_history.get_prev().is_none();
+            if !playback.maze.build_history.move_tape_next() {
+                break 'building;
             }
             last_render = now;
         } else if tui.events.try_next().is_some() {
             // quit_early = true;
             break 'building;
+        }
+    }
+    'solving: loop {
+        tui.render_solver_frame(
+            play_forward,
+            playback.maze.solve_history.cur_step(),
+            &mut replay_copy,
+            &render_space,
+        )?;
+        let now = Instant::now();
+        if now - last_render >= frame_time {
+            if play_forward {
+                play_forward = playback.maze.solve_history.move_tape_next();
+            } else {
+                play_forward = !playback.maze.solve_history.move_tape_prev();
+            }
+            last_render = now;
+        } else if tui.events.try_next().is_some() {
+            // quit_early = true;
+            break 'solving;
         }
     }
     Ok(())

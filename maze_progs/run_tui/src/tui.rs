@@ -262,9 +262,9 @@ impl<'a> Tui<'a> {
 
     pub fn render_builder_frame(
         &mut self,
+        forward: bool,
         step: Option<&[maze::Delta]>,
         replay_maze: &mut maze::Maze,
-        forward: bool,
         rect: &Rc<[Rect]>,
     ) -> Result<()> {
         let popup_layout_v = Layout::default()
@@ -311,7 +311,13 @@ impl<'a> Tui<'a> {
         Ok(())
     }
 
-    pub fn render_solver_frame(&mut self, maze: &maze::Maze, rect: &Rc<[Rect]>) -> Result<()> {
+    pub fn render_solver_frame(
+        &mut self,
+        forward: bool,
+        step: Option<&[maze::Delta]>,
+        replay_maze: &mut maze::Maze,
+        rect: &Rc<[Rect]>,
+    ) -> Result<()> {
         let popup_layout_v = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -338,8 +344,19 @@ impl<'a> Tui<'a> {
             )
             .wrap(Wrap { trim: true })
             .alignment(Alignment::Center);
+        if let Some(history) = step {
+            if forward {
+                for delta in history {
+                    replay_maze[delta.p.row as usize][delta.p.col as usize] = delta.after;
+                }
+            } else {
+                for delta in history.iter().rev() {
+                    replay_maze[delta.p.row as usize][delta.p.col as usize] = delta.before;
+                }
+            }
+        }
         self.terminal.draw(|f| {
-            f.render_widget(SolveFrame::new(maze), rect[0]);
+            f.render_widget(SolveFrame::new(replay_maze), rect[0]);
             f.render_widget(popup_instructions, popup_layout_h);
         })?;
         Ok(())
