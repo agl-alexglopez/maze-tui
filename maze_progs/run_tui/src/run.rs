@@ -183,45 +183,50 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
         Ok(l) => l,
         Err(_) => print::maze_panic!("rendering cannot progress without lock"),
     };
-    let frame_time = Duration::from_millis(5);
+    let frame_time = Duration::from_millis(1);
     let mut last_render = Instant::now();
     let mut play_forward = true;
-    'building: loop {
-        tui.render_builder_frame(
-            play_forward,
-            playback.maze.build_history.cur_step(),
-            &mut replay_copy,
-            &render_space,
-        )?;
-        let now = Instant::now();
-        if now - last_render >= frame_time {
-            if !playback.maze.build_history.move_tape_next() {
-                break 'building;
+    'rendering: loop {
+        'building: loop {
+            tui.render_builder_frame(
+                play_forward,
+                playback.maze.build_history.cur_step(),
+                &mut replay_copy,
+                &render_space,
+            )?;
+            let now = Instant::now();
+            if now - last_render >= frame_time {
+                if play_forward {
+                    if !playback.maze.build_history.move_tape_next() {
+                        break 'building;
+                    }
+                } else {
+                    play_forward = !playback.maze.build_history.move_tape_prev();
+                }
+                last_render = now;
+            } else if tui.events.try_next().is_some() {
+                break 'rendering;
             }
-            last_render = now;
-        } else if tui.events.try_next().is_some() {
-            // quit_early = true;
-            break 'building;
         }
-    }
-    'solving: loop {
-        tui.render_solver_frame(
-            play_forward,
-            playback.maze.solve_history.cur_step(),
-            &mut replay_copy,
-            &render_space,
-        )?;
-        let now = Instant::now();
-        if now - last_render >= frame_time {
-            if play_forward {
-                play_forward = playback.maze.solve_history.move_tape_next();
-            } else {
-                play_forward = !playback.maze.solve_history.move_tape_prev();
+
+        'solving: loop {
+            tui.render_solver_frame(
+                play_forward,
+                playback.maze.solve_history.cur_step(),
+                &mut replay_copy,
+                &render_space,
+            )?;
+            let now = Instant::now();
+            if now - last_render >= frame_time {
+                if play_forward {
+                    play_forward = playback.maze.solve_history.move_tape_next();
+                } else if !playback.maze.solve_history.move_tape_prev() {
+                    break 'solving;
+                }
+                last_render = now;
+            } else if tui.events.try_next().is_some() {
+                break 'rendering;
             }
-            last_render = now;
-        } else if tui.events.try_next().is_some() {
-            // quit_early = true;
-            break 'solving;
         }
     }
     Ok(())
