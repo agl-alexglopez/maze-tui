@@ -195,38 +195,16 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
         let now = Instant::now();
         if now - last_render >= frame_time {
             if play_forward {
-                if playback.maze.build_history.get_next().is_none() {
-                    play_forward = false;
-                }
-            } else if playback.maze.build_history.get_prev().is_none() {
-                play_forward = true;
+                play_forward = playback.maze.build_history.get_next().is_some();
+            } else {
+                play_forward = playback.maze.build_history.get_prev().is_none();
             }
             last_render = now;
         } else if tui.events.try_next().is_some() {
             // quit_early = true;
             break 'building;
         }
-        // if let Some((_, animated_mod)) = this_run.modify {
-        //     animated_mod(&mut lk.maze, this_run.build_speed);
-        // }
-        // this_run.solve.1(maze.clone(), this_run.solve_speed);
     }
-    // if quit_early {
-    //     return Ok(());
-    // }
-    // let maze_lk = match maze.lock() {
-    //     Ok(lk) => lk,
-    //     Err(_) => print::maze_panic!("Lock lost."),
-    // };
-    // 'waiting: loop {
-    //     let now = Instant::now();
-    //     if now - last_render >= frame_time {
-    //         tui.render_builder_frame(&maze_lk.maze, &mut replay_copy, &render_space)?;
-    //         last_render = now;
-    //     } else if tui.events.try_next().is_some() {
-    //         break 'waiting;
-    //     }
-    // }
     Ok(())
 }
 
