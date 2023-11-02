@@ -41,47 +41,80 @@ pub fn run() -> tui::Result<()> {
     let mut run_bg = set_random_args(&tui.padded_frame());
     run_bg.args.style = maze::MazeStyle::Contrast;
     let mut bg_maze = monitor::Solver::new(maze::Maze::new(run_bg.args));
-    builders::recursive_backtracker::generate_history(bg_maze.clone());
-    solvers::bfs::hunt_history(bg_maze.clone());
     match bg_maze.lock() {
-        Ok(mut maze) => {
-            maze.maze.build_history.end();
-            maze.maze.solve_history.end();
+        Ok(mut lk) => {
+            build::fill_maze_with_walls(&mut lk.maze);
         }
         Err(_) => print::maze_panic!("uncontested lock failure"),
     }
+    builders::recursive_backtracker::generate_history(bg_maze.clone());
+    let mut replay_copy = match bg_maze.lock() {
+        Ok(lk) => lk.maze.clone(),
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    solvers::bfs::hunt_history(bg_maze.clone());
+    let mut play_forward = true;
+    let frame_time = Duration::from_millis(10);
+    let mut last_render = Instant::now();
     'render: loop {
-        tui.home(&mut bg_maze.lock().expect("uncontested lock failure").maze)?;
-        match tui.events.next()? {
-            tui::Pack::Resize(_, _) => {
-                run_bg = set_random_args(&tui.padded_frame());
-                run_bg.args.style = maze::MazeStyle::Contrast;
-                bg_maze = monitor::Solver::new(maze::Maze::new(run_bg.args));
-                builders::recursive_backtracker::generate_history(bg_maze.clone());
-                solvers::bfs::hunt_history(bg_maze.clone());
-                let mut maze = bg_maze.lock().expect("uncontested lock failure?");
-                maze.maze.build_history.end();
-                maze.maze.solve_history.end();
-            }
-            tui::Pack::Press(ev) => {
-                match ev.into() {
-                    Input { key: Key::Esc, .. } => break 'render,
-                    Input { key: Key::Down, .. } => tui.scroll(ScrollDirection::Forward),
-                    Input { key: Key::Up, .. } => tui.scroll(ScrollDirection::Backward),
-                    Input {
-                        key: Key::Enter, ..
-                    } => {
-                        if render_command(tui.cmd.lines()[0].to_string(), &mut tui).is_ok() {
-                            tui.terminal.clear()?;
+        if let Some(ev) = tui.events.try_next() {
+            match ev {
+                tui::Pack::Resize(_, _) => {
+                    run_bg = set_random_args(&tui.padded_frame());
+                    run_bg.args.style = maze::MazeStyle::Contrast;
+                    bg_maze = monitor::Solver::new(maze::Maze::new(run_bg.args));
+                    match bg_maze.lock() {
+                        Ok(mut lk) => {
+                            build::fill_maze_with_walls(&mut lk.maze);
+                        }
+                        Err(_) => print::maze_panic!("uncontested lock failure"),
+                    }
+                    builders::recursive_backtracker::generate_history(bg_maze.clone());
+                    replay_copy = match bg_maze.lock() {
+                        Ok(lk) => lk.maze.clone(),
+                        Err(_) => print::maze_panic!("uncontested lock failure"),
+                    };
+                    solvers::bfs::hunt_history(bg_maze.clone());
+                }
+                tui::Pack::Press(ev) => {
+                    match ev.into() {
+                        Input { key: Key::Esc, .. } => break 'render,
+                        Input { key: Key::Down, .. } => tui.scroll(ScrollDirection::Forward),
+                        Input { key: Key::Up, .. } => tui.scroll(ScrollDirection::Backward),
+                        Input {
+                            key: Key::Enter, ..
+                        } => {
+                            if render_command(tui.cmd.lines()[0].to_string(), &mut tui).is_ok() {
+                                tui.terminal.clear()?;
+                            }
+                        }
+                        input => {
+                            // TextArea::input returns if the input modified its text
+                            let _ = tui.cmd_input(input);
                         }
                     }
-                    input => {
-                        // TextArea::input returns if the input modified its text
-                        let _ = tui.cmd_input(input);
+                }
+                tui::Pack::Tick => {}
+            }
+        }
+        match bg_maze.lock() {
+            Ok(mut lk) => {
+                tui.home_animated(
+                    play_forward,
+                    lk.maze.solve_history.cur_step(),
+                    &mut replay_copy,
+                )?;
+                let now = Instant::now();
+                if now - last_render >= frame_time {
+                    if play_forward {
+                        play_forward = lk.maze.solve_history.move_tape_next();
+                    } else {
+                        play_forward = !lk.maze.solve_history.move_tape_prev();
                     }
+                    last_render = now;
                 }
             }
-            tui::Pack::Tick => {}
+            Err(_) => print::maze_panic!("uncontested lock failure"),
         }
     }
     tui.exit()?;

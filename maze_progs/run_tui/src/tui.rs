@@ -298,6 +298,91 @@ impl<'a> Tui<'a> {
         Ok(())
     }
 
+    pub fn home_animated(
+        &mut self,
+        forward: bool,
+        step: Option<&[maze::Delta]>,
+        replay_maze: &mut maze::Maze,
+    ) -> Result<()> {
+        if let Some(history) = step {
+            if forward {
+                for delta in history {
+                    replay_maze[delta.p.row as usize][delta.p.col as usize] = delta.after;
+                }
+            } else {
+                for delta in history.iter().rev() {
+                    replay_maze[delta.p.row as usize][delta.p.col as usize] = delta.before;
+                }
+            }
+        }
+        let frame = self.padded_frame();
+        self.terminal.draw(|f| {
+            f.render_widget(SolveFrame::new(replay_maze), frame);
+            let overall_layout = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(vec![Constraint::Percentage(70), Constraint::Percentage(30)])
+                .split(f.size());
+            let popup_layout_v = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Percentage((100 - 80) / 2),
+                    Constraint::Percentage(80),
+                    Constraint::Percentage((100 - 80) / 2),
+                ])
+                .split(overall_layout[0]);
+            let popup_layout_h = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Percentage((100 - 50) / 2),
+                    Constraint::Min(70),
+                    Constraint::Percentage((100 - 50) / 2),
+                ])
+                .split(popup_layout_v[1])[1];
+            let popup_instructions = Paragraph::new(INSTRUCTIONS)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .border_type(BorderType::Double)
+                        .border_style(Style::new().fg(Color::Yellow))
+                        .style(Style::default().bg(Color::Black)),
+                )
+                .alignment(Alignment::Left)
+                .scroll((self.scroll.pos as u16, 0));
+            f.render_widget(Clear, popup_layout_h);
+            f.render_widget(popup_instructions, popup_layout_h);
+            self.scroll.state = self.scroll.state.content_length(INSTRUCTIONS_LINE_COUNT);
+            f.render_stateful_widget(
+                Scrollbar::default()
+                    .orientation(ScrollbarOrientation::VerticalRight)
+                    .thumb_symbol("█")
+                    .begin_symbol(Some("↑"))
+                    .end_symbol(Some("↓")),
+                popup_layout_h,
+                &mut self.scroll.state,
+            );
+            let text_v = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Percentage((100 - 15) / 2),
+                    Constraint::Min(3),
+                    Constraint::Percentage((100 - 15) / 2),
+                ])
+                .split(overall_layout[1]);
+            let text_h = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Percentage((100 - 50) / 2),
+                    Constraint::Min(70),
+                    Constraint::Percentage((100 - 50) / 2),
+                ])
+                .split(text_v[1])[1];
+            let tb = self.cmd.widget();
+            f.render_widget(Clear, text_h);
+            f.render_widget(tb, text_h);
+        })?;
+        Ok(())
+    }
+
     pub fn background_maze(&mut self) -> Result<()> {
         self.terminal.draw(|frame| ui_bg_maze(frame))?;
         Ok(())
