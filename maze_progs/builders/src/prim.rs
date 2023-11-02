@@ -34,15 +34,19 @@ impl Ord for PriorityPoint {
 
 // Public Builder Function------------------------------------------------------------------------
 
-pub fn generate_maze(maze: &mut maze::Maze) {
-    build::fill_maze_with_walls(maze);
+pub fn generate_maze(monitor: monitor::SolverReceiver) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    build::fill_maze_with_walls(&mut lk.maze);
     let mut rng = thread_rng();
     let weight_range = Uniform::from(1..=100);
     let start = PriorityPoint {
         priority: weight_range.sample(&mut rng),
         p: maze::Point {
-            row: 2 * rng.gen_range(1..((maze.row_size() - 2) / 2)) + 1,
-            col: 2 * rng.gen_range(1..((maze.col_size() - 2) / 2)) + 1,
+            row: 2 * rng.gen_range(1..((lk.maze.row_size() - 2) / 2)) + 1,
+            col: 2 * rng.gen_range(1..((lk.maze.col_size() - 2) / 2)) + 1,
         },
     };
     let mut lookup_weights: HashMap<maze::Point, u8> = HashMap::from([(start.p, start.priority)]);
@@ -55,7 +59,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                 row: cur.p.row + dir.row,
                 col: cur.p.col + dir.col,
             };
-            if !build::can_build_new_square(maze, next) {
+            if !build::can_build_new_square(&lk.maze, next) {
                 continue;
             }
             // Weights would have been randomly pre-generated anyway. Generate as we go
@@ -74,7 +78,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
         }
         match max_neighbor {
             Some(neighbor) => {
-                build::join_squares(maze, cur.p, neighbor.p);
+                build::join_squares(&mut lk.maze, cur.p, neighbor.p);
                 pq.push(neighbor);
             }
             None => {
@@ -84,28 +88,33 @@ pub fn generate_maze(maze: &mut maze::Maze) {
     }
 }
 
-pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
-    if maze.is_mini() {
-        animate_mini_maze(maze, speed);
+pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    if lk.maze.is_mini() {
+        drop(lk);
+        animate_mini_maze(monitor, speed);
         return;
     }
     let animation = build::BUILDER_SPEEDS[speed as usize];
-    build::fill_maze_with_walls(maze);
-    build::flush_grid(maze);
-    build::print_overlap_key_animated(maze);
+    build::fill_maze_with_walls(&mut lk.maze);
+    build::flush_grid(&lk.maze);
+    build::print_overlap_key_animated(&lk.maze);
     let mut rng = thread_rng();
     let weight_range = Uniform::from(1..=100);
     let start = PriorityPoint {
         priority: weight_range.sample(&mut rng),
         p: maze::Point {
-            row: 2 * rng.gen_range(1..((maze.row_size() - 2) / 2)) + 1,
-            col: 2 * rng.gen_range(1..((maze.col_size() - 2) / 2)) + 1,
+            row: 2 * rng.gen_range(1..((lk.maze.row_size() - 2) / 2)) + 1,
+            col: 2 * rng.gen_range(1..((lk.maze.col_size() - 2) / 2)) + 1,
         },
     };
     let mut lookup_weights: HashMap<maze::Point, u8> = HashMap::from([(start.p, start.priority)]);
     let mut pq = BinaryHeap::from([start]);
     while let Some(&cur) = pq.peek() {
-        if maze.exit() {
+        if monitor.exit() {
             return;
         }
         let mut max_neighbor: Option<PriorityPoint> = None;
@@ -115,7 +124,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                 row: cur.p.row + dir.row,
                 col: cur.p.col + dir.col,
             };
-            if !build::can_build_new_square(maze, next) {
+            if !build::can_build_new_square(&lk.maze, next) {
                 continue;
             }
             let weight = *lookup_weights
@@ -131,7 +140,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         }
         match max_neighbor {
             Some(neighbor) => {
-                build::join_squares_animated(maze, cur.p, neighbor.p, animation);
+                build::join_squares_animated(&mut lk.maze, cur.p, neighbor.p, animation);
                 pq.push(neighbor);
             }
             None => {
@@ -141,24 +150,28 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     }
 }
 
-fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
+fn animate_mini_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
     let animation = build::BUILDER_SPEEDS[speed as usize];
-    build::fill_maze_with_walls(maze);
-    build::flush_grid(maze);
-    build::print_overlap_key_animated(maze);
+    build::fill_maze_with_walls(&mut lk.maze);
+    build::flush_grid(&lk.maze);
+    build::print_overlap_key_animated(&lk.maze);
     let mut rng = thread_rng();
     let weight_range = Uniform::from(1..=100);
     let start = PriorityPoint {
         priority: weight_range.sample(&mut rng),
         p: maze::Point {
-            row: 2 * rng.gen_range(1..((maze.row_size() - 2) / 2)) + 1,
-            col: 2 * rng.gen_range(1..((maze.col_size() - 2) / 2)) + 1,
+            row: 2 * rng.gen_range(1..((&lk.maze.row_size() - 2) / 2)) + 1,
+            col: 2 * rng.gen_range(1..((&lk.maze.col_size() - 2) / 2)) + 1,
         },
     };
     let mut lookup_weights: HashMap<maze::Point, u8> = HashMap::from([(start.p, start.priority)]);
     let mut pq = BinaryHeap::from([start]);
     while let Some(&cur) = pq.peek() {
-        if maze.exit() {
+        if monitor.exit() {
             return;
         }
         let mut max_neighbor: Option<PriorityPoint> = None;
@@ -168,7 +181,7 @@ fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                 row: cur.p.row + dir.row,
                 col: cur.p.col + dir.col,
             };
-            if !build::can_build_new_square(maze, next) {
+            if !build::can_build_new_square(&lk.maze, next) {
                 continue;
             }
             let weight = *lookup_weights
@@ -184,7 +197,7 @@ fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         }
         match max_neighbor {
             Some(neighbor) => {
-                build::join_minis_animated(maze, cur.p, neighbor.p, animation);
+                build::join_minis_animated(&mut lk.maze, cur.p, neighbor.p, animation);
                 pq.push(neighbor);
             }
             None => {

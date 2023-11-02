@@ -14,8 +14,8 @@ struct RunPoint {
     cur: maze::Point,
 }
 
-pub fn paint_run_lengths(monitor: monitor::SolverMonitor) {
-    let mut lk = match monitor.lock() {
+pub fn paint_run_lengths(monitor: monitor::SolverReceiver) {
+    let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("Lock panic."),
     };
@@ -64,8 +64,12 @@ pub fn paint_run_lengths(monitor: monitor::SolverMonitor) {
     painter(&lk.maze, &map);
 }
 
-pub fn animate_run_lengths(monitor: monitor::SolverMonitor, speed: speed::Speed) {
+pub fn animate_run_lengths(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+    if monitor.exit() {
+        return;
+    }
     if monitor
+        .solver
         .lock()
         .unwrap_or_else(|_| print::maze_panic!("Thread panicked"))
         .maze
@@ -74,7 +78,7 @@ pub fn animate_run_lengths(monitor: monitor::SolverMonitor, speed: speed::Speed)
         animate_mini_run_lengths(monitor, speed);
         return;
     }
-    let start: maze::Point = if let Ok(mut lk) = monitor.lock() {
+    let start: maze::Point = if let Ok(mut lk) = monitor.solver.lock() {
         let row_mid = lk.maze.row_size() / 2;
         let col_mid = lk.maze.col_size() / 2;
         let start = maze::Point {
@@ -89,9 +93,6 @@ pub fn animate_run_lengths(monitor: monitor::SolverMonitor, speed: speed::Speed)
         }]);
         lk.maze[start.row as usize][start.col as usize] |= rgb::MEASURE;
         while let Some(cur) = bfs.pop_front() {
-            if lk.maze.exit() {
-                return;
-            }
             if cur.len > lk.map.max {
                 lk.map.max = cur.len;
             }
@@ -157,8 +158,8 @@ pub fn animate_run_lengths(monitor: monitor::SolverMonitor, speed: speed::Speed)
     }
 }
 
-fn animate_mini_run_lengths(monitor: monitor::SolverMonitor, speed: speed::Speed) {
-    let start: maze::Point = if let Ok(mut lk) = monitor.lock() {
+fn animate_mini_run_lengths(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+    let start: maze::Point = if let Ok(mut lk) = monitor.solver.lock() {
         let row_mid = lk.maze.row_size() / 2;
         let col_mid = lk.maze.col_size() / 2;
         let start = maze::Point {
@@ -173,7 +174,7 @@ fn animate_mini_run_lengths(monitor: monitor::SolverMonitor, speed: speed::Speed
         }]);
         lk.maze[start.row as usize][start.col as usize] |= rgb::MEASURE;
         while let Some(cur) = bfs.pop_front() {
-            if lk.maze.exit() {
+            if monitor.exit() {
                 return;
             }
             if cur.len > lk.map.max {
@@ -325,16 +326,19 @@ fn painter(maze: &maze::Maze, map: &monitor::MaxMap) {
 }
 
 fn painter_animated(
-    monitor: monitor::SolverMonitor,
+    monitor: monitor::SolverReceiver,
     guide: rgb::ThreadGuide,
     animation: rgb::SpeedUnit,
 ) {
     let mut seen = HashSet::from([guide.p]);
     let mut bfs = VecDeque::from([guide.p]);
     while let Some(cur) = bfs.pop_front() {
-        match monitor.lock() {
+        if monitor.exit() {
+            return;
+        }
+        match monitor.solver.lock() {
             Ok(mut lk) => {
-                if lk.maze.exit() || lk.count == lk.map.distances.len() {
+                if lk.count == lk.map.distances.len() {
                     return;
                 }
                 let run = lk
@@ -363,7 +367,7 @@ fn painter_animated(
                 row: cur.row + p.row,
                 col: cur.col + p.col,
             };
-            if match monitor.lock() {
+            if match monitor.solver.lock() {
                 Err(p) => print::maze_panic!("Panic with lock: {}", p),
                 Ok(lk) => (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0,
             } && !seen.contains(&next)
@@ -378,16 +382,19 @@ fn painter_animated(
 }
 
 fn painter_mini_animated(
-    monitor: monitor::SolverMonitor,
+    monitor: monitor::SolverReceiver,
     guide: rgb::ThreadGuide,
     animation: rgb::SpeedUnit,
 ) {
     let mut seen = HashSet::from([guide.p]);
     let mut bfs = VecDeque::from([guide.p]);
     while let Some(cur) = bfs.pop_front() {
-        match monitor.lock() {
+        if monitor.exit() {
+            return;
+        }
+        match monitor.solver.lock() {
             Ok(mut lk) => {
-                if lk.maze.exit() || lk.count == lk.map.distances.len() {
+                if lk.count == lk.map.distances.len() {
                     return;
                 }
                 if (lk.maze[cur.row as usize][cur.col as usize] & rgb::PAINT) == 0 {
@@ -461,7 +468,7 @@ fn painter_mini_animated(
                 row: cur.row + p.row,
                 col: cur.col + p.col,
             };
-            if match monitor.lock() {
+            if match monitor.solver.lock() {
                 Err(p) => print::maze_panic!("Panic with lock: {}", p),
                 Ok(lk) => (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0,
             } && !seen.contains(&next)

@@ -23,10 +23,13 @@ pub use solvers::floodfs;
 pub use solvers::rdfs;
 pub use solvers::solve;
 
-pub type BuildFunction = (fn(&mut maze::Maze), fn(&mut maze::Maze, speed::Speed));
+pub type BuildFunction = (
+    fn(monitor::SolverReceiver),
+    fn(monitor::SolverReceiver, speed::Speed),
+);
 pub type SolveFunction = (
-    fn(monitor::SolverMonitor),
-    fn(monitor::SolverMonitor, speed::Speed),
+    fn(monitor::SolverReceiver),
+    fn(monitor::SolverReceiver, speed::Speed),
 );
 
 pub struct FlagArg<'a, 'b> {
@@ -118,7 +121,7 @@ pub const WALL_STYLES: [(&str, maze::MazeStyle); 8] = [
     ("spikes", maze::MazeStyle::Spikes),
 ];
 
-pub const BUILDERS: [(&str, BuildFunction); 10] = [
+pub const CURSOR_BUILDERS: [(&str, BuildFunction); 10] = [
     ("arena", (arena::generate_maze, arena::animate_maze)),
     (
         "rdfs",
@@ -152,12 +155,12 @@ pub const BUILDERS: [(&str, BuildFunction); 10] = [
     ("grid", (grid::generate_maze, grid::animate_maze)),
 ];
 
-pub const MODIFICATIONS: [(&str, BuildFunction); 2] = [
+pub const CURSOR_MODIFICATIONS: [(&str, BuildFunction); 2] = [
     ("cross", (modify::add_cross, modify::add_cross_animated)),
     ("x", (modify::add_x, modify::add_x_animated)),
 ];
 
-pub const SOLVERS: [(&str, SolveFunction); 26] = [
+pub const CURSOR_SOLVERS: [(&str, SolveFunction); 26] = [
     ("dfs-hunt", (dfs::hunt, dfs::animate_hunt)),
     ("dfs-gather", (dfs::gather, dfs::animate_gather)),
     ("dfs-corner", (dfs::corner, dfs::animate_corner)),

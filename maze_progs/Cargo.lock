@@ -51,6 +51,7 @@ dependencies = [
  "rand",
  "ratatui",
  "speed",
+ "tape",
 ]
 
 [[package]]
@@ -140,6 +141,7 @@ name = "demo"
 version = "0.1.0"
 dependencies = [
  "builders",
+ "crossbeam-channel",
  "crossterm 0.26.1",
  "ctrlc",
  "maze",
@@ -243,7 +245,7 @@ dependencies = [
 name = "maze"
 version = "0.1.0"
 dependencies = [
- "crossbeam-channel",
+ "tape",
 ]
 
 [[package]]
@@ -420,6 +422,7 @@ name = "run_maze"
 version = "0.1.0"
 dependencies = [
  "builders",
+ "crossbeam-channel",
  "crossterm 0.26.1",
  "ctrlc",
  "maze",
@@ -448,6 +451,7 @@ dependencies = [
  "solvers",
  "speed",
  "tables",
+ "tape",
  "tui-textarea",
 ]
 
@@ -513,6 +517,7 @@ dependencies = [
  "rand",
  "ratatui",
  "speed",
+ "tape",
 ]
 
 [[package]]
@@ -563,6 +568,10 @@ dependencies = [
  "solvers",
  "speed",
 ]
+
+[[package]]
+name = "tape"
+version = "0.1.0"
 
 [[package]]
 name = "tui-textarea"

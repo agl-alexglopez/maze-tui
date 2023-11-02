@@ -18,20 +18,21 @@ const WALL_UP_DOWN_RIGHT: usize = 0b0111;
 const WALL_UP_DOWN_LEFT: usize = 0b1101;
 const WALL_LEFT_RIGHT: usize = 0b1010;
 
-pub fn generate_maze(maze: &mut maze::Maze) {
-    build::fill_maze_with_walls(maze);
+pub fn generate_maze(monitor: monitor::SolverReceiver) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    build::fill_maze_with_walls(&mut lk.maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
-        row: 2 * (gen.gen_range(1..maze.row_size() - 2) / 2) + 1,
-        col: 2 * (gen.gen_range(1..maze.col_size() - 2) / 2) + 1,
+        row: 2 * (gen.gen_range(1..lk.maze.row_size() - 2) / 2) + 1,
+        col: 2 * (gen.gen_range(1..lk.maze.col_size() - 2) / 2) + 1,
     };
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     let mut cur: maze::Point = start;
     let mut highest_completed_row = 1;
     'carving: loop {
-        if maze.exit() {
-            return;
-        }
         random_direction_indices.shuffle(&mut gen);
         for &i in random_direction_indices.iter() {
             let direction = &build::GENERATE_DIRECTIONS[i];
@@ -39,18 +40,18 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                 row: cur.row + direction.row,
                 col: cur.col + direction.col,
             };
-            if build::can_build_new_square(maze, branch) {
-                build::join_squares(maze, cur, branch);
+            if build::can_build_new_square(&lk.maze, branch) {
+                build::join_squares(&mut lk.maze, cur, branch);
                 cur = branch;
                 continue 'carving;
             }
         }
 
         let mut set_highest_completed_row = false;
-        for r in (highest_completed_row..maze.row_size() - 1).step_by(2) {
-            for c in (1..maze.col_size() - 1).step_by(2) {
+        for r in (highest_completed_row..lk.maze.row_size() - 1).step_by(2) {
+            for c in (1..lk.maze.col_size() - 1).step_by(2) {
                 let start_candidate = maze::Point { row: r, col: c };
-                if (maze[r as usize][c as usize] & build::BUILDER_BIT) == 0 {
+                if (lk.maze[r as usize][c as usize] & build::BUILDER_BIT) == 0 {
                     if !set_highest_completed_row {
                         highest_completed_row = r;
                         set_highest_completed_row = true;
@@ -60,11 +61,11 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                             row: r + dir.row,
                             col: c + dir.col,
                         };
-                        if build::is_square_within_perimeter_walls(maze, next)
-                            && (maze[next.row as usize][next.col as usize] & build::BUILDER_BIT)
+                        if build::is_square_within_perimeter_walls(&lk.maze, next)
+                            && (lk.maze[next.row as usize][next.col as usize] & build::BUILDER_BIT)
                                 != 0
                         {
-                            build::join_squares(maze, start_candidate, next);
+                            build::join_squares(&mut lk.maze, start_candidate, next);
                             cur = start_candidate;
                             continue 'carving;
                         }
@@ -76,28 +77,33 @@ pub fn generate_maze(maze: &mut maze::Maze) {
     }
 }
 
-pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
-    if maze.is_mini() {
-        animate_mini_maze(maze, speed);
+pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    if lk.maze.is_mini() {
+        drop(lk);
+        animate_mini_maze(monitor, speed);
         return;
     }
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
-    build::fill_maze_with_walls(maze);
-    build::flush_grid(maze);
-    build::print_overlap_key_animated(maze);
+    build::fill_maze_with_walls(&mut lk.maze);
+    build::flush_grid(&lk.maze);
+    build::print_overlap_key_animated(&lk.maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
-        row: 2 * (gen.gen_range(1..maze.row_size() - 2) / 2) + 1,
-        col: 2 * (gen.gen_range(1..maze.col_size() - 2) / 2) + 1,
+        row: 2 * (gen.gen_range(1..lk.maze.row_size() - 2) / 2) + 1,
+        col: 2 * (gen.gen_range(1..lk.maze.col_size() - 2) / 2) + 1,
     };
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     let mut cur: maze::Point = start;
     let mut highest_completed_row = 1;
     'carving: loop {
-        if maze.exit() {
+        if monitor.exit() {
             return;
         }
-        print::set_cursor_position(cur, maze.offset());
+        print::set_cursor_position(cur, lk.maze.offset());
         execute!(
             io::stdout(),
             SetForegroundColor(Color::AnsiValue(CARVING)),
@@ -113,9 +119,9 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                 row: cur.row + direction.row,
                 col: cur.col + direction.col,
             };
-            if build::can_build_new_square(maze, branch) {
-                build::join_squares_animated(maze, cur, branch, animation);
-                print::set_cursor_position(branch, maze.offset());
+            if build::can_build_new_square(&lk.maze, branch) {
+                build::join_squares_animated(&mut lk.maze, cur, branch, animation);
+                print::set_cursor_position(branch, lk.maze.offset());
                 execute!(
                     io::stdout(),
                     SetForegroundColor(Color::AnsiValue(CARVING)),
@@ -130,11 +136,11 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         }
 
         let mut set_highest_completed_row = false;
-        for r in (highest_completed_row..maze.row_size() - 1).step_by(2) {
-            shoot_hunter_laser(maze, r);
-            for c in (1..maze.col_size() - 1).step_by(2) {
+        for r in (highest_completed_row..lk.maze.row_size() - 1).step_by(2) {
+            shoot_hunter_laser(&lk.maze, r);
+            for c in (1..lk.maze.col_size() - 1).step_by(2) {
                 let start_candidate = maze::Point { row: r, col: c };
-                if (maze[r as usize][c as usize] & build::BUILDER_BIT) == 0 {
+                if (lk.maze[r as usize][c as usize] & build::BUILDER_BIT) == 0 {
                     if !set_highest_completed_row {
                         highest_completed_row = r;
                         set_highest_completed_row = true;
@@ -144,41 +150,50 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                             row: r + dir.row,
                             col: c + dir.col,
                         };
-                        if build::is_square_within_perimeter_walls(maze, next)
-                            && (maze[next.row as usize][next.col as usize] & build::BUILDER_BIT)
+                        if build::is_square_within_perimeter_walls(&lk.maze, next)
+                            && (lk.maze[next.row as usize][next.col as usize] & build::BUILDER_BIT)
                                 != 0
                         {
-                            build::join_squares_animated(maze, start_candidate, next, animation);
+                            build::join_squares_animated(
+                                &mut lk.maze,
+                                start_candidate,
+                                next,
+                                animation,
+                            );
                             cur = start_candidate;
                             continue 'carving;
                         }
                     }
                 }
             }
-            reset_row(maze, r);
+            reset_row(&lk.maze, r);
         }
         return;
     }
 }
 
-pub fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
+pub fn animate_mini_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
-    build::fill_maze_with_walls(maze);
-    build::flush_grid(maze);
-    build::print_overlap_key_animated(maze);
+    build::fill_maze_with_walls(&mut lk.maze);
+    build::flush_grid(&lk.maze);
+    build::print_overlap_key_animated(&lk.maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
-        row: 2 * (gen.gen_range(1..maze.row_size() - 2) / 2) + 1,
-        col: 2 * (gen.gen_range(1..maze.col_size() - 2) / 2) + 1,
+        row: 2 * (gen.gen_range(1..lk.maze.row_size() - 2) / 2) + 1,
+        col: 2 * (gen.gen_range(1..lk.maze.col_size() - 2) / 2) + 1,
     };
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     let mut cur: maze::Point = start;
     let mut highest_completed_row = 1;
     'carving: loop {
-        if maze.exit() {
+        if monitor.exit() {
             return;
         }
-        flush_mini_carver(maze, cur, animation);
+        flush_mini_carver(&lk.maze, cur, animation);
         random_direction_indices.shuffle(&mut gen);
         for &i in random_direction_indices.iter() {
             let direction = &build::GENERATE_DIRECTIONS[i];
@@ -186,27 +201,27 @@ pub fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                 row: cur.row + direction.row,
                 col: cur.col + direction.col,
             };
-            if build::can_build_new_square(maze, branch) {
-                build::join_minis_animated(maze, cur, branch, animation);
+            if build::can_build_new_square(&lk.maze, branch) {
+                build::join_minis_animated(&mut lk.maze, cur, branch, animation);
                 print::set_cursor_position(
                     maze::Point {
                         row: branch.row / 2,
                         col: branch.col,
                     },
-                    maze.offset(),
+                    lk.maze.offset(),
                 );
-                flush_mini_carver(maze, branch, animation);
+                flush_mini_carver(&lk.maze, branch, animation);
                 cur = branch;
                 continue 'carving;
             }
         }
 
         let mut set_highest_completed_row = false;
-        for r in (highest_completed_row..maze.row_size() - 1).step_by(2) {
-            shoot_mini_laser(maze, r);
-            for c in (1..maze.col_size() - 1).step_by(2) {
+        for r in (highest_completed_row..lk.maze.row_size() - 1).step_by(2) {
+            shoot_mini_laser(&lk.maze, r);
+            for c in (1..lk.maze.col_size() - 1).step_by(2) {
                 let start_candidate = maze::Point { row: r, col: c };
-                if (maze[r as usize][c as usize] & build::BUILDER_BIT) == 0 {
+                if (lk.maze[r as usize][c as usize] & build::BUILDER_BIT) == 0 {
                     if !set_highest_completed_row {
                         highest_completed_row = r;
                         set_highest_completed_row = true;
@@ -216,18 +231,23 @@ pub fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                             row: r + dir.row,
                             col: c + dir.col,
                         };
-                        if build::is_square_within_perimeter_walls(maze, next)
-                            && (maze[next.row as usize][next.col as usize] & build::BUILDER_BIT)
+                        if build::is_square_within_perimeter_walls(&lk.maze, next)
+                            && (lk.maze[next.row as usize][next.col as usize] & build::BUILDER_BIT)
                                 != 0
                         {
-                            build::join_minis_animated(maze, start_candidate, next, animation);
+                            build::join_minis_animated(
+                                &mut lk.maze,
+                                start_candidate,
+                                next,
+                                animation,
+                            );
                             cur = start_candidate;
                             continue 'carving;
                         }
                     }
                 }
             }
-            reset_mini_row(maze, r);
+            reset_mini_row(&lk.maze, r);
         }
         return;
     }

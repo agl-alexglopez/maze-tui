@@ -18,13 +18,17 @@ const MIN_CHAMBER: i32 = 3;
 
 // Public Functions-------------------------------------------------------------------------------
 
-pub fn generate_maze(maze: &mut maze::Maze) {
-    build::build_wall_outline(maze);
+pub fn generate_maze(monitor: monitor::SolverReceiver) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    build::build_wall_outline(&mut lk.maze);
     let mut rng = thread_rng();
     let mut chamber_stack: Vec<Chamber> = Vec::from([Chamber {
         offset: maze::Point { row: 0, col: 0 },
-        h: maze.row_size(),
-        w: maze.col_size(),
+        h: lk.maze.row_size(),
+        w: lk.maze.col_size(),
     }]);
     while let Some(chamber) = chamber_stack.pop() {
         if chamber.h >= chamber.w && chamber.w > MIN_CHAMBER {
@@ -35,7 +39,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                     continue;
                 }
                 build::build_wall_line(
-                    maze,
+                    &mut lk.maze,
                     maze::Point {
                         row: chamber.offset.row + divide,
                         col: chamber.offset.col + c,
@@ -63,7 +67,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                     continue;
                 }
                 build::build_wall_line(
-                    maze,
+                    &mut lk.maze,
                     maze::Point {
                         row: chamber.offset.row + r,
                         col: chamber.offset.col + divide,
@@ -87,23 +91,28 @@ pub fn generate_maze(maze: &mut maze::Maze) {
     }
 }
 
-pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
-    if maze.is_mini() {
-        animate_mini_maze(maze, speed);
+pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    if lk.maze.is_mini() {
+        drop(lk);
+        animate_mini_maze(monitor, speed);
         return;
     }
     let animation = build::BUILDER_SPEEDS[speed as usize];
-    build::build_wall_outline(maze);
-    build::flush_grid(maze);
-    build::print_overlap_key_animated(maze);
+    build::build_wall_outline(&mut lk.maze);
+    build::flush_grid(&lk.maze);
+    build::print_overlap_key_animated(&lk.maze);
     let mut rng = thread_rng();
     let mut chamber_stack: Vec<Chamber> = Vec::from([Chamber {
         offset: maze::Point { row: 0, col: 0 },
-        h: maze.row_size(),
-        w: maze.col_size(),
+        h: lk.maze.row_size(),
+        w: lk.maze.col_size(),
     }]);
     while let Some(chamber) = chamber_stack.pop() {
-        if maze.exit() {
+        if monitor.exit() {
             return;
         }
         if chamber.h >= chamber.w && chamber.w > MIN_CHAMBER {
@@ -114,7 +123,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                     continue;
                 }
                 build::build_wall_line_animated(
-                    maze,
+                    &mut lk.maze,
                     maze::Point {
                         row: chamber.offset.row + divide,
                         col: chamber.offset.col + c,
@@ -143,7 +152,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                     continue;
                 }
                 build::build_wall_line_animated(
-                    maze,
+                    &mut lk.maze,
                     maze::Point {
                         row: chamber.offset.row + r,
                         col: chamber.offset.col + divide,
@@ -168,19 +177,23 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     }
 }
 
-fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
+fn animate_mini_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
     let animation = build::BUILDER_SPEEDS[speed as usize];
-    build::build_wall_outline(maze);
-    build::flush_grid(maze);
-    build::print_overlap_key_animated(maze);
+    build::build_wall_outline(&mut lk.maze);
+    build::flush_grid(&lk.maze);
+    build::print_overlap_key_animated(&lk.maze);
     let mut rng = thread_rng();
     let mut chamber_stack: Vec<Chamber> = Vec::from([Chamber {
         offset: maze::Point { row: 0, col: 0 },
-        h: maze.row_size(),
-        w: maze.col_size(),
+        h: lk.maze.row_size(),
+        w: lk.maze.col_size(),
     }]);
     while let Some(chamber) = chamber_stack.pop() {
-        if maze.exit() {
+        if monitor.exit() {
             return;
         }
         if chamber.h >= chamber.w && chamber.w > MIN_CHAMBER {
@@ -191,7 +204,7 @@ fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                     continue;
                 }
                 build::build_mini_wall_line_animated(
-                    maze,
+                    &mut lk.maze,
                     maze::Point {
                         row: chamber.offset.row + divide,
                         col: chamber.offset.col + c,
@@ -220,7 +233,7 @@ fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                     continue;
                 }
                 build::build_mini_wall_line_animated(
-                    maze,
+                    &mut lk.maze,
                     maze::Point {
                         row: chamber.offset.row + r,
                         col: chamber.offset.col + divide,

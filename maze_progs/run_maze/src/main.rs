@@ -1,4 +1,5 @@
 use builders::build::{self, flush_grid};
+use crossbeam_channel::bounded;
 
 use std::env;
 
@@ -52,48 +53,44 @@ fn main() {
     }
     // RAII approach to cursor hiding. Call hide and on scope drop it unhides, no call needed.
     let invisible = print::InvisibleCursor::new();
+    let (impatient_user, worker) = bounded::<bool>(1);
     invisible.hide();
     ctrlc::set_handler(move || {
-        //print::clear_screen();
-        print::set_cursor_position(
-            maze::Point {
-                row: run.args.odd_rows + 3,
-                col: 0,
-            },
-            maze::Offset::default(),
-        );
         print::unhide_cursor_on_process_exit();
-        std::process::exit(0);
+        if impatient_user.send(true).is_err() {
+            std::process::exit(0);
+        }
     })
     .expect("Could not set quit handler.");
     if run.args.style == maze::MazeStyle::Mini {
         run.args.odd_rows *= 2;
     }
-
-    let mut maze = maze::Maze::new(run.args);
-
     print::clear_screen();
+    let maze = maze::Maze::new(run.args);
     build::print_overlap_key(&maze);
+    let monitor = monitor::SolverReceiver::new(maze, worker);
     match run.build_view {
         tables::ViewingMode::StaticImage => {
-            run.build.0(&mut maze);
+            run.build.0(monitor.clone());
             if let Some((static_mod, _)) = run.modify {
-                static_mod(&mut maze)
+                static_mod(monitor.clone())
             }
-            flush_grid(&maze);
+            if let Ok(lk) = monitor.solver.lock() {
+                flush_grid(&lk.maze);
+            } else {
+                print::maze_panic!("uncontested lock failure");
+            }
         }
         tables::ViewingMode::AnimatedPlayback => {
-            run.build.1(&mut maze, run.build_speed);
+            run.build.1(monitor.clone(), run.build_speed);
             if let Some((_, animate_mod)) = run.modify {
-                animate_mod(&mut maze, run.build_speed)
+                animate_mod(monitor.clone(), run.build_speed)
             }
         }
     }
 
     // Ensure a smooth transition from build to solve with no flashing.
     print::set_cursor_position(maze::Point::default(), maze::Offset::default());
-
-    let monitor = monitor::Solver::new(maze);
 
     match run.solve_view {
         tables::ViewingMode::StaticImage => {
@@ -102,7 +99,7 @@ fn main() {
         tables::ViewingMode::AnimatedPlayback => run.solve.1(monitor.clone(), run.solve_speed),
     }
 
-    if let Ok(lk) = monitor.clone().lock() {
+    if let Ok(lk) = monitor.clone().solver.lock() {
         print::set_cursor_position(
             maze::Point {
                 row: if lk.maze.style_index() == (maze::MazeStyle::Mini as usize) {
@@ -115,6 +112,13 @@ fn main() {
             maze::Offset::default(),
         );
     }
+    print::set_cursor_position(
+        maze::Point {
+            row: run.args.odd_rows + 3,
+            col: 0,
+        },
+        maze::Offset::default(),
+    );
 }
 
 fn set_arg(run: &mut tables::MazeRunner, args: &tables::FlagArg) -> Result<(), String> {
@@ -128,13 +132,13 @@ fn set_arg(run: &mut tables::MazeRunner, args: &tables::FlagArg) -> Result<(), S
             run.args.odd_cols = set_dimension(args);
             Ok(())
         }
-        "-b" => tables::search_table(args.arg, &tables::BUILDERS)
+        "-b" => tables::search_table(args.arg, &tables::CURSOR_BUILDERS)
             .map(|func_pair| run.build = func_pair)
             .ok_or(err_string(args)),
-        "-m" => tables::search_table(args.arg, &tables::MODIFICATIONS)
+        "-m" => tables::search_table(args.arg, &tables::CURSOR_MODIFICATIONS)
             .map(|mod_tuple| run.modify = Some(mod_tuple))
             .ok_or(err_string(args)),
-        "-s" => tables::search_table(args.arg, &tables::SOLVERS)
+        "-s" => tables::search_table(args.arg, &tables::CURSOR_SOLVERS)
             .map(|solve_tuple| run.solve = solve_tuple)
             .ok_or(err_string(args)),
         "-w" => tables::search_table(args.arg, &tables::WALL_STYLES)

@@ -9,10 +9,14 @@ use std::collections::HashMap;
 
 // Public Builder Functions-----------------------------------------------------------------------
 
-pub fn generate_maze(maze: &mut maze::Maze) {
-    build::fill_maze_with_walls(maze);
-    let walls = load_shuffled_walls(maze);
-    let ids = tag_cells(maze);
+pub fn generate_maze(monitor: monitor::SolverReceiver) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    build::fill_maze_with_walls(&mut lk.maze);
+    let walls = load_shuffled_walls(&lk.maze);
+    let ids = tag_cells(&lk.maze);
     let mut sets = disjoint::DisjointSet::new(ids.len());
 
     for w in &walls {
@@ -27,7 +31,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
             };
             if let (Some(a_id), Some(b_id)) = (ids.get(&above), ids.get(&below)) {
                 if sets.made_union(*a_id, *b_id) {
-                    build::join_squares(maze, above, below);
+                    build::join_squares(&mut lk.maze, above, below);
                 }
             } else {
                 print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
@@ -44,7 +48,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
         };
         if let (Some(l_id), Some(r_id)) = (ids.get(&left), ids.get(&right)) {
             if sets.made_union(*l_id, *r_id) {
-                build::join_squares(maze, right, left);
+                build::join_squares(&mut lk.maze, right, left);
             }
         } else {
             print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
@@ -52,21 +56,26 @@ pub fn generate_maze(maze: &mut maze::Maze) {
     }
 }
 
-pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
-    if maze.is_mini() {
-        animate_mini_maze(maze, speed);
+pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    if lk.maze.is_mini() {
+        drop(lk);
+        animate_mini_maze(monitor, speed);
         return;
     }
     let animation = build::BUILDER_SPEEDS[speed as usize];
-    build::fill_maze_with_walls(maze);
-    build::flush_grid(maze);
-    build::print_overlap_key_animated(maze);
-    let walls = load_shuffled_walls(maze);
-    let ids = tag_cells(maze);
+    build::fill_maze_with_walls(&mut lk.maze);
+    build::flush_grid(&lk.maze);
+    build::print_overlap_key_animated(&lk.maze);
+    let walls = load_shuffled_walls(&lk.maze);
+    let ids = tag_cells(&lk.maze);
     let mut sets = disjoint::DisjointSet::new(ids.len());
 
     for w in &walls {
-        if maze.exit() {
+        if monitor.exit() {
             return;
         }
         if w.row % 2 == 0 {
@@ -80,7 +89,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
             };
             if let (Some(a_id), Some(b_id)) = (ids.get(&above), ids.get(&below)) {
                 if sets.made_union(*a_id, *b_id) {
-                    build::join_squares_animated(maze, above, below, animation);
+                    build::join_squares_animated(&mut lk.maze, above, below, animation);
                 }
                 continue;
             }
@@ -96,7 +105,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         };
         if let (Some(l_id), Some(r_id)) = (ids.get(&left), ids.get(&right)) {
             if sets.made_union(*l_id, *r_id) {
-                build::join_squares_animated(maze, left, right, animation);
+                build::join_squares_animated(&mut lk.maze, left, right, animation);
             }
             continue;
         }
@@ -104,17 +113,21 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     }
 }
 
-fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
+fn animate_mini_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
     let animation = build::BUILDER_SPEEDS[speed as usize];
-    build::fill_maze_with_walls(maze);
-    build::flush_grid(maze);
-    build::print_overlap_key_animated(maze);
-    let walls = load_shuffled_walls(maze);
-    let ids = tag_cells(maze);
+    build::fill_maze_with_walls(&mut lk.maze);
+    build::flush_grid(&lk.maze);
+    build::print_overlap_key_animated(&lk.maze);
+    let walls = load_shuffled_walls(&lk.maze);
+    let ids = tag_cells(&lk.maze);
     let mut sets = disjoint::DisjointSet::new(ids.len());
 
     for w in &walls {
-        if maze.exit() {
+        if monitor.exit() {
             return;
         }
         if w.row % 2 == 0 {
@@ -128,7 +141,7 @@ fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
             };
             if let (Some(a_id), Some(b_id)) = (ids.get(&above), ids.get(&below)) {
                 if sets.made_union(*a_id, *b_id) {
-                    build::join_minis_animated(maze, above, below, animation);
+                    build::join_minis_animated(&mut lk.maze, above, below, animation);
                 }
                 continue;
             }
@@ -144,7 +157,7 @@ fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
         };
         if let (Some(l_id), Some(r_id)) = (ids.get(&left), ids.get(&right)) {
             if sets.made_union(*l_id, *r_id) {
-                build::join_minis_animated(maze, left, right, animation);
+                build::join_minis_animated(&mut lk.maze, left, right, animation);
             }
             continue;
         }

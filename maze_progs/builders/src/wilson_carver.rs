@@ -24,25 +24,29 @@ struct RandomWalk {
 
 // Public Functions-------------------------------------------------------------------------------
 
-pub fn generate_maze(maze: &mut maze::Maze) {
-    build::fill_maze_with_walls(maze);
+pub fn generate_maze(monitor: monitor::SolverReceiver) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    build::fill_maze_with_walls(&mut lk.maze);
     let mut rng = thread_rng();
     let start = maze::Point {
-        row: 2 * (rng.gen_range(2..maze.row_size() - 1) / 2) + 1,
-        col: 2 * (rng.gen_range(2..maze.col_size() - 1) / 2) + 1,
+        row: 2 * (rng.gen_range(2..lk.maze.row_size() - 1) / 2) + 1,
+        col: 2 * (rng.gen_range(2..lk.maze.col_size() - 1) / 2) + 1,
     };
-    build::build_path(maze, start);
-    maze[start.row as usize][start.col as usize] |= build::BUILDER_BIT;
+    build::build_path(&mut lk.maze, start);
+    lk.maze[start.row as usize][start.col as usize] |= build::BUILDER_BIT;
     let mut cur = RandomWalk {
         prev_row_start: 1,
         prev: maze::Point { row: 0, col: 0 },
         walk: maze::Point { row: 1, col: 1 },
         next: maze::Point { row: 0, col: 0 },
     };
-    maze[cur.walk.row as usize][cur.walk.col as usize] &= !build::MARKERS_MASK;
+    lk.maze[cur.walk.row as usize][cur.walk.col as usize] &= !build::MARKERS_MASK;
     let mut indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     'walking: loop {
-        maze[cur.walk.row as usize][cur.walk.col as usize] |= WALK_BIT;
+        lk.maze[cur.walk.row as usize][cur.walk.col as usize] |= WALK_BIT;
         indices.shuffle(&mut rng);
         'choosing_step: for &i in indices.iter() {
             let p = &build::GENERATE_DIRECTIONS[i];
@@ -50,10 +54,10 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                 row: cur.walk.row + p.row,
                 col: cur.walk.col + p.col,
             };
-            if !is_valid_step(maze, cur.next, cur.prev) {
+            if !is_valid_step(&lk.maze, cur.next, cur.prev) {
                 continue 'choosing_step;
             }
-            match complete_walk(maze, cur) {
+            match complete_walk(&mut lk.maze, cur) {
                 Some(new_walk) => {
                     cur = new_walk;
                     continue 'walking;
@@ -66,36 +70,41 @@ pub fn generate_maze(maze: &mut maze::Maze) {
     }
 }
 
-pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
-    if maze.is_mini() {
-        animate_mini_maze(maze, speed);
+pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    if lk.maze.is_mini() {
+        drop(lk);
+        animate_mini_maze(monitor, speed);
         return;
     }
     let animation = build::BUILDER_SPEEDS[speed as usize];
-    build::fill_maze_with_walls(maze);
-    build::flush_grid(maze);
-    build::print_overlap_key_animated(maze);
+    build::fill_maze_with_walls(&mut lk.maze);
+    build::flush_grid(&lk.maze);
+    build::print_overlap_key_animated(&lk.maze);
     let mut rng = thread_rng();
     let start = maze::Point {
-        row: 2 * (rng.gen_range(2..maze.row_size() - 1) / 2) + 1,
-        col: 2 * (rng.gen_range(2..maze.col_size() - 1) / 2) + 1,
+        row: 2 * (rng.gen_range(2..lk.maze.row_size() - 1) / 2) + 1,
+        col: 2 * (rng.gen_range(2..lk.maze.col_size() - 1) / 2) + 1,
     };
-    build::build_path_animated(maze, start, animation);
-    build::flush_cursor_maze_coordinate(maze, start);
-    maze[start.row as usize][start.col as usize] |= build::BUILDER_BIT;
+    build::build_path_animated(&mut lk.maze, start, animation);
+    build::flush_cursor_maze_coordinate(&lk.maze, start);
+    lk.maze[start.row as usize][start.col as usize] |= build::BUILDER_BIT;
     let mut cur = RandomWalk {
         prev_row_start: 1,
         prev: maze::Point { row: 0, col: 0 },
         walk: maze::Point { row: 1, col: 1 },
         next: maze::Point { row: 0, col: 0 },
     };
-    maze[cur.walk.row as usize][cur.walk.col as usize] &= !build::MARKERS_MASK;
+    lk.maze[cur.walk.row as usize][cur.walk.col as usize] &= !build::MARKERS_MASK;
     let mut indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     'walking: loop {
-        if maze.exit() {
+        if monitor.exit() {
             return;
         }
-        maze[cur.walk.row as usize][cur.walk.col as usize] |= WALK_BIT;
+        lk.maze[cur.walk.row as usize][cur.walk.col as usize] |= WALK_BIT;
         indices.shuffle(&mut rng);
         'choosing_step: for &i in indices.iter() {
             let p = &build::GENERATE_DIRECTIONS[i];
@@ -103,11 +112,11 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                 row: cur.walk.row + p.row,
                 col: cur.walk.col + p.col,
             };
-            if !is_valid_step(maze, cur.next, cur.prev) {
+            if !is_valid_step(&lk.maze, cur.next, cur.prev) {
                 continue 'choosing_step;
             }
 
-            match complete_walk_animated(maze, cur, animation) {
+            match complete_walk_animated(&mut lk.maze, cur, animation) {
                 Some(new_walk) => {
                     cur = new_walk;
                     continue 'walking;
@@ -120,32 +129,36 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     }
 }
 
-fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
+fn animate_mini_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
     let animation = build::BUILDER_SPEEDS[speed as usize];
-    build::fill_maze_with_walls(maze);
-    build::flush_grid(maze);
-    build::print_overlap_key_animated(maze);
+    build::fill_maze_with_walls(&mut lk.maze);
+    build::flush_grid(&lk.maze);
+    build::print_overlap_key_animated(&lk.maze);
     let mut rng = thread_rng();
     let start = maze::Point {
-        row: 2 * (rng.gen_range(2..maze.row_size() - 1) / 2) + 1,
-        col: 2 * (rng.gen_range(2..maze.col_size() - 1) / 2) + 1,
+        row: 2 * (rng.gen_range(2..lk.maze.row_size() - 1) / 2) + 1,
+        col: 2 * (rng.gen_range(2..lk.maze.col_size() - 1) / 2) + 1,
     };
-    build::build_mini_path_animated(maze, start, animation);
-    build::flush_mini_coordinate(maze, start);
-    maze[start.row as usize][start.col as usize] |= build::BUILDER_BIT;
+    build::build_mini_path_animated(&mut lk.maze, start, animation);
+    build::flush_mini_coordinate(&lk.maze, start);
+    lk.maze[start.row as usize][start.col as usize] |= build::BUILDER_BIT;
     let mut cur = RandomWalk {
         prev_row_start: 1,
         prev: maze::Point { row: 0, col: 0 },
         walk: maze::Point { row: 1, col: 1 },
         next: maze::Point { row: 0, col: 0 },
     };
-    maze[cur.walk.row as usize][cur.walk.col as usize] &= !build::MARKERS_MASK;
+    lk.maze[cur.walk.row as usize][cur.walk.col as usize] &= !build::MARKERS_MASK;
     let mut indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     'walking: loop {
-        if maze.exit() {
+        if monitor.exit() {
             return;
         }
-        maze[cur.walk.row as usize][cur.walk.col as usize] |= WALK_BIT;
+        lk.maze[cur.walk.row as usize][cur.walk.col as usize] |= WALK_BIT;
         indices.shuffle(&mut rng);
         'choosing_step: for &i in indices.iter() {
             let p = &build::GENERATE_DIRECTIONS[i];
@@ -153,11 +166,11 @@ fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                 row: cur.walk.row + p.row,
                 col: cur.walk.col + p.col,
             };
-            if !is_valid_step(maze, cur.next, cur.prev) {
+            if !is_valid_step(&lk.maze, cur.next, cur.prev) {
                 continue 'choosing_step;
             }
 
-            match complete_mini_walk_animated(maze, cur, animation) {
+            match complete_mini_walk_animated(&mut lk.maze, cur, animation) {
                 Some(new_walk) => {
                     cur = new_walk;
                     continue 'walking;

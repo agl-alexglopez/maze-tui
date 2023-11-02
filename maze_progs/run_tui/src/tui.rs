@@ -2,9 +2,6 @@ use builders::build;
 use crossbeam_channel::{self, unbounded};
 use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyEvent};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
-use rand::distributions::Bernoulli;
-use rand::prelude::Distribution;
-use rand::{seq::SliceRandom, thread_rng};
 use ratatui::widgets::Widget;
 use ratatui::{
     buffer::Buffer,
@@ -301,17 +298,17 @@ impl<'a> Tui<'a> {
     pub fn home_animated(
         &mut self,
         forward: bool,
-        step: Option<&[maze::Delta]>,
+        step: Option<&[tape::Delta<maze::Point, maze::Square>]>,
         replay_maze: &mut maze::Maze,
     ) -> Result<()> {
         if let Some(history) = step {
             if forward {
                 for delta in history {
-                    replay_maze[delta.p.row as usize][delta.p.col as usize] = delta.after;
+                    replay_maze[delta.id.row as usize][delta.id.col as usize] = delta.after;
                 }
             } else {
                 for delta in history.iter().rev() {
-                    replay_maze[delta.p.row as usize][delta.p.col as usize] = delta.before;
+                    replay_maze[delta.id.row as usize][delta.id.col as usize] = delta.before;
                 }
             }
         }
@@ -513,7 +510,7 @@ impl<'a> Tui<'a> {
     pub fn render_builder_frame(
         &mut self,
         forward: bool,
-        step: Option<&[maze::Delta]>,
+        step: Option<&[tape::Delta<maze::Point, maze::Square>]>,
         replay_maze: &mut maze::Maze,
         rect: &Rc<[Rect]>,
     ) -> Result<()> {
@@ -546,11 +543,11 @@ impl<'a> Tui<'a> {
         if let Some(history) = step {
             if forward {
                 for delta in history {
-                    replay_maze[delta.p.row as usize][delta.p.col as usize] = delta.after;
+                    replay_maze[delta.id.row as usize][delta.id.col as usize] = delta.after;
                 }
             } else {
                 for delta in history.iter().rev() {
-                    replay_maze[delta.p.row as usize][delta.p.col as usize] = delta.before;
+                    replay_maze[delta.id.row as usize][delta.id.col as usize] = delta.before;
                 }
             }
         }
@@ -564,7 +561,7 @@ impl<'a> Tui<'a> {
     pub fn render_solver_frame(
         &mut self,
         forward: bool,
-        step: Option<&[maze::Delta]>,
+        step: Option<&[tape::Delta<maze::Point, maze::Square>]>,
         replay_maze: &mut maze::Maze,
         rect: &Rc<[Rect]>,
     ) -> Result<()> {
@@ -597,11 +594,11 @@ impl<'a> Tui<'a> {
         if let Some(history) = step {
             if forward {
                 for delta in history {
-                    replay_maze[delta.p.row as usize][delta.p.col as usize] = delta.after;
+                    replay_maze[delta.id.row as usize][delta.id.col as usize] = delta.after;
                 }
             } else {
                 for delta in history.iter().rev() {
-                    replay_maze[delta.p.row as usize][delta.p.col as usize] = delta.before;
+                    replay_maze[delta.id.row as usize][delta.id.col as usize] = delta.before;
                 }
             }
         }
@@ -670,53 +667,6 @@ impl EventHandler {
 
 // The UI section has a lot of boilerplate, repetition, and magic numbers but at least we can edit
 // it in one place. Look into more sane organization.
-
-fn ui_bg_maze(f: &mut Frame<'_>) {
-    let frame_block = Block::default().padding(Padding::new(1, 1, 1, 1));
-    let mut background_maze = tables::MazeRunner::new();
-    let mut rng = thread_rng();
-    background_maze.args.style = match tables::WALL_STYLES.choose(&mut rng) {
-        Some(&style) => style.1,
-        None => print::maze_panic!("Styles not found."),
-    };
-    let modification_probability = Bernoulli::new(0.2);
-    background_maze.modify = None;
-    if modification_probability
-        .expect("Bernoulli innefective")
-        .sample(&mut rng)
-    {
-        background_maze.modify = match tables::MODIFICATIONS.choose(&mut rng) {
-            Some(&m) => Some(m.1),
-            None => print::maze_panic!("Modification table empty."),
-        }
-    }
-    let mut rng = thread_rng();
-    background_maze.build.0 = match &tables::BUILDERS.choose(&mut rng) {
-        Some(b) => b.1 .0,
-        None => print::maze_panic!("Builder table empty!"),
-    };
-    let inner = frame_block.inner(f.size());
-    background_maze.args.odd_rows = inner.height as i32;
-    background_maze.args.odd_cols = inner.width as i32;
-    background_maze.args.offset = maze::Offset {
-        add_rows: inner.y as i32,
-        add_cols: inner.x as i32,
-    };
-    if background_maze.args.style == maze::MazeStyle::Mini {
-        background_maze.args.odd_rows *= 2;
-    }
-    let mut bg_maze = maze::Maze::new(background_maze.args);
-    background_maze.build.0(&mut bg_maze);
-    if let Some(m) = background_maze.modify {
-        m.0(&mut bg_maze);
-    }
-    let monitor = monitor::Solver::new(bg_maze);
-    background_maze.solve.0(monitor.clone());
-    match monitor.clone().lock() {
-        Ok(lk) => solve::print_paths(&lk.maze),
-        Err(_) => print::maze_panic!("Home screen broke."),
-    }
-}
 
 fn ui_info_prompt(f: &mut Frame<'_>) {
     let overall_layout = Layout::default()

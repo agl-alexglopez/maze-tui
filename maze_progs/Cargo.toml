@@ -8,6 +8,7 @@ members = [
     "builders",
     "key",
     "tables",
+    "tape",
     "solvers",
     "painters",
     "print",

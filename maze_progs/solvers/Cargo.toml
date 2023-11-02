@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 speed = { path = "../speed" }
 key = { path = "../key" }
+tape = { path = "../tape" }
 maze = { path = "../maze" }
 monitor = { path = "../monitor" }
 builders = { path = "../builders" }

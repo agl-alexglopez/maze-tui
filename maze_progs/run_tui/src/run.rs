@@ -1,44 +1,21 @@
 use crate::tui;
 use builders::build;
-use crossterm::event::KeyCode;
 use rand::{distributions::Bernoulli, distributions::Distribution, seq::SliceRandom, thread_rng};
 use ratatui::{
     prelude::{CrosstermBackend, Rect, Terminal},
     widgets::ScrollDirection,
 };
-use solvers::solve;
-use std::error;
-use std::fmt;
 use std::time::Duration;
 use std::time::Instant;
 use tui_textarea::{Input, Key};
 
-#[derive(Debug)]
-pub struct Quit {
-    pub q: bool,
-}
-
-impl Quit {
-    pub fn new() -> Self {
-        Quit { q: false }
-    }
-}
-
-impl fmt::Display for Quit {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Quit: {}", self.q)
-    }
-}
-
 #[derive(Debug, Clone)]
 struct Playback {
-    build_tape: maze::Tape,
-    solve_tape: maze::Tape,
+    build_tape: tape::Tape<maze::Point, maze::Square>,
+    solve_tape: tape::Tape<maze::Point, maze::Square>,
     maze: maze::Maze,
     forward: bool,
 }
-
-impl error::Error for Quit {}
 
 pub fn run() -> tui::Result<()> {
     let backend = CrosstermBackend::new(std::io::stdout());
@@ -147,7 +124,7 @@ fn new_solve_tape(rect: Rect) -> Playback {
         Err(_) => print::maze_panic!("uncontested lock failure"),
     };
     Playback {
-        build_tape: maze::Tape::default(),
+        build_tape: tape::Tape::default(),
         solve_tape: history,
         maze: replay_copy,
         forward: true,
@@ -265,13 +242,13 @@ pub fn set_command_args(cmd: String, tui: &mut tui::Tui) -> Result<tables::MazeR
 
 fn set_arg(run: &mut tables::MazeRunner, args: &tables::FlagArg) -> Result<(), String> {
     match args.flag {
-        "-b" => tables::search_table(args.arg, &tables::BUILDERS)
+        "-b" => tables::search_table(args.arg, &tables::CURSOR_BUILDERS)
             .map(|func_pair| run.build = func_pair)
             .ok_or(err_string(args)),
-        "-m" => tables::search_table(args.arg, &tables::MODIFICATIONS)
+        "-m" => tables::search_table(args.arg, &tables::CURSOR_MODIFICATIONS)
             .map(|mod_tuple| run.modify = Some(mod_tuple))
             .ok_or(err_string(args)),
-        "-s" => tables::search_table(args.arg, &tables::SOLVERS)
+        "-s" => tables::search_table(args.arg, &tables::CURSOR_SOLVERS)
             .map(|solve_tuple| run.solve = solve_tuple)
             .ok_or(err_string(args)),
         "-w" => tables::search_table(args.arg, &tables::WALL_STYLES)
@@ -321,11 +298,11 @@ fn set_random_args(rect: &Rect) -> tables::MazeRunner {
         Some(&speed) => speed.1,
         None => print::maze_panic!("Solve speed array empty."),
     };
-    this_run.build = match tables::BUILDERS.choose(&mut rng) {
+    this_run.build = match tables::CURSOR_BUILDERS.choose(&mut rng) {
         Some(&algo) => algo.1,
         None => print::maze_panic!("Build algorithm array empty."),
     };
-    this_run.solve = match tables::SOLVERS.choose(&mut rng) {
+    this_run.solve = match tables::CURSOR_SOLVERS.choose(&mut rng) {
         Some(&algo) => algo.1,
         None => print::maze_panic!("Solve algorithm array empty."),
     };
@@ -334,7 +311,7 @@ fn set_random_args(rect: &Rect) -> tables::MazeRunner {
         .expect("Bernoulli innefective")
         .sample(&mut rng)
     {
-        this_run.modify = match tables::MODIFICATIONS.choose(&mut rng) {
+        this_run.modify = match tables::CURSOR_MODIFICATIONS.choose(&mut rng) {
             Some(&m) => Some(m.1),
             None => print::maze_panic!("Modification table empty."),
         }
