@@ -64,6 +64,13 @@ pub fn hunt_history(monitor: monitor::SolverMonitor) {
     }
 
     if let Ok(mut lk) = monitor.lock() {
+        let burst = 4;
+        for i in (0..lk.maze.solve_history.len()).step_by(burst) {
+            if i + burst <= lk.maze.solve_history.len() {
+                lk.maze.solve_history[i].burst = burst;
+                lk.maze.solve_history[i + burst - 1].burst = burst;
+            }
+        }
         for i in 0..lk.win_path.len() {
             let p = lk.win_path[i];
             let square = lk.maze[p.0.row as usize][p.0.col as usize];

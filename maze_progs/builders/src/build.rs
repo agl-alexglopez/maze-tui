@@ -10,8 +10,7 @@ use print;
 use print::maze_panic;
 use ratatui::{
     buffer::Cell,
-    prelude::Rect,
-    style::{Color as RatColor, Modifier, Style},
+    style::{Color as RatColor, Modifier},
 };
 use std::io::{self};
 

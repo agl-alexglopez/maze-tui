@@ -32,7 +32,8 @@ impl fmt::Display for Quit {
 
 #[derive(Debug, Clone)]
 struct Playback {
-    tape: maze::Tape,
+    build_tape: maze::Tape,
+    solve_tape: maze::Tape,
     maze: maze::Maze,
     forward: bool,
 }
@@ -80,21 +81,49 @@ pub fn run() -> tui::Result<()> {
         }
         tui.home_animated(
             playback.forward,
-            playback.tape.cur_step(),
+            playback.solve_tape.cur_step(),
             &mut playback.maze,
         )?;
         let now = Instant::now();
         if now - last_render >= frame_time {
             playback.forward = if playback.forward {
-                playback.tape.set_next()
+                playback.solve_tape.set_next()
             } else {
-                !playback.tape.set_prev()
+                !playback.solve_tape.set_prev()
             };
             last_render = now;
         }
     }
     tui.exit()?;
     Ok(())
+}
+
+fn new_tape(run: &tables::MazeRunner) -> Playback {
+    let maze = monitor::Solver::new(maze::Maze::new(run.args));
+    let replay_copy = match maze.lock() {
+        Ok(mut lk) => {
+            let mut maze_copy = lk.maze.clone();
+            build::fill_maze_with_walls(&mut lk.maze);
+            build::fill_maze_with_walls(&mut maze_copy);
+            maze_copy
+        }
+        Err(_) => print::maze_panic!("Could not obtain lock."),
+    };
+    builders::recursive_backtracker::generate_history(maze.clone());
+    solvers::bfs::hunt_history(maze.clone());
+    let (build_playback, solve_playback) = match maze.lock() {
+        Ok(l) => (
+            l.maze.build_history.to_owned(),
+            l.maze.solve_history.to_owned(),
+        ),
+        Err(_) => print::maze_panic!("rendering cannot progress without lock"),
+    };
+    Playback {
+        build_tape: build_playback,
+        solve_tape: solve_playback,
+        maze: replay_copy,
+        forward: true,
+    }
 }
 
 fn new_solve_tape(rect: Rect) -> Playback {
@@ -118,43 +147,25 @@ fn new_solve_tape(rect: Rect) -> Playback {
         Err(_) => print::maze_panic!("uncontested lock failure"),
     };
     Playback {
-        tape: history,
+        build_tape: maze::Tape::default(),
+        solve_tape: history,
         maze: replay_copy,
         forward: true,
     }
 }
 
 fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<()> {
-    tui.terminal.clear()?;
-    //let t_start = Instant::now();
     let render_space = tui.inner_maze_rect();
-    this_run.args.style = maze::MazeStyle::Sharp;
-    let maze = monitor::Solver::new(maze::Maze::new(this_run.args));
-    let mut replay_copy = match maze.lock() {
-        Ok(mut lk) => {
-            let mut maze_copy = lk.maze.clone();
-            build::fill_maze_with_walls(&mut lk.maze);
-            build::fill_maze_with_walls(&mut maze_copy);
-            maze_copy
-        }
-        Err(_) => print::maze_panic!("Could not obtain lock."),
-    };
-    builders::recursive_backtracker::generate_history(maze.clone());
-    solvers::bfs::hunt_history(maze.clone());
-    // let mut quit_early = false;
-    let mut playback = match maze.lock() {
-        Ok(l) => l,
-        Err(_) => print::maze_panic!("rendering cannot progress without lock"),
-    };
-    let frame_time = Duration::from_micros(2000);
+    this_run.args.style = maze::MazeStyle::Contrast;
+    let mut play = new_tape(&this_run);
+    let mut frame_time = Duration::from_micros(400);
     let mut last_render = Instant::now();
-    let mut play_forward = true;
     'rendering: loop {
         'building: loop {
             tui.render_builder_frame(
-                play_forward,
-                playback.maze.build_history.cur_step(),
-                &mut replay_copy,
+                play.forward,
+                play.build_tape.cur_step(),
+                &mut play.maze,
                 &render_space,
             )?;
             if tui.events.try_next().is_some() {
@@ -162,21 +173,22 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
             }
             let now = Instant::now();
             if now - last_render >= frame_time {
-                if play_forward {
-                    if !playback.maze.build_history.set_next() {
+                if play.forward {
+                    if !play.build_tape.set_next() {
                         break 'building;
                     }
                 } else {
-                    play_forward = !playback.maze.build_history.set_prev();
+                    play.forward = !play.build_tape.set_prev();
                 }
                 last_render = now;
             }
         }
+        frame_time = Duration::from_micros(4000);
         'solving: loop {
             tui.render_solver_frame(
-                play_forward,
-                playback.maze.solve_history.cur_step(),
-                &mut replay_copy,
+                play.forward,
+                play.solve_tape.cur_step(),
+                &mut play.maze,
                 &render_space,
             )?;
             if tui.events.try_next().is_some() {
@@ -184,9 +196,16 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
             }
             let now = Instant::now();
             if now - last_render >= frame_time {
-                if play_forward {
-                    play_forward = playback.maze.solve_history.set_next();
-                } else if !playback.maze.solve_history.set_prev() {
+                if play.forward {
+                    play.forward = play.solve_tape.set_next();
+                } else if !play.solve_tape.set_prev() {
+                    tui.render_solver_frame(
+                        play.forward,
+                        play.solve_tape.cur_step(),
+                        &mut play.maze,
+                        &render_space,
+                    )?;
+                    frame_time = Duration::from_micros(400);
                     break 'solving;
                 }
                 last_render = now;
