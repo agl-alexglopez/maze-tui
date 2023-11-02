@@ -199,13 +199,13 @@ impl Tape {
         self.i == self.peek_prev_index()
     }
 
-    pub fn move_tape_prev(&mut self) -> bool {
+    pub fn set_prev(&mut self) -> bool {
         let prev = self.i;
         self.i = self.peek_prev_index();
         self.i != prev
     }
 
-    pub fn move_tape_next(&mut self) -> bool {
+    pub fn set_next(&mut self) -> bool {
         let prev = self.i;
         self.i = self.peek_next_index();
         self.i != prev

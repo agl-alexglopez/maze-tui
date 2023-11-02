@@ -85,11 +85,11 @@ pub fn run() -> tui::Result<()> {
         )?;
         let now = Instant::now();
         if now - last_render >= frame_time {
-            if playback.forward {
-                playback.forward = playback.tape.move_tape_next();
+            playback.forward = if playback.forward {
+                playback.tape.set_next()
             } else {
-                playback.forward = !playback.tape.move_tape_prev();
-            }
+                !playback.tape.set_prev()
+            };
             last_render = now;
         }
     }
@@ -163,11 +163,11 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
             let now = Instant::now();
             if now - last_render >= frame_time {
                 if play_forward {
-                    if !playback.maze.build_history.move_tape_next() {
+                    if !playback.maze.build_history.set_next() {
                         break 'building;
                     }
                 } else {
-                    play_forward = !playback.maze.build_history.move_tape_prev();
+                    play_forward = !playback.maze.build_history.set_prev();
                 }
                 last_render = now;
             }
@@ -185,8 +185,8 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
             let now = Instant::now();
             if now - last_render >= frame_time {
                 if play_forward {
-                    play_forward = playback.maze.solve_history.move_tape_next();
-                } else if !playback.maze.solve_history.move_tape_prev() {
+                    play_forward = playback.maze.solve_history.set_next();
+                } else if !playback.maze.solve_history.set_prev() {
                     break 'solving;
                 }
                 last_render = now;
