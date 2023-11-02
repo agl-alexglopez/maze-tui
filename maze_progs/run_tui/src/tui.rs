@@ -383,17 +383,108 @@ impl<'a> Tui<'a> {
         Ok(())
     }
 
-    pub fn background_maze(&mut self) -> Result<()> {
-        self.terminal.draw(|frame| ui_bg_maze(frame))?;
-        Ok(())
-    }
-
     pub fn scroll(&mut self, dir: ScrollDirection) {
         self.scroll.scroll(dir)
     }
 
-    pub fn error_popup(&mut self, msg: String) -> Result<()> {
-        self.terminal.draw(|f| ui_err(&msg, f))?;
+    pub fn error_popup(&mut self, msg: String, replay_maze: &maze::Maze) -> Result<()> {
+        let frame = self.padded_frame();
+        self.terminal.draw(|f| {
+            f.render_widget(SolveFrame::new(replay_maze), frame);
+            let overall_layout = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(vec![Constraint::Percentage(70), Constraint::Percentage(30)])
+                .split(f.size());
+            let popup_layout_v = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Percentage((100 - 80) / 2),
+                    Constraint::Percentage(80),
+                    Constraint::Percentage((100 - 80) / 2),
+                ])
+                .split(overall_layout[0]);
+            let popup_layout_h = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Percentage((100 - 50) / 2),
+                    Constraint::Min(70),
+                    Constraint::Percentage((100 - 50) / 2),
+                ])
+                .split(popup_layout_v[1])[1];
+            let popup_instructions = Paragraph::new(INSTRUCTIONS)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .border_type(BorderType::Double)
+                        .border_style(Style::new().fg(Color::Yellow))
+                        .style(Style::default().bg(Color::DarkGray)),
+                )
+                .alignment(Alignment::Left)
+                .scroll((self.scroll.pos as u16, 0));
+            f.render_widget(Clear, popup_layout_h);
+            f.render_widget(popup_instructions, popup_layout_h);
+            self.scroll.state = self.scroll.state.content_length(INSTRUCTIONS_LINE_COUNT);
+            f.render_stateful_widget(
+                Scrollbar::default()
+                    .orientation(ScrollbarOrientation::VerticalRight)
+                    .thumb_symbol("█")
+                    .begin_symbol(Some("↑"))
+                    .end_symbol(Some("↓")),
+                popup_layout_h,
+                &mut self.scroll.state,
+            );
+            let text_v = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Percentage((100 - 15) / 2),
+                    Constraint::Min(3),
+                    Constraint::Percentage((100 - 15) / 2),
+                ])
+                .split(overall_layout[1]);
+            let text_h = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Percentage((100 - 50) / 2),
+                    Constraint::Min(70),
+                    Constraint::Percentage((100 - 50) / 2),
+                ])
+                .split(text_v[1])[1];
+            let tb = self.cmd.widget();
+            f.render_widget(Clear, text_h);
+            f.render_widget(tb, text_h);
+            let err_layout_v = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Percentage((100 - 15) / 2),
+                    Constraint::Min(4),
+                    Constraint::Percentage((100 - 15) / 2),
+                ])
+                .split(f.size());
+            let err_layout_h = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Percentage((100 - 30) / 2),
+                    Constraint::Percentage(30),
+                    Constraint::Percentage((100 - 30) / 2),
+                ])
+                .split(err_layout_v[1])[1];
+            let err_instructions = Paragraph::new(msg)
+                .wrap(Wrap { trim: true })
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .border_style(Style::new().fg(Color::Red).bg(Color::Red))
+                        .style(
+                            Style::default()
+                                .bg(Color::Black)
+                                .fg(Color::Red)
+                                .add_modifier(Modifier::BOLD),
+                        ),
+                )
+                .alignment(Alignment::Center);
+            f.render_widget(Clear, err_layout_h);
+            f.render_widget(err_instructions, err_layout_h);
+        })?;
         'reading_message: loop {
             match self.events.next()? {
                 Pack::Press(_) | Pack::Resize(_, _) => {
@@ -625,78 +716,6 @@ fn ui_bg_maze(f: &mut Frame<'_>) {
         Ok(lk) => solve::print_paths(&lk.maze),
         Err(_) => print::maze_panic!("Home screen broke."),
     }
-}
-
-fn ui_home(
-    cmd: &mut TextArea,
-    scroll: &mut Scroller,
-    replay_maze: &mut maze::Maze,
-    f: &mut Frame<'_>,
-) {
-    let frame_block = Block::default().padding(Padding::new(1, 1, 1, 1));
-    let inner = frame_block.inner(f.size());
-    f.render_widget(SolveFrame::new(replay_maze), inner);
-    let overall_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Percentage(70), Constraint::Percentage(30)])
-        .split(f.size());
-    let popup_layout_v = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage((100 - 80) / 2),
-            Constraint::Percentage(80),
-            Constraint::Percentage((100 - 80) / 2),
-        ])
-        .split(overall_layout[0]);
-    let popup_layout_h = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage((100 - 50) / 2),
-            Constraint::Min(70),
-            Constraint::Percentage((100 - 50) / 2),
-        ])
-        .split(popup_layout_v[1])[1];
-    let popup_instructions = Paragraph::new(INSTRUCTIONS)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_type(BorderType::Double)
-                .border_style(Style::new().fg(Color::Yellow))
-                .style(Style::default().bg(Color::Black)),
-        )
-        .alignment(Alignment::Left)
-        .scroll((scroll.pos as u16, 0));
-    f.render_widget(Clear, popup_layout_h);
-    f.render_widget(popup_instructions, popup_layout_h);
-    scroll.state = scroll.state.content_length(INSTRUCTIONS_LINE_COUNT);
-    f.render_stateful_widget(
-        Scrollbar::default()
-            .orientation(ScrollbarOrientation::VerticalRight)
-            .thumb_symbol("█")
-            .begin_symbol(Some("↑"))
-            .end_symbol(Some("↓")),
-        popup_layout_h,
-        &mut scroll.state,
-    );
-    let text_v = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage((100 - 15) / 2),
-            Constraint::Min(3),
-            Constraint::Percentage((100 - 15) / 2),
-        ])
-        .split(overall_layout[1]);
-    let text_h = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage((100 - 50) / 2),
-            Constraint::Min(70),
-            Constraint::Percentage((100 - 50) / 2),
-        ])
-        .split(text_v[1])[1];
-    let tb = cmd.widget();
-    f.render_widget(Clear, text_h);
-    f.render_widget(tb, text_h);
 }
 
 fn ui_info_prompt(f: &mut Frame<'_>) {
