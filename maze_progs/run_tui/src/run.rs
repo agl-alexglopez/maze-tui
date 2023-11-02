@@ -30,6 +30,13 @@ impl fmt::Display for Quit {
     }
 }
 
+#[derive(Debug, Clone)]
+struct Playback {
+    tape: maze::Tape,
+    maze: maze::Maze,
+    forward: bool,
+}
+
 impl error::Error for Quit {}
 
 pub fn run() -> tui::Result<()> {
@@ -38,43 +45,14 @@ pub fn run() -> tui::Result<()> {
     let events = tui::EventHandler::new(250);
     let mut tui = tui::Tui::new(terminal, events);
     tui.enter()?;
-    let mut run_bg = set_random_args(&tui.padded_frame());
-    run_bg.args.style = maze::MazeStyle::Contrast;
-    let mut bg_maze = monitor::Solver::new(maze::Maze::new(run_bg.args));
-    match bg_maze.lock() {
-        Ok(mut lk) => {
-            build::fill_maze_with_walls(&mut lk.maze);
-        }
-        Err(_) => print::maze_panic!("uncontested lock failure"),
-    }
-    builders::recursive_backtracker::generate_history(bg_maze.clone());
-    let mut replay_copy = match bg_maze.lock() {
-        Ok(lk) => lk.maze.clone(),
-        Err(_) => print::maze_panic!("uncontested lock failure"),
-    };
-    solvers::bfs::hunt_history(bg_maze.clone());
-    let mut play_forward = true;
+    let mut playback = new_tape(&mut tui);
     let frame_time = Duration::from_millis(10);
     let mut last_render = Instant::now();
     'render: loop {
         if let Some(ev) = tui.events.try_next() {
             match ev {
                 tui::Pack::Resize(_, _) => {
-                    run_bg = set_random_args(&tui.padded_frame());
-                    run_bg.args.style = maze::MazeStyle::Contrast;
-                    bg_maze = monitor::Solver::new(maze::Maze::new(run_bg.args));
-                    match bg_maze.lock() {
-                        Ok(mut lk) => {
-                            build::fill_maze_with_walls(&mut lk.maze);
-                        }
-                        Err(_) => print::maze_panic!("uncontested lock failure"),
-                    }
-                    builders::recursive_backtracker::generate_history(bg_maze.clone());
-                    replay_copy = match bg_maze.lock() {
-                        Ok(lk) => lk.maze.clone(),
-                        Err(_) => print::maze_panic!("uncontested lock failure"),
-                    };
-                    solvers::bfs::hunt_history(bg_maze.clone());
+                    playback = new_tape(&mut tui);
                 }
                 tui::Pack::Press(ev) => {
                     match ev.into() {
@@ -97,28 +75,50 @@ pub fn run() -> tui::Result<()> {
                 tui::Pack::Tick => {}
             }
         }
-        match bg_maze.lock() {
-            Ok(mut lk) => {
-                tui.home_animated(
-                    play_forward,
-                    lk.maze.solve_history.cur_step(),
-                    &mut replay_copy,
-                )?;
-                let now = Instant::now();
-                if now - last_render >= frame_time {
-                    if play_forward {
-                        play_forward = lk.maze.solve_history.move_tape_next();
-                    } else {
-                        play_forward = !lk.maze.solve_history.move_tape_prev();
-                    }
-                    last_render = now;
-                }
+        tui.home_animated(
+            playback.forward,
+            playback.tape.cur_step(),
+            &mut playback.maze,
+        )?;
+        let now = Instant::now();
+        if now - last_render >= frame_time {
+            if playback.forward {
+                playback.forward = playback.tape.move_tape_next();
+            } else {
+                playback.forward = !playback.tape.move_tape_prev();
             }
-            Err(_) => print::maze_panic!("uncontested lock failure"),
+            last_render = now;
         }
     }
     tui.exit()?;
     Ok(())
+}
+
+fn new_tape(tui: &mut tui::Tui) -> Playback {
+    let mut run_bg = set_random_args(&tui.padded_frame());
+    run_bg.args.style = maze::MazeStyle::Contrast;
+    let bg_maze = monitor::Solver::new(maze::Maze::new(run_bg.args));
+    match bg_maze.lock() {
+        Ok(mut lk) => {
+            build::fill_maze_with_walls(&mut lk.maze);
+        }
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    }
+    builders::recursive_backtracker::generate_history(bg_maze.clone());
+    let replay_copy = match bg_maze.lock() {
+        Ok(lk) => lk.maze.clone(),
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    solvers::bfs::hunt_history(bg_maze.clone());
+    let history = match bg_maze.lock() {
+        Ok(lk) => lk.maze.solve_history.to_owned(),
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    Playback {
+        tape: history,
+        maze: replay_copy,
+        forward: true,
+    }
 }
 
 pub fn render_command(cmd: String, tui: &mut tui::Tui) -> tui::Result<()> {
