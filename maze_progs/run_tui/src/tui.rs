@@ -21,7 +21,7 @@ use tui_textarea::{Input, TextArea};
 
 use std::rc::Rc;
 use std::{
-    thread,
+    cmp, thread,
     time::{Duration, Instant},
 };
 
@@ -65,12 +65,12 @@ impl<'a> SolveFrame<'a> {
 
 impl<'a> Widget for BuildFrame<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        for r in 0..self.row_size() {
-            for c in 0..self.col_size() {
-                let square = self.maze[r as usize][c as usize];
-                let x = area.left() + c as u16;
-                let y = area.top() + r as u16;
-                *buf.get_mut(x, y) = build::decode_square(self.maze, square);
+        let buf_area = buf.area;
+        let row_len = cmp::min(buf_area.height - area.top(), self.row_size() as u16);
+        let col_len = cmp::min(buf_area.width - area.left(), self.col_size() as u16);
+        for (r, y) in (area.top()..area.top() + row_len).enumerate() {
+            for (c, x) in (area.left()..area.left() + col_len).enumerate() {
+                *buf.get_mut(x, y) = build::decode_square(self.maze.wall_row(), self.maze[r][c]);
             }
         }
     }
@@ -78,12 +78,12 @@ impl<'a> Widget for BuildFrame<'a> {
 
 impl<'a> Widget for SolveFrame<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        for r in 0..self.row_size() {
-            for c in 0..self.col_size() {
-                let square = self.maze[r as usize][c as usize];
-                let x = area.left() + c as u16;
-                let y = area.top() + r as u16;
-                *buf.get_mut(x, y) = solve::decode_square(self.maze, square);
+        let buf_area = buf.area;
+        let row_len = cmp::min(buf_area.height - area.top(), self.row_size() as u16);
+        let col_len = cmp::min(buf_area.width - area.left(), self.col_size() as u16);
+        for (r, y) in (area.top()..area.top() + row_len).enumerate() {
+            for (c, x) in (area.left()..area.left() + col_len).enumerate() {
+                *buf.get_mut(x, y) = solve::decode_square(self.maze.wall_row(), self.maze[r][c]);
             }
         }
     }
@@ -205,6 +205,11 @@ impl<'a> Tui<'a> {
             .split(f.size())
     }
 
+    pub fn padded_frame(&mut self) -> Rect {
+        let frame_block = Block::default().padding(Padding::new(1, 1, 1, 1));
+        frame_block.inner(self.terminal.get_frame().size())
+    }
+
     /// Resets the terminal interface.
     ///
     /// This function is also used for the panic hook to revert
@@ -224,9 +229,72 @@ impl<'a> Tui<'a> {
         Ok(())
     }
 
-    pub fn home(&mut self) -> Result<()> {
-        self.terminal
-            .draw(|frame| ui_home(&mut self.cmd, &mut self.scroll, frame))?;
+    pub fn home(&mut self, replay_maze: &mut maze::Maze) -> Result<()> {
+        let frame = self.padded_frame();
+        self.terminal.draw(|f| {
+            f.render_widget(SolveFrame::new(replay_maze), frame);
+            let overall_layout = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(vec![Constraint::Percentage(70), Constraint::Percentage(30)])
+                .split(f.size());
+            let popup_layout_v = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Percentage((100 - 80) / 2),
+                    Constraint::Percentage(80),
+                    Constraint::Percentage((100 - 80) / 2),
+                ])
+                .split(overall_layout[0]);
+            let popup_layout_h = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Percentage((100 - 50) / 2),
+                    Constraint::Min(70),
+                    Constraint::Percentage((100 - 50) / 2),
+                ])
+                .split(popup_layout_v[1])[1];
+            let popup_instructions = Paragraph::new(INSTRUCTIONS)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .border_type(BorderType::Double)
+                        .border_style(Style::new().fg(Color::Yellow))
+                        .style(Style::default().bg(Color::Black)),
+                )
+                .alignment(Alignment::Left)
+                .scroll((self.scroll.pos as u16, 0));
+            f.render_widget(Clear, popup_layout_h);
+            f.render_widget(popup_instructions, popup_layout_h);
+            self.scroll.state = self.scroll.state.content_length(INSTRUCTIONS_LINE_COUNT);
+            f.render_stateful_widget(
+                Scrollbar::default()
+                    .orientation(ScrollbarOrientation::VerticalRight)
+                    .thumb_symbol("█")
+                    .begin_symbol(Some("↑"))
+                    .end_symbol(Some("↓")),
+                popup_layout_h,
+                &mut self.scroll.state,
+            );
+            let text_v = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Percentage((100 - 15) / 2),
+                    Constraint::Min(3),
+                    Constraint::Percentage((100 - 15) / 2),
+                ])
+                .split(overall_layout[1]);
+            let text_h = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Percentage((100 - 50) / 2),
+                    Constraint::Min(70),
+                    Constraint::Percentage((100 - 50) / 2),
+                ])
+                .split(text_v[1])[1];
+            let tb = self.cmd.widget();
+            f.render_widget(Clear, text_h);
+            f.render_widget(tb, text_h);
+        })?;
         Ok(())
     }
 
@@ -474,7 +542,15 @@ fn ui_bg_maze(f: &mut Frame<'_>) {
     }
 }
 
-fn ui_home(cmd: &mut TextArea, scroll: &mut Scroller, f: &mut Frame<'_>) {
+fn ui_home(
+    cmd: &mut TextArea,
+    scroll: &mut Scroller,
+    replay_maze: &mut maze::Maze,
+    f: &mut Frame<'_>,
+) {
+    let frame_block = Block::default().padding(Padding::new(1, 1, 1, 1));
+    let inner = frame_block.inner(f.size());
+    f.render_widget(SolveFrame::new(replay_maze), inner);
     let overall_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Percentage(70), Constraint::Percentage(30)])
@@ -505,6 +581,7 @@ fn ui_home(cmd: &mut TextArea, scroll: &mut Scroller, f: &mut Frame<'_>) {
         )
         .alignment(Alignment::Left)
         .scroll((scroll.pos as u16, 0));
+    f.render_widget(Clear, popup_layout_h);
     f.render_widget(popup_instructions, popup_layout_h);
     scroll.state = scroll.state.content_length(INSTRUCTIONS_LINE_COUNT);
     f.render_stateful_widget(
@@ -533,6 +610,7 @@ fn ui_home(cmd: &mut TextArea, scroll: &mut Scroller, f: &mut Frame<'_>) {
         ])
         .split(text_v[1])[1];
     let tb = cmd.widget();
+    f.render_widget(Clear, text_h);
     f.render_widget(tb, text_h);
 }
 

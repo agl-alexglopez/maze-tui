@@ -1,18 +1,16 @@
 use crate::tui;
 use builders::build;
-use crossbeam_channel::bounded;
-use crossbeam_channel::{select, tick};
 use crossterm::event::KeyCode;
 use rand::{distributions::Bernoulli, distributions::Distribution, seq::SliceRandom, thread_rng};
 use ratatui::{
-    prelude::{CrosstermBackend, Terminal},
+    prelude::{CrosstermBackend, Rect, Terminal},
     widgets::ScrollDirection,
 };
 use solvers::solve;
 use std::error;
 use std::fmt;
+use std::time::Duration;
 use std::time::Instant;
-use std::{thread, time::Duration};
 use tui_textarea::{Input, Key};
 
 #[derive(Debug)]
@@ -40,12 +38,30 @@ pub fn run() -> tui::Result<()> {
     let events = tui::EventHandler::new(250);
     let mut tui = tui::Tui::new(terminal, events);
     tui.enter()?;
-    tui.background_maze()?;
+    let mut run_bg = set_random_args(&tui.padded_frame());
+    run_bg.args.style = maze::MazeStyle::Contrast;
+    let mut bg_maze = monitor::Solver::new(maze::Maze::new(run_bg.args));
+    builders::recursive_backtracker::generate_history(bg_maze.clone());
+    solvers::bfs::hunt_history(bg_maze.clone());
+    match bg_maze.lock() {
+        Ok(mut maze) => {
+            maze.maze.build_history.end();
+            maze.maze.solve_history.end();
+        }
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    }
     'render: loop {
-        tui.home()?;
+        tui.home(&mut bg_maze.lock().expect("uncontested lock failure").maze)?;
         match tui.events.next()? {
             tui::Pack::Resize(_, _) => {
-                tui.background_maze()?;
+                run_bg = set_random_args(&tui.padded_frame());
+                run_bg.args.style = maze::MazeStyle::Contrast;
+                bg_maze = monitor::Solver::new(maze::Maze::new(run_bg.args));
+                builders::recursive_backtracker::generate_history(bg_maze.clone());
+                solvers::bfs::hunt_history(bg_maze.clone());
+                let mut maze = bg_maze.lock().expect("uncontested lock failure?");
+                maze.maze.build_history.end();
+                maze.maze.solve_history.end();
             }
             tui::Pack::Press(ev) => {
                 match ev.into() {
@@ -57,7 +73,6 @@ pub fn run() -> tui::Result<()> {
                     } => {
                         if render_command(tui.cmd.lines()[0].to_string(), &mut tui).is_ok() {
                             tui.terminal.clear()?;
-                            tui.background_maze()?;
                         }
                     }
                     input => {
@@ -70,20 +85,6 @@ pub fn run() -> tui::Result<()> {
         }
     }
     tui.exit()?;
-    Ok(())
-}
-
-pub fn run_command(cmd: &String, tui: &mut tui::Tui) -> tui::Result<()> {
-    if cmd.is_empty() {
-        rand_with_channels(tui)?;
-        return Ok(());
-    }
-    match set_command_args(tui, cmd) {
-        Ok(run) => {
-            run_channels(run, tui)?;
-        }
-        Err(_) => return Err(Box::new(Quit::new())),
-    };
     Ok(())
 }
 
@@ -102,70 +103,11 @@ pub fn render_command(cmd: String, tui: &mut tui::Tui) -> tui::Result<()> {
     Ok(())
 }
 
-pub fn rand_with_channels(tui: &mut tui::Tui) -> tui::Result<()> {
-    run_channels(set_random_args(tui), tui)?;
-    Ok(())
-}
-
-fn run_channels(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<()> {
-    tui.terminal.clear()?;
-    let (impatient_user, worker) = bounded::<bool>(1);
-    let (finished_worker, patient_user) = bounded::<bool>(1);
-    let mut should_quit = false;
-    let maze = monitor::Solver::new(maze::Maze::new_channel(&this_run.args, worker));
-    let mc = maze.clone();
-    let worker_thread = thread::spawn(move || {
-        if let Ok(mut lk) = mc.lock() {
-            match this_run.build_view {
-                tables::ViewingMode::StaticImage => {
-                    build::print_overlap_key(&lk.maze);
-                    this_run.build.0(&mut lk.maze);
-                    if let Some((static_mod, _)) = this_run.modify {
-                        static_mod(&mut lk.maze);
-                    }
-                    build::flush_grid(&lk.maze);
-                }
-                tables::ViewingMode::AnimatedPlayback => {
-                    this_run.build.1(&mut lk.maze, this_run.build_speed);
-                    if let Some((_, animated_mod)) = this_run.modify {
-                        animated_mod(&mut lk.maze, this_run.build_speed);
-                    }
-                }
-            }
-        }
-        match this_run.solve_view {
-            tables::ViewingMode::StaticImage => this_run.solve.0(mc),
-            tables::ViewingMode::AnimatedPlayback => this_run.solve.1(mc, this_run.solve_speed),
-        }
-        match finished_worker.send(true) {
-            Ok(_) => {}
-            Err(_) => print::maze_panic!("Worker sender disconnected."),
-        }
-    });
-
-    while patient_user.is_empty() {
-        match tui.events.next()? {
-            tui::Pack::Press(_) | tui::Pack::Resize(_, _) => match impatient_user.send(true) {
-                Ok(_) => {
-                    should_quit = true;
-                    break;
-                }
-                Err(_) => return Err(Box::new(Quit::new())),
-            },
-            _ => {}
-        }
-    }
-    worker_thread.join().unwrap();
-    if should_quit {
-        return Ok(());
-    }
-    handle_waiting_user(&this_run.build, maze.clone(), tui)
-}
-
-fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<()> {
+fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<()> {
     tui.terminal.clear()?;
     //let t_start = Instant::now();
     let render_space = tui.inner_maze_rect();
+    this_run.args.style = maze::MazeStyle::Sharp;
     let maze = monitor::Solver::new(maze::Maze::new(this_run.args));
     let mut replay_copy = match maze.lock() {
         Ok(mut lk) => {
@@ -183,7 +125,7 @@ fn render_maze(this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<
         Ok(l) => l,
         Err(_) => print::maze_panic!("rendering cannot progress without lock"),
     };
-    let frame_time = Duration::from_micros(50);
+    let frame_time = Duration::from_micros(2000);
     let mut last_render = Instant::now();
     let mut play_forward = true;
     'rendering: loop {
@@ -374,15 +316,17 @@ fn set_arg(run: &mut tables::MazeRunner, args: &tables::FlagArg) -> Result<(), S
     }
 }
 
-fn set_random_args(tui: &mut tui::Tui) -> tables::MazeRunner {
+fn set_random_args(rect: &Rect) -> tables::MazeRunner {
     let mut rng = thread_rng();
     let mut this_run = tables::MazeRunner::new();
-    let dimensions = tui.inner_dimensions();
     this_run.build_view = tables::ViewingMode::AnimatedPlayback;
     this_run.solve_view = tables::ViewingMode::AnimatedPlayback;
-    this_run.args.odd_rows = (dimensions.rows as f64 / 1.3) as i32;
-    this_run.args.odd_cols = dimensions.cols;
-    this_run.args.offset = dimensions.offset;
+    this_run.args.odd_rows = (rect.height - 1) as i32;
+    this_run.args.odd_cols = (rect.width - 1) as i32;
+    this_run.args.offset = maze::Offset {
+        add_rows: rect.y as i32,
+        add_cols: rect.x as i32,
+    };
     let modification_probability = Bernoulli::new(0.2);
     this_run.args.style = match tables::WALL_STYLES.choose(&mut rng) {
         Some(&style) => style.1,

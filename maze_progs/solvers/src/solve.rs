@@ -118,7 +118,7 @@ pub fn print_paths(maze: &maze::Maze) {
     print::flush();
 }
 
-pub fn decode_square(maze: &maze::Maze, square: maze::Square) -> Cell {
+pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
     // We have some special printing for the finish square. Not here.
     if (square & FINISH_BIT) != 0 {
         let ansi = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
@@ -152,9 +152,7 @@ pub fn decode_square(maze: &maze::Maze, square: maze::Square) -> Cell {
         }
     } else if (square & maze::PATH_BIT) == 0 {
         Cell {
-            symbol: maze
-                .wall_char((square & maze::WALL_MASK) as usize)
-                .to_string(),
+            symbol: wall_row[(square & maze::WALL_MASK) as usize].to_string(),
             fg: RatColor::Reset,
             bg: RatColor::Reset,
             underline_color: RatColor::Reset,

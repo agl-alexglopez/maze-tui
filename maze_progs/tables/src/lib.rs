@@ -59,7 +59,7 @@ impl MazeRunner {
                 odd_rows: 33,
                 odd_cols: 111,
                 offset: maze::Offset::default(),
-                style: maze::MazeStyle::Contrast,
+                style: maze::MazeStyle::Sharp,
             },
             build_view: ViewingMode::StaticImage,
             build_speed: speed::Speed::Speed4,

@@ -99,6 +99,20 @@ impl Tape {
         self.steps.is_empty()
     }
 
+    pub fn end(&mut self) {
+        if self.steps.is_empty() {
+            panic!("no tape to end because no deltas provided");
+        }
+        self.i = self.steps.len() - 1;
+    }
+
+    pub fn start(&mut self) {
+        if self.steps.is_empty() {
+            panic!("no tape to start because no deltas provided");
+        }
+        self.i = 0;
+    }
+
     pub fn len(&self) -> usize {
         self.steps.len()
     }
@@ -269,6 +283,10 @@ impl Maze {
 
     pub fn wall_char(&self, wall_mask_index: usize) -> char {
         WALL_STYLES[(self.wall_style_index * WALL_ROW) + wall_mask_index]
+    }
+
+    pub fn wall_row(&self) -> &[char] {
+        &WALL_STYLES[self.wall_style_index * WALL_ROW..self.wall_style_index * WALL_ROW + WALL_ROW]
     }
 
     pub fn style_index(&self) -> usize {

@@ -1026,7 +1026,7 @@ pub fn print_overlap_key_animated(maze: &maze::Maze) {
 
 // Terminal Printing Helpers
 
-pub fn decode_square(maze: &maze::Maze, square: maze::Square) -> Cell {
+pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
     if square & MARKERS_MASK != 0 {
         let mark = BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize];
         Cell {
@@ -1039,9 +1039,7 @@ pub fn decode_square(maze: &maze::Maze, square: maze::Square) -> Cell {
         }
     } else if square & maze::PATH_BIT == 0 {
         Cell {
-            symbol: maze
-                .wall_char((square & maze::WALL_MASK) as usize)
-                .to_string(),
+            symbol: wall_row[(square & maze::WALL_MASK) as usize].to_string(),
             fg: RatColor::Reset,
             bg: RatColor::Reset,
             underline_color: RatColor::Reset,
