@@ -46,15 +46,15 @@ pub fn generate_history(monitor: monitor::SolverMonitor) {
         let square = lk.maze.get(cur.row, cur.col);
         let half_step_square = lk.maze.get(half_step.row, half_step.col);
         lk.maze.build_history.push(tape::Delta {
-            id: half_step,
-            before: half_step_square,
-            after: half_step_square & !build::MARKERS_MASK,
-            burst: 1,
-        });
-        lk.maze.build_history.push(tape::Delta {
             id: cur,
             before: square,
             after: square & !build::MARKERS_MASK,
+            burst: 1,
+        });
+        lk.maze.build_history.push(tape::Delta {
+            id: half_step,
+            before: half_step_square,
+            after: half_step_square & !build::MARKERS_MASK,
             burst: 1,
         });
         *lk.maze.get_mut(cur.row, cur.col) &= !build::MARKERS_MASK;

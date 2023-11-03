@@ -1,7 +1,11 @@
 use std::ops::{Index, IndexMut};
 
 #[derive(Debug, Default, Clone, Copy)]
-pub struct Delta<ID, T> {
+pub struct Delta<ID, T>
+where
+    ID: Copy + Clone + Default,
+    T: Copy + Clone + Default,
+{
     pub id: ID,
     pub before: T,
     pub after: T,
@@ -9,25 +13,41 @@ pub struct Delta<ID, T> {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct Tape<ID, T> {
+pub struct Tape<ID, T>
+where
+    ID: Copy + Clone + Default,
+    T: Copy + Clone + Default,
+{
     steps: Vec<Delta<ID, T>>,
     i: usize,
 }
 
-impl<ID, T> Index<usize> for Tape<ID, T> {
+impl<ID, T> Index<usize> for Tape<ID, T>
+where
+    ID: Copy + Clone + Default,
+    T: Copy + Clone + Default,
+{
     type Output = Delta<ID, T>;
     fn index(&self, index: usize) -> &Self::Output {
         &self.steps[index]
     }
 }
 
-impl<ID, T> IndexMut<usize> for Tape<ID, T> {
+impl<ID, T> IndexMut<usize> for Tape<ID, T>
+where
+    ID: Copy + Clone + Default,
+    T: Copy + Clone + Default,
+{
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.steps[index]
     }
 }
 
-impl<ID, T> Tape<ID, T> {
+impl<ID, T> Tape<ID, T>
+where
+    ID: Copy + Clone + Default,
+    T: Copy + Clone + Default,
+{
     pub fn slice(&self, start: usize, end: usize) -> &[Delta<ID, T>] {
         &self.steps[start..end]
     }
@@ -108,10 +128,7 @@ impl<ID, T> Tape<ID, T> {
         Some(&self.steps[self.i..self.i + self.steps[self.i].burst])
     }
 
-    pub fn push_burst(&mut self, steps: &[Delta<ID, T>])
-    where
-        Delta<ID, T>: Copy,
-    {
+    pub fn push_burst(&mut self, steps: &[Delta<ID, T>]) {
         if steps.is_empty()
             || steps[0].burst != steps.len()
             || steps[steps.len() - 1].burst != steps.len()

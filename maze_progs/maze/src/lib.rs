@@ -90,7 +90,7 @@ pub struct Blueprint {
 // Model a ROWxCOLUMN maze in a flat Vec. Implement tricky indexing in Index impls.
 #[derive(Debug, Clone, Default)]
 pub struct Maze {
-    maze: Blueprint,
+    pub maze: Blueprint,
     pub build_history: tape::Tape<Point, Square>,
     pub solve_history: tape::Tape<Point, Square>,
 }
@@ -153,10 +153,6 @@ impl Maze {
 
     pub fn as_slice_mut(&mut self) -> &mut [Square] {
         self.maze.buf.as_mut_slice()
-    }
-
-    pub fn as_blueprint_mut(&mut self) -> &mut Blueprint {
-        &mut self.maze
     }
 
     pub fn get_mut(&mut self, row: i32, col: i32) -> &mut Square {

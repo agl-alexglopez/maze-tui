@@ -9,6 +9,8 @@ use ratatui::{
 use std::{error, fmt, rc::Rc, sync::Arc, sync::Mutex, time::Duration, time::Instant};
 use tui_textarea::{Input, Key};
 
+const DEFAULT_DURATION: Duration = Duration::from_micros(2000);
+
 #[derive(Debug)]
 pub struct Quit {
     pub q: bool,
@@ -34,6 +36,11 @@ struct Playback {
     build_tape: tape::Tape<maze::Point, maze::Square>,
     solve_tape: tape::Tape<maze::Point, maze::Square>,
     forward: bool,
+    pause: bool,
+    step_forward: bool,
+    step_back: bool,
+    speed: Duration,
+    last_render: Instant,
 }
 
 pub fn run() -> tui::Result<()> {
@@ -102,10 +109,15 @@ fn new_tape(run: &tables::MazeRunner) -> Playback {
             Ok(mut solver) => {
                 build::reset_build(&mut solver.maze);
                 Playback {
-                    maze: std::mem::take(solver.maze.as_blueprint_mut()),
+                    maze: solver.maze.maze,
                     build_tape: solver.maze.build_history,
                     solve_tape: solver.maze.solve_history,
                     forward: true,
+                    pause: false,
+                    step_forward: false,
+                    step_back: false,
+                    speed: DEFAULT_DURATION,
+                    last_render: Instant::now(),
                 }
             }
             Err(_) => print::maze_panic!("rendering cannot progress without lock"),
@@ -125,10 +137,15 @@ fn new_solve_tape(rect: Rect) -> Playback {
             Ok(mut solver) => {
                 solvers::solve::reset_solve(&mut solver.maze);
                 Playback {
-                    maze: std::mem::take(solver.maze.as_blueprint_mut()),
+                    maze: solver.maze.maze,
                     build_tape: solver.maze.build_history,
                     solve_tape: solver.maze.solve_history,
                     forward: true,
+                    pause: false,
+                    step_forward: false,
+                    step_back: false,
+                    speed: DEFAULT_DURATION,
+                    last_render: Instant::now(),
                 }
             }
             Err(_) => print::maze_panic!("rendering cannot progress without lock"),
@@ -141,8 +158,6 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
     let render_space = tui.inner_maze_rect();
     this_run.args.style = maze::MazeStyle::Contrast;
     let mut play = new_tape(&this_run);
-    let mut frame_time = Duration::from_micros(400);
-    let mut last_render = Instant::now();
     'rendering: loop {
         'building: loop {
             tui.render_builder_frame(
@@ -151,25 +166,66 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
                 &mut play.maze,
                 &render_space,
             )?;
-            if let Some(tui::Pack::Press(ev)) = tui.events.try_next() {
-                if ev.code == KeyCode::Char('i') {
-                    if handle_reader(
-                        tui,
-                        tui::Process::Building,
-                        &this_run.build,
-                        &play.maze,
-                        &render_space,
-                    )
-                    .is_err()
-                    {
-                        break 'rendering;
-                    }
-                } else {
-                    break 'rendering;
+            if let Some(ev) = tui.events.try_next() {
+                match ev {
+                    tui::Pack::Press(ev) => match ev.code {
+                        KeyCode::Char('i') => {
+                            if handle_reader(
+                                tui,
+                                tui::Process::Building,
+                                &this_run.build,
+                                &play.maze,
+                                &render_space,
+                            )
+                            .is_err()
+                            {
+                                break 'rendering;
+                            }
+                        }
+                        KeyCode::Char(' ') => play.pause = !play.pause,
+                        KeyCode::Right => {
+                            play.step_forward = true;
+                            play.forward = true;
+                            play.pause = true;
+                        }
+                        KeyCode::Left => {
+                            play.step_back = true;
+                            play.forward = false;
+                            play.pause = true;
+                        }
+                        KeyCode::Down => play.speed = play.speed.saturating_mul(2),
+                        KeyCode::Up => {
+                            play.speed = match play.speed.checked_div(2) {
+                                Some(t) => t,
+                                None => Duration::ZERO,
+                            }
+                        }
+                        KeyCode::Esc => break 'rendering,
+                        _ => {}
+                    },
+                    tui::Pack::Resize(_, _) => break 'rendering,
                 }
             }
             let now = Instant::now();
-            if now - last_render >= frame_time {
+            if play.step_forward {
+                tui.render_builder_frame(
+                    play.forward,
+                    play.build_tape.cur_step(),
+                    &mut play.maze,
+                    &render_space,
+                )?;
+                play.build_tape.set_next();
+                play.step_forward = false;
+            } else if play.step_back {
+                tui.render_builder_frame(
+                    play.forward,
+                    play.build_tape.cur_step(),
+                    &mut play.maze,
+                    &render_space,
+                )?;
+                play.build_tape.set_prev();
+                play.step_back = false;
+            } else if !play.pause && now - play.last_render >= play.speed {
                 if play.forward {
                     if !play.build_tape.set_next() {
                         break 'building;
@@ -177,10 +233,9 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
                 } else {
                     play.forward = !play.build_tape.set_prev();
                 }
-                last_render = now;
+                play.last_render = now;
             }
         }
-        frame_time = Duration::from_micros(4000);
         'solving: loop {
             tui.render_solver_frame(
                 play.forward,
@@ -188,25 +243,66 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
                 &mut play.maze,
                 &render_space,
             )?;
-            if let Some(tui::Pack::Press(ev)) = tui.events.try_next() {
-                if ev.code == KeyCode::Char('i') {
-                    if handle_reader(
-                        tui,
-                        tui::Process::Solving,
-                        &this_run.build,
-                        &play.maze,
-                        &render_space,
-                    )
-                    .is_err()
-                    {
-                        break 'rendering;
-                    }
-                } else {
-                    break 'rendering;
+            if let Some(ev) = tui.events.try_next() {
+                match ev {
+                    tui::Pack::Press(ev) => match ev.code {
+                        KeyCode::Char('i') => {
+                            if handle_reader(
+                                tui,
+                                tui::Process::Solving,
+                                &this_run.build,
+                                &play.maze,
+                                &render_space,
+                            )
+                            .is_err()
+                            {
+                                break 'rendering;
+                            }
+                        }
+                        KeyCode::Char(' ') => play.pause = !play.pause,
+                        KeyCode::Right => {
+                            play.step_forward = true;
+                            play.forward = true;
+                            play.pause = true;
+                        }
+                        KeyCode::Left => {
+                            play.step_back = true;
+                            play.forward = false;
+                            play.pause = true;
+                        }
+                        KeyCode::Down => play.speed = play.speed.saturating_mul(2),
+                        KeyCode::Up => {
+                            play.speed = match play.speed.checked_div(2) {
+                                Some(t) => t,
+                                None => Duration::ZERO,
+                            }
+                        }
+                        KeyCode::Esc => break 'rendering,
+                        _ => {}
+                    },
+                    tui::Pack::Resize(_, _) => break 'rendering,
                 }
             }
             let now = Instant::now();
-            if now - last_render >= frame_time {
+            if play.step_forward {
+                tui.render_solver_frame(
+                    play.forward,
+                    play.solve_tape.cur_step(),
+                    &mut play.maze,
+                    &render_space,
+                )?;
+                play.solve_tape.set_next();
+                play.step_forward = false;
+            } else if play.step_back {
+                tui.render_solver_frame(
+                    play.forward,
+                    play.solve_tape.cur_step(),
+                    &mut play.maze,
+                    &render_space,
+                )?;
+                play.solve_tape.set_prev();
+                play.step_back = false;
+            } else if !play.pause && now - play.last_render >= play.speed {
                 if play.forward {
                     play.forward = play.solve_tape.set_next();
                 } else if !play.solve_tape.set_prev() {
@@ -216,10 +312,9 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
                         &mut play.maze,
                         &render_space,
                     )?;
-                    frame_time = Duration::from_micros(400);
                     break 'solving;
                 }
-                last_render = now;
+                play.last_render = now;
             }
         }
     }
