@@ -92,13 +92,19 @@ fn main() {
         print::set_cursor_position(maze::Point::default(), maze::Offset::default());
 
         solve_algo(monitor.clone(), solve_speed);
-        print::set_cursor_position(
-            maze::Point {
-                row: dimensions.0 + 3,
-                col: 0,
-            },
-            maze::Offset::default(),
-        );
+        if let Ok(lk) = monitor.clone().solver.lock() {
+            print::set_cursor_position(
+                maze::Point {
+                    row: if lk.maze.style_index() == (maze::MazeStyle::Mini as usize) {
+                        lk.maze.row_size() / 2 + 3
+                    } else {
+                        lk.maze.row_size() + 2
+                    },
+                    col: 0,
+                },
+                maze::Offset::default(),
+            );
+        }
         if impatient_user.is_full() {
             break;
         }

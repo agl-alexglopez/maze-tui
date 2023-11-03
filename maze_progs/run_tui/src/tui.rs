@@ -6,7 +6,7 @@ use ratatui::widgets::Widget;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout},
-    prelude::{Alignment, Color, Frame, Modifier, Rect},
+    prelude::{Alignment, Color, Modifier, Rect},
     style::Style,
     widgets::{
         Block, BorderType, Borders, Clear, Padding, Paragraph, ScrollDirection, Scrollbar,
@@ -28,46 +28,41 @@ pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBacken
 pub type Err = Box<dyn std::error::Error>;
 pub type Result<T> = std::result::Result<T, Err>;
 
+pub enum Process {
+    Building,
+    Solving,
+}
+
 pub struct BuildFrame<'a> {
-    maze: &'a maze::Maze,
+    maze: &'a maze::Blueprint,
 }
 
 pub struct SolveFrame<'a> {
-    maze: &'a maze::Maze,
+    maze: &'a maze::Blueprint,
 }
 
 impl<'a> BuildFrame<'a> {
-    fn new(m: &'a maze::Maze) -> Self {
+    fn new(m: &'a maze::Blueprint) -> Self {
         Self { maze: m }
-    }
-    fn row_size(&self) -> i32 {
-        self.maze.row_size()
-    }
-    fn col_size(&self) -> i32 {
-        self.maze.col_size()
     }
 }
 
 impl<'a> SolveFrame<'a> {
-    fn new(m: &'a maze::Maze) -> Self {
+    fn new(m: &'a maze::Blueprint) -> Self {
         Self { maze: m }
-    }
-    fn row_size(&self) -> i32 {
-        self.maze.row_size()
-    }
-    fn col_size(&self) -> i32 {
-        self.maze.col_size()
     }
 }
 
 impl<'a> Widget for BuildFrame<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let buf_area = buf.area;
-        let row_len = cmp::min(buf_area.height - area.top(), self.row_size() as u16);
-        let col_len = cmp::min(buf_area.width - area.left(), self.col_size() as u16);
+        let row_len = cmp::min(buf_area.height - area.top(), self.maze.rows as u16);
+        let col_len = cmp::min(buf_area.width - area.left(), self.maze.cols as u16);
+        let wall_row = &maze::wall_row(self.maze.wall_style_index);
+        let cols = col_len as usize;
         for (r, y) in (area.top()..area.top() + row_len).enumerate() {
             for (c, x) in (area.left()..area.left() + col_len).enumerate() {
-                *buf.get_mut(x, y) = build::decode_square(self.maze.wall_row(), self.maze[r][c]);
+                *buf.get_mut(x, y) = build::decode_square(wall_row, self.maze.buf[r * cols + c]);
             }
         }
     }
@@ -76,11 +71,13 @@ impl<'a> Widget for BuildFrame<'a> {
 impl<'a> Widget for SolveFrame<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let buf_area = buf.area;
-        let row_len = cmp::min(buf_area.height - area.top(), self.row_size() as u16);
-        let col_len = cmp::min(buf_area.width - area.left(), self.col_size() as u16);
+        let row_len = cmp::min(buf_area.height - area.top(), self.maze.rows as u16);
+        let col_len = cmp::min(buf_area.width - area.left(), self.maze.cols as u16);
+        let wall_row = &maze::wall_row(self.maze.wall_style_index);
+        let cols = col_len as usize;
         for (r, y) in (area.top()..area.top() + row_len).enumerate() {
             for (c, x) in (area.left()..area.left() + col_len).enumerate() {
-                *buf.get_mut(x, y) = solve::decode_square(self.maze.wall_row(), self.maze[r][c]);
+                *buf.get_mut(x, y) = solve::decode_square(wall_row, self.maze.buf[r * cols + c]);
             }
         }
     }
@@ -89,7 +86,6 @@ impl<'a> Widget for SolveFrame<'a> {
 // Event is a crowded name so we'll call it a pack.
 #[derive(Debug)]
 pub enum Pack {
-    Tick,
     Press(KeyEvent),
     Resize(u16, u16),
 }
@@ -225,90 +221,22 @@ impl<'a> Tui<'a> {
         self.terminal.show_cursor()?;
         Ok(())
     }
-
-    pub fn home(&mut self, replay_maze: &mut maze::Maze) -> Result<()> {
-        let frame = self.padded_frame();
-        self.terminal.draw(|f| {
-            f.render_widget(SolveFrame::new(replay_maze), frame);
-            let overall_layout = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(vec![Constraint::Percentage(70), Constraint::Percentage(30)])
-                .split(f.size());
-            let popup_layout_v = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([
-                    Constraint::Percentage((100 - 80) / 2),
-                    Constraint::Percentage(80),
-                    Constraint::Percentage((100 - 80) / 2),
-                ])
-                .split(overall_layout[0]);
-            let popup_layout_h = Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints([
-                    Constraint::Percentage((100 - 50) / 2),
-                    Constraint::Min(70),
-                    Constraint::Percentage((100 - 50) / 2),
-                ])
-                .split(popup_layout_v[1])[1];
-            let popup_instructions = Paragraph::new(INSTRUCTIONS)
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .border_type(BorderType::Double)
-                        .border_style(Style::new().fg(Color::Yellow))
-                        .style(Style::default().bg(Color::Black)),
-                )
-                .alignment(Alignment::Left)
-                .scroll((self.scroll.pos as u16, 0));
-            f.render_widget(Clear, popup_layout_h);
-            f.render_widget(popup_instructions, popup_layout_h);
-            self.scroll.state = self.scroll.state.content_length(INSTRUCTIONS_LINE_COUNT);
-            f.render_stateful_widget(
-                Scrollbar::default()
-                    .orientation(ScrollbarOrientation::VerticalRight)
-                    .thumb_symbol("█")
-                    .begin_symbol(Some("↑"))
-                    .end_symbol(Some("↓")),
-                popup_layout_h,
-                &mut self.scroll.state,
-            );
-            let text_v = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([
-                    Constraint::Percentage((100 - 15) / 2),
-                    Constraint::Min(3),
-                    Constraint::Percentage((100 - 15) / 2),
-                ])
-                .split(overall_layout[1]);
-            let text_h = Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints([
-                    Constraint::Percentage((100 - 50) / 2),
-                    Constraint::Min(70),
-                    Constraint::Percentage((100 - 50) / 2),
-                ])
-                .split(text_v[1])[1];
-            let tb = self.cmd.widget();
-            f.render_widget(Clear, text_h);
-            f.render_widget(tb, text_h);
-        })?;
-        Ok(())
-    }
-
     pub fn home_animated(
         &mut self,
         forward: bool,
         step: Option<&[tape::Delta<maze::Point, maze::Square>]>,
-        replay_maze: &mut maze::Maze,
+        replay_maze: &mut maze::Blueprint,
     ) -> Result<()> {
         if let Some(history) = step {
             if forward {
                 for delta in history {
-                    replay_maze[delta.id.row as usize][delta.id.col as usize] = delta.after;
+                    replay_maze.buf[(delta.id.row * replay_maze.cols + delta.id.col) as usize] =
+                        delta.after;
                 }
             } else {
                 for delta in history.iter().rev() {
-                    replay_maze[delta.id.row as usize][delta.id.col as usize] = delta.before;
+                    replay_maze.buf[(delta.id.row * replay_maze.cols + delta.id.col) as usize] =
+                        delta.before;
                 }
             }
         }
@@ -384,7 +312,7 @@ impl<'a> Tui<'a> {
         self.scroll.scroll(dir)
     }
 
-    pub fn error_popup(&mut self, msg: String, replay_maze: &maze::Maze) -> Result<()> {
+    pub fn error_popup(&mut self, msg: String, replay_maze: &maze::Blueprint) -> Result<()> {
         let frame = self.padded_frame();
         self.terminal.draw(|f| {
             f.render_widget(SolveFrame::new(replay_maze), frame);
@@ -483,23 +411,69 @@ impl<'a> Tui<'a> {
             f.render_widget(err_instructions, err_layout_h);
         })?;
         'reading_message: loop {
-            match self.events.next()? {
-                Pack::Press(_) | Pack::Resize(_, _) => {
-                    break 'reading_message;
-                }
-                _ => {}
+            if self.events.try_next().is_some() {
+                break 'reading_message;
             }
         }
         Ok(())
     }
 
-    pub fn info_popup(&mut self, scroll: &mut Scroller, msg: &str) -> Result<()> {
-        self.terminal.draw(|f| ui_info(msg, scroll, f))?;
-        Ok(())
-    }
-
-    pub fn info_prompt(&mut self) -> Result<()> {
-        self.terminal.draw(|f| ui_info_prompt(f))?;
+    pub fn info_popup(
+        &mut self,
+        process: &Process,
+        rect: &Rc<[Rect]>,
+        replay_maze: &maze::Blueprint,
+        scroll: &mut Scroller,
+        msg: &str,
+    ) -> Result<()> {
+        self.terminal.draw(|f| {
+            match process {
+                Process::Building => f.render_widget(BuildFrame::new(replay_maze), rect[0]),
+                Process::Solving => f.render_widget(SolveFrame::new(replay_maze), rect[0]),
+            }
+            let overall_layout = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(vec![Constraint::Percentage(65)])
+                .split(f.size());
+            let popup_layout_v = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Percentage((100 - 70) / 2),
+                    Constraint::Percentage(70),
+                    Constraint::Percentage((100 - 70) / 2),
+                ])
+                .split(overall_layout[0]);
+            let popup_layout_h = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Percentage((100 - 80) / 2),
+                    Constraint::Percentage(80),
+                    Constraint::Percentage((100 - 80) / 2),
+                ])
+                .split(popup_layout_v[1])[1];
+            let popup_instructions = Paragraph::new(msg)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .border_type(BorderType::Double)
+                        .border_style(Style::new().fg(Color::Yellow))
+                        .style(Style::default().bg(Color::Black)),
+                )
+                .wrap(Wrap { trim: true })
+                .scroll((scroll.pos as u16, 0));
+            f.render_widget(Clear, popup_layout_h);
+            f.render_widget(popup_instructions, popup_layout_h);
+            scroll.state = scroll.state.content_length(DESCRIPTION_LINE_COUNT);
+            f.render_stateful_widget(
+                Scrollbar::default()
+                    .orientation(ScrollbarOrientation::VerticalRight)
+                    .thumb_symbol("█")
+                    .begin_symbol(Some("↑"))
+                    .end_symbol(Some("↓")),
+                popup_layout_h,
+                &mut scroll.state,
+            );
+        })?;
         Ok(())
     }
 
@@ -511,7 +485,7 @@ impl<'a> Tui<'a> {
         &mut self,
         forward: bool,
         step: Option<&[tape::Delta<maze::Point, maze::Square>]>,
-        replay_maze: &mut maze::Maze,
+        replay_maze: &mut maze::Blueprint,
         rect: &Rc<[Rect]>,
     ) -> Result<()> {
         let popup_layout_v = Layout::default()
@@ -543,11 +517,13 @@ impl<'a> Tui<'a> {
         if let Some(history) = step {
             if forward {
                 for delta in history {
-                    replay_maze[delta.id.row as usize][delta.id.col as usize] = delta.after;
+                    replay_maze.buf[(delta.id.row * replay_maze.cols + delta.id.col) as usize] =
+                        delta.after;
                 }
             } else {
                 for delta in history.iter().rev() {
-                    replay_maze[delta.id.row as usize][delta.id.col as usize] = delta.before;
+                    replay_maze.buf[(delta.id.row * replay_maze.cols + delta.id.col) as usize] =
+                        delta.before;
                 }
             }
         }
@@ -562,7 +538,7 @@ impl<'a> Tui<'a> {
         &mut self,
         forward: bool,
         step: Option<&[tape::Delta<maze::Point, maze::Square>]>,
-        replay_maze: &mut maze::Maze,
+        replay_maze: &mut maze::Blueprint,
         rect: &Rc<[Rect]>,
     ) -> Result<()> {
         let popup_layout_v = Layout::default()
@@ -594,11 +570,13 @@ impl<'a> Tui<'a> {
         if let Some(history) = step {
             if forward {
                 for delta in history {
-                    replay_maze[delta.id.row as usize][delta.id.col as usize] = delta.after;
+                    replay_maze.buf[(delta.id.row * replay_maze.cols + delta.id.col) as usize] =
+                        delta.after;
                 }
             } else {
                 for delta in history.iter().rev() {
-                    replay_maze[delta.id.row as usize][delta.id.col as usize] = delta.before;
+                    replay_maze.buf[(delta.id.row * replay_maze.cols + delta.id.col) as usize] =
+                        delta.before;
                 }
             }
         }
@@ -656,180 +634,15 @@ impl EventHandler {
     ///
     /// This function will always block the current thread if
     /// there is no data available and it's possible for more data to be sent.
-    pub fn next(&self) -> Result<Pack> {
+    pub fn _next(&self) -> Result<Pack> {
         Ok(self.receiver.recv()?)
     }
 
+    /// Receive the next event but only try to receive and return an option with a
+    /// pack if one is available. Makes for easier conditions to check in render loops.
     pub fn try_next(&self) -> Option<Pack> {
         self.receiver.try_recv().ok()
     }
-}
-
-// The UI section has a lot of boilerplate, repetition, and magic numbers but at least we can edit
-// it in one place. Look into more sane organization.
-
-fn ui_info_prompt(f: &mut Frame<'_>) {
-    let overall_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Percentage(80), Constraint::Percentage(20)])
-        .split(f.size());
-    let popup_layout_v = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage((100 - 15) / 2),
-            Constraint::Min(3),
-            Constraint::Percentage((100 - 15) / 2),
-        ])
-        .split(overall_layout[1]);
-    let popup_layout_h = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage((100 - 50) / 2),
-            Constraint::Percentage(50),
-            Constraint::Percentage((100 - 50) / 2),
-        ])
-        .split(popup_layout_v[1])[1];
-    let popup_instructions = Paragraph::new("Toggle <i> for more <i>nfo. Exit <esc>.")
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_type(BorderType::Double)
-                .border_style(Style::new().fg(Color::Yellow))
-                .style(Style::default().bg(Color::Black)),
-        )
-        .wrap(Wrap { trim: true })
-        .alignment(Alignment::Center);
-    f.render_widget(popup_instructions, popup_layout_h);
-}
-
-fn ui_info(msg: &str, scroll: &mut Scroller, f: &mut Frame<'_>) {
-    let overall_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Percentage(65)])
-        .split(f.size());
-    let popup_layout_v = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage((100 - 70) / 2),
-            Constraint::Percentage(70),
-            Constraint::Percentage((100 - 70) / 2),
-        ])
-        .split(overall_layout[0]);
-    let popup_layout_h = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage((100 - 80) / 2),
-            Constraint::Percentage(80),
-            Constraint::Percentage((100 - 80) / 2),
-        ])
-        .split(popup_layout_v[1])[1];
-    let popup_instructions = Paragraph::new(msg)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_type(BorderType::Double)
-                .border_style(Style::new().fg(Color::Yellow))
-                .style(Style::default().bg(Color::Black)),
-        )
-        .wrap(Wrap { trim: true })
-        .scroll((scroll.pos as u16, 0));
-    f.render_widget(popup_instructions, popup_layout_h);
-    scroll.state = scroll.state.content_length(DESCRIPTION_LINE_COUNT);
-    f.render_stateful_widget(
-        Scrollbar::default()
-            .orientation(ScrollbarOrientation::VerticalRight)
-            .thumb_symbol("█")
-            .begin_symbol(Some("↑"))
-            .end_symbol(Some("↓")),
-        popup_layout_h,
-        &mut scroll.state,
-    );
-}
-
-fn ui_err(msg: &str, f: &mut Frame<'_>) {
-    let overall_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Percentage(70), Constraint::Percentage(30)])
-        .split(f.size());
-    let popup_layout_v = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage((100 - 80) / 2),
-            Constraint::Percentage(80),
-            Constraint::Percentage((100 - 80) / 2),
-        ])
-        .split(overall_layout[0]);
-    let popup_layout_h = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage((100 - 50) / 2),
-            Constraint::Min(70),
-            Constraint::Percentage((100 - 50) / 2),
-        ])
-        .split(popup_layout_v[1])[1];
-    // This is just a dummy popup to show during the error. No need to track scroll state.
-    let popup_instructions = Paragraph::new(INSTRUCTIONS)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::new().fg(Color::Yellow))
-                .style(Style::default().bg(Color::DarkGray)),
-        )
-        .alignment(Alignment::Left);
-    f.render_widget(popup_instructions, popup_layout_h);
-    let text_v = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage((100 - 15) / 2),
-            Constraint::Min(3),
-            Constraint::Percentage((100 - 15) / 2),
-        ])
-        .split(overall_layout[1]);
-    let text_h = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage((100 - 50) / 2),
-            Constraint::Min(70),
-            Constraint::Percentage((100 - 50) / 2),
-        ])
-        .split(text_v[1])[1];
-    let text_block = Block::default()
-        .borders(Borders::ALL)
-        .border_style(Style::new().fg(Color::Yellow))
-        .style(Style::default().bg(Color::DarkGray));
-    f.render_widget(text_block, text_h);
-    let err_layout_v = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage((100 - 15) / 2),
-            Constraint::Min(4),
-            Constraint::Percentage((100 - 15) / 2),
-        ])
-        .split(f.size());
-    let err_layout_h = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage((100 - 30) / 2),
-            Constraint::Percentage(30),
-            Constraint::Percentage((100 - 30) / 2),
-        ])
-        .split(err_layout_v[1])[1];
-    let err_instructions = Paragraph::new(msg)
-        .wrap(Wrap { trim: true })
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::new().fg(Color::Red).bg(Color::Red))
-                .style(
-                    Style::default()
-                        .bg(Color::Black)
-                        .fg(Color::Red)
-                        .add_modifier(Modifier::BOLD),
-                ),
-        )
-        .alignment(Alignment::Center);
-    f.render_widget(Clear, err_layout_h);
-    f.render_widget(err_instructions, err_layout_h);
 }
 
 static INSTRUCTIONS: &str = include_str!("../../res/instructions.txt");

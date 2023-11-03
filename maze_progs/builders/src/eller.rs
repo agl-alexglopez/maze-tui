@@ -122,10 +122,7 @@ pub fn generate_maze(monitor: monitor::SolverReceiver) {
         for set in sets_in_this_row.iter() {
             for _drop in 0..rng.gen_range(1..=set.1.len()) {
                 let chose: &maze::Point = &set.1[rng.gen_range(0..set.1.len())];
-                if (lk.maze[(chose.row + DROP_DIST) as usize][chose.col as usize]
-                    & build::BUILDER_BIT)
-                    != 0
-                {
+                if (lk.maze.get(chose.row + DROP_DIST, chose.col) & build::BUILDER_BIT) != 0 {
                     continue;
                 }
                 let next_row = window.next_row_i();
@@ -208,10 +205,7 @@ pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
         for set in sets_in_this_row.iter() {
             for _drop in 0..rng.gen_range(1..=set.1.len()) {
                 let chose: &maze::Point = &set.1[rng.gen_range(0..set.1.len())];
-                if (lk.maze[(chose.row + DROP_DIST) as usize][chose.col as usize]
-                    & build::BUILDER_BIT)
-                    != 0
-                {
+                if (lk.maze.get(chose.row + DROP_DIST, chose.col) & build::BUILDER_BIT) != 0 {
                     continue;
                 }
                 let next_row = window.next_row_i();
@@ -290,10 +284,7 @@ fn animate_mini_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
         for set in sets_in_this_row.iter() {
             for _drop in 0..rng.gen_range(1..=set.1.len()) {
                 let chose: &maze::Point = &set.1[rng.gen_range(0..set.1.len())];
-                if (lk.maze[(chose.row + DROP_DIST) as usize][chose.col as usize]
-                    & build::BUILDER_BIT)
-                    != 0
-                {
+                if (lk.maze.get(chose.row + DROP_DIST, chose.col) & build::BUILDER_BIT) != 0 {
                     continue;
                 }
                 let next_row = window.next_row_i();

@@ -9,9 +9,8 @@ use maze;
 use print::maze_panic;
 use rand::prelude::*;
 use ratatui::{
-    buffer::{Buffer, Cell},
-    prelude::Rect,
-    style::{Color as RatColor, Modifier, Style},
+    buffer::Cell,
+    style::{Color as RatColor, Modifier},
 };
 use std::io::{self};
 
@@ -29,30 +28,38 @@ pub struct ThreadGuide {
 
 // Public Module Functions
 
+pub fn reset_solve(maze: &mut maze::Maze) {
+    for square in maze.as_slice_mut().iter_mut() {
+        if (*square & maze::PATH_BIT) != 0 {
+            *square = maze::PATH_BIT;
+        }
+    }
+}
+
 pub fn set_corner_starts(maze: &maze::Maze) -> [maze::Point; 4] {
     let mut point1: maze::Point = maze::Point { row: 1, col: 1 };
-    if (maze[point1.row as usize][point1.col as usize] & maze::PATH_BIT) == 0 {
+    if (maze.get(point1.row, point1.col) & maze::PATH_BIT) == 0 {
         point1 = find_nearest_square(maze, point1);
     }
     let mut point2: maze::Point = maze::Point {
         row: 1,
         col: maze.col_size() - 2,
     };
-    if (maze[point2.row as usize][point2.col as usize] & maze::PATH_BIT) == 0 {
+    if (maze.get(point2.row, point2.col) & maze::PATH_BIT) == 0 {
         point2 = find_nearest_square(maze, point2);
     }
     let mut point3: maze::Point = maze::Point {
         row: maze.row_size() - 2,
         col: 1,
     };
-    if (maze[point3.row as usize][point3.col as usize] & maze::PATH_BIT) == 0 {
+    if (maze.get(point3.row, point3.col) & maze::PATH_BIT) == 0 {
         point3 = find_nearest_square(maze, point3);
     }
     let mut point4: maze::Point = maze::Point {
         row: maze.row_size() - 2,
         col: maze.col_size() - 2,
     };
-    if (maze[point4.row as usize][point4.col as usize] & maze::PATH_BIT) == 0 {
+    if (maze.get(point4.row, point4.col) & maze::PATH_BIT) == 0 {
         point4 = find_nearest_square(maze, point4);
     }
     [point1, point2, point3, point4]
@@ -181,7 +188,7 @@ pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         },
         maze.offset(),
     );
-    let square = maze[point.row as usize][point.col as usize];
+    let square = maze.get(point.row, point.col);
     // We have some special printing for the finish square. Not here.
     if (square & FINISH_BIT) != 0 {
         let ansi = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
@@ -249,7 +256,7 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
         },
         maze.offset(),
     );
-    let square = &maze[point.row as usize][point.col as usize];
+    let square = maze.get(point.row, point.col);
     if (square & FINISH_BIT) != 0 {
         let ansi = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
         match queue!(
@@ -318,7 +325,7 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         },
         maze.offset(),
     );
-    let square = maze[point.row as usize][point.col as usize];
+    let square = maze.get(point.row, point.col);
     let this_color = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
     if (square & (FINISH_BIT | START_BIT)) != 0 {
         execute!(
@@ -334,8 +341,8 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     }
     // This is a path square. We should never be asked to print a wall from a solver animation?
     if point.row % 2 != 0 {
-        if (maze[(point.row - 1) as usize][point.col as usize] & maze::PATH_BIT) != 0 {
-            let neighbor_square = maze[(point.row - 1) as usize][point.col as usize];
+        if (maze.get(point.row - 1, point.col) & maze::PATH_BIT) != 0 {
+            let neighbor_square = maze.get(point.row - 1, point.col);
             if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
                 execute!(
                     io::stdout(),
@@ -371,8 +378,8 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         return;
     }
     // Even rows but this still must be a path.
-    if (maze[(point.row + 1) as usize][point.col as usize] & maze::PATH_BIT) != 0 {
-        let neighbor_square = maze[(point.row + 1) as usize][point.col as usize];
+    if (maze.get(point.row + 1, point.col) & maze::PATH_BIT) != 0 {
+        let neighbor_square = maze.get(point.row + 1, point.col);
         if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
             execute!(
                 io::stdout(),
@@ -415,7 +422,7 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
         },
         maze.offset(),
     );
-    let square = maze[point.row as usize][point.col as usize];
+    let square = maze.get(point.row, point.col);
     let this_color = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
     if (square & (FINISH_BIT | START_BIT)) != 0 {
         queue!(
@@ -438,8 +445,8 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
         return;
     }
     if point.row % 2 != 0 {
-        if (maze[(point.row - 1) as usize][point.col as usize] & maze::PATH_BIT) != 0 {
-            let neighbor_square = maze[(point.row - 1) as usize][point.col as usize];
+        if (maze.get(point.row - 1, point.col) & maze::PATH_BIT) != 0 {
+            let neighbor_square = maze.get(point.row - 1, point.col);
             if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
                 queue!(
                     io::stdout(),
@@ -475,8 +482,8 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
         return;
     }
     // Even rows but this still must be a path.
-    if (maze[(point.row + 1) as usize][point.col as usize] & maze::PATH_BIT) != 0 {
-        let neighbor_square = maze[(point.row + 1) as usize][point.col as usize];
+    if (maze.get(point.row + 1, point.col) & maze::PATH_BIT) != 0 {
+        let neighbor_square = maze.get(point.row + 1, point.col);
         if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
             queue!(
                 io::stdout(),
@@ -520,7 +527,7 @@ pub fn flush_dark_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         },
         maze.offset(),
     );
-    let square = maze[point.row as usize][point.col as usize];
+    let square = maze.get(point.row, point.col);
     let this_color = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
     if (square & (FINISH_BIT | START_BIT)) != 0 {
         execute!(
@@ -536,8 +543,8 @@ pub fn flush_dark_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     }
     // This is a path square. We should never be asked to print a wall from a solver animation?
     if point.row % 2 != 0 {
-        if (maze[(point.row - 1) as usize][point.col as usize] & maze::PATH_BIT) != 0 {
-            let neighbor_square = maze[(point.row - 1) as usize][point.col as usize];
+        if (maze.get(point.row - 1, point.col) & maze::PATH_BIT) != 0 {
+            let neighbor_square = maze.get(point.row - 1, point.col);
             if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
                 execute!(
                     io::stdout(),
@@ -573,8 +580,8 @@ pub fn flush_dark_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         return;
     }
     // Even rows but this still must be a path.
-    if (maze[(point.row + 1) as usize][point.col as usize] & maze::PATH_BIT) != 0 {
-        let neighbor_square = maze[(point.row + 1) as usize][point.col as usize];
+    if (maze.get(point.row + 1, point.col) & maze::PATH_BIT) != 0 {
+        let neighbor_square = maze.get(point.row + 1, point.col);
         if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
             execute!(
                 io::stdout(),
@@ -642,9 +649,9 @@ fn is_valid_start_or_finish(maze: &maze::Maze, choice: maze::Point) -> bool {
         && choice.row < maze.row_size() - 1
         && choice.col > 0
         && choice.col < maze.col_size() - 1
-        && (maze[choice.row as usize][choice.col as usize] & maze::PATH_BIT) != 0
-        && (maze[choice.row as usize][choice.col as usize] & FINISH_BIT) == 0
-        && (maze[choice.row as usize][choice.col as usize] & START_BIT) == 0
+        && (maze.get(choice.row, choice.col) & maze::PATH_BIT) != 0
+        && (maze.get(choice.row, choice.col) & FINISH_BIT) == 0
+        && (maze.get(choice.row, choice.col) & START_BIT) == 0
 }
 
 // Read Only Data Available to All Solvers

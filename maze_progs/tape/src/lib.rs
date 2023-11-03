@@ -28,6 +28,10 @@ impl<ID, T> IndexMut<usize> for Tape<ID, T> {
 }
 
 impl<ID, T> Tape<ID, T> {
+    pub fn slice(&self, start: usize, end: usize) -> &[Delta<ID, T>] {
+        &self.steps[start..end]
+    }
+
     pub fn is_empty(&self) -> bool {
         self.steps.is_empty()
     }

@@ -40,7 +40,6 @@
 // maze start bit--------||| |||| |||| ||||
 // maze goals bit-------|||| |||| |||| ||||
 //                    0b0000 0000 0000 0000
-use std::ops::{Index, IndexMut};
 
 // Public Types
 
@@ -59,7 +58,7 @@ pub struct Offset {
     pub add_cols: i32,
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum MazeStyle {
     Mini = 0,
     Sharp,
@@ -79,14 +78,19 @@ pub struct MazeArgs {
     pub style: MazeStyle,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct Blueprint {
+    pub buf: Vec<Square>,
+    pub rows: i32,
+    pub cols: i32,
+    pub offset: Offset,
+    pub wall_style_index: usize,
+}
+
 // Model a ROWxCOLUMN maze in a flat Vec. Implement tricky indexing in Index impls.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Maze {
-    maze: Vec<Square>,
-    maze_row_size: i32,
-    maze_col_size: i32,
-    offset: Offset,
-    wall_style_index: usize,
+    maze: Blueprint,
     pub build_history: tape::Tape<Point, Square>,
     pub solve_history: tape::Tape<Point, Square>,
 }
@@ -102,57 +106,65 @@ impl Maze {
         let rows = args.odd_rows + 1 - (args.odd_rows % 2);
         let cols = args.odd_cols + 1 - (args.odd_cols % 2);
         Self {
-            maze: (vec![0; rows as usize * cols as usize]),
-            maze_row_size: (rows),
-            maze_col_size: (cols),
-            offset: args.offset,
-            wall_style_index: args.style as usize,
+            maze: Blueprint {
+                buf: (vec![0; rows as usize * cols as usize]),
+                rows,
+                cols,
+                offset: args.offset,
+                wall_style_index: args.style as usize,
+            },
             build_history: tape::Tape::default(),
             solve_history: tape::Tape::default(),
         }
     }
 
     pub fn row_size(&self) -> i32 {
-        self.maze_row_size
+        self.maze.rows
     }
 
     pub fn offset(&self) -> Offset {
-        self.offset
+        self.maze.offset
     }
 
     pub fn col_size(&self) -> i32 {
-        self.maze_col_size
+        self.maze.cols
     }
 
     pub fn wall_char(&self, wall_mask_index: usize) -> char {
-        WALL_STYLES[(self.wall_style_index * WALL_ROW) + wall_mask_index]
+        WALL_STYLES[(self.maze.wall_style_index * WALL_ROW) + wall_mask_index]
     }
 
     pub fn wall_row(&self) -> &[char] {
-        &WALL_STYLES[self.wall_style_index * WALL_ROW..self.wall_style_index * WALL_ROW + WALL_ROW]
+        &WALL_STYLES[self.maze.wall_style_index * WALL_ROW
+            ..self.maze.wall_style_index * WALL_ROW + WALL_ROW]
     }
 
     pub fn style_index(&self) -> usize {
-        self.wall_style_index
+        self.maze.wall_style_index
     }
 
     pub fn is_mini(&self) -> bool {
-        self.wall_style_index == (MazeStyle::Mini as usize)
+        self.maze.wall_style_index == (MazeStyle::Mini as usize)
     }
-}
 
-impl Index<usize> for Maze {
-    type Output = [Square];
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.maze[(index * self.maze_col_size as usize)
-            ..(index * self.maze_col_size as usize + self.maze_col_size as usize)]
+    pub fn as_slice(&self) -> &[Square] {
+        self.maze.buf.as_slice()
     }
-}
 
-impl IndexMut<usize> for Maze {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.maze[(index * self.maze_col_size as usize)
-            ..(index * self.maze_col_size as usize + self.maze_col_size as usize)]
+    pub fn as_slice_mut(&mut self) -> &mut [Square] {
+        self.maze.buf.as_mut_slice()
+    }
+
+    pub fn as_blueprint_mut(&mut self) -> &mut Blueprint {
+        &mut self.maze
+    }
+
+    pub fn get_mut(&mut self, row: i32, col: i32) -> &mut Square {
+        &mut self.maze.buf[(row * self.maze.cols + col) as usize]
+    }
+
+    pub fn get(&self, row: i32, col: i32) -> Square {
+        self.maze.buf[(row * self.maze.cols + col) as usize]
     }
 }
 
@@ -168,6 +180,10 @@ impl Default for MazeArgs {
 }
 
 // Read Only Data Available to Any Maze Users
+
+pub fn wall_row(row_index: usize) -> &'static [char] {
+    &WALL_STYLES[row_index * WALL_ROW..row_index * WALL_ROW + WALL_ROW]
+}
 
 // Any modification made to these bits by a builder MUST be cleared before build process completes.
 pub const CLEAR_AVAILABLE_BITS: Square = 0b0001_1111_1111_0000;

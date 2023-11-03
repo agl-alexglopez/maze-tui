@@ -112,13 +112,6 @@ fn main() {
             maze::Offset::default(),
         );
     }
-    print::set_cursor_position(
-        maze::Point {
-            row: run.args.odd_rows + 3,
-            col: 0,
-        },
-        maze::Offset::default(),
-    );
 }
 
 fn set_arg(run: &mut tables::MazeRunner, args: &tables::FlagArg) -> Result<(), String> {

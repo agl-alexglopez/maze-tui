@@ -51,7 +51,7 @@ pub fn generate_maze(monitor: monitor::SolverReceiver) {
         for r in (highest_completed_row..lk.maze.row_size() - 1).step_by(2) {
             for c in (1..lk.maze.col_size() - 1).step_by(2) {
                 let start_candidate = maze::Point { row: r, col: c };
-                if (lk.maze[r as usize][c as usize] & build::BUILDER_BIT) == 0 {
+                if (lk.maze.get(r, c) & build::BUILDER_BIT) == 0 {
                     if !set_highest_completed_row {
                         highest_completed_row = r;
                         set_highest_completed_row = true;
@@ -62,8 +62,7 @@ pub fn generate_maze(monitor: monitor::SolverReceiver) {
                             col: c + dir.col,
                         };
                         if build::is_square_within_perimeter_walls(&lk.maze, next)
-                            && (lk.maze[next.row as usize][next.col as usize] & build::BUILDER_BIT)
-                                != 0
+                            && (lk.maze.get(next.row, next.col) & build::BUILDER_BIT) != 0
                         {
                             build::join_squares(&mut lk.maze, start_candidate, next);
                             cur = start_candidate;
@@ -140,7 +139,7 @@ pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
             shoot_hunter_laser(&lk.maze, r);
             for c in (1..lk.maze.col_size() - 1).step_by(2) {
                 let start_candidate = maze::Point { row: r, col: c };
-                if (lk.maze[r as usize][c as usize] & build::BUILDER_BIT) == 0 {
+                if (lk.maze.get(r, c) & build::BUILDER_BIT) == 0 {
                     if !set_highest_completed_row {
                         highest_completed_row = r;
                         set_highest_completed_row = true;
@@ -151,8 +150,7 @@ pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
                             col: c + dir.col,
                         };
                         if build::is_square_within_perimeter_walls(&lk.maze, next)
-                            && (lk.maze[next.row as usize][next.col as usize] & build::BUILDER_BIT)
-                                != 0
+                            && (lk.maze.get(next.row, next.col) & build::BUILDER_BIT) != 0
                         {
                             build::join_squares_animated(
                                 &mut lk.maze,
@@ -221,7 +219,7 @@ pub fn animate_mini_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) 
             shoot_mini_laser(&lk.maze, r);
             for c in (1..lk.maze.col_size() - 1).step_by(2) {
                 let start_candidate = maze::Point { row: r, col: c };
-                if (lk.maze[r as usize][c as usize] & build::BUILDER_BIT) == 0 {
+                if (lk.maze.get(r, c) & build::BUILDER_BIT) == 0 {
                     if !set_highest_completed_row {
                         highest_completed_row = r;
                         set_highest_completed_row = true;
@@ -232,8 +230,7 @@ pub fn animate_mini_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) 
                             col: c + dir.col,
                         };
                         if build::is_square_within_perimeter_walls(&lk.maze, next)
-                            && (lk.maze[next.row as usize][next.col as usize] & build::BUILDER_BIT)
-                                != 0
+                            && (lk.maze.get(next.row, next.col) & build::BUILDER_BIT) != 0
                         {
                             build::join_minis_animated(
                                 &mut lk.maze,
@@ -307,7 +304,7 @@ fn shoot_mini_laser(maze: &maze::Maze, current_row: i32) {
             },
             maze.offset(),
         );
-        if (maze[(current_row + 1) as usize][c as usize] & maze::PATH_BIT) == 0 {
+        if (maze.get(current_row + 1, c) & maze::PATH_BIT) == 0 {
             queue!(
                 stdout,
                 SetBackgroundColor(Color::AnsiValue(HUNTING)),
@@ -363,7 +360,7 @@ fn flush_mini_carver(maze: &maze::Maze, p: maze::Point, animation: build::SpeedU
         },
         maze.offset(),
     );
-    if (maze[(p.row - 1) as usize][p.col as usize] & maze::PATH_BIT) == 0 {
+    if (maze.get(p.row - 1, p.col) & maze::PATH_BIT) == 0 {
         execute!(
             io::stdout(),
             SetBackgroundColor(Color::AnsiValue(CARVING)),
