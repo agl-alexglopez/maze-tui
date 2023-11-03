@@ -492,7 +492,7 @@ impl<'a> Tui<'a> {
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Percentage((100 - 17) / 2),
-                Constraint::Min(3),
+                Constraint::Min(4),
                 Constraint::Percentage((100 - 17) / 2),
             ])
             .split(rect[1]);
@@ -504,7 +504,7 @@ impl<'a> Tui<'a> {
                 Constraint::Percentage((100 - 50) / 2),
             ])
             .split(popup_layout_v[1])[1];
-        let popup_instructions = Paragraph::new("Toggle <i> for more <i>nfo. Exit <esc>.")
+        let popup_instructions = Paragraph::new(POPUP_INSTRUCTIONS)
             .block(
                 Block::default()
                     .borders(Borders::ALL)
@@ -512,7 +512,6 @@ impl<'a> Tui<'a> {
                     .border_style(Style::new().fg(Color::Yellow))
                     .style(Style::default().bg(Color::Black)),
             )
-            .wrap(Wrap { trim: true })
             .alignment(Alignment::Center);
         if let Some(history) = step {
             if forward {
@@ -545,7 +544,7 @@ impl<'a> Tui<'a> {
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Percentage((100 - 15) / 2),
-                Constraint::Min(3),
+                Constraint::Min(4),
                 Constraint::Percentage((100 - 15) / 2),
             ])
             .split(rect[1]);
@@ -557,7 +556,7 @@ impl<'a> Tui<'a> {
                 Constraint::Percentage((100 - 50) / 2),
             ])
             .split(popup_layout_v[1])[1];
-        let popup_instructions = Paragraph::new("Toggle <i> for more <i>nfo. Exit <esc>.")
+        let popup_instructions = Paragraph::new(POPUP_INSTRUCTIONS)
             .block(
                 Block::default()
                     .borders(Borders::ALL)
@@ -565,7 +564,6 @@ impl<'a> Tui<'a> {
                     .border_style(Style::new().fg(Color::Yellow))
                     .style(Style::default().bg(Color::Black)),
             )
-            .wrap(Wrap { trim: true })
             .alignment(Alignment::Center);
         if let Some(history) = step {
             if forward {
@@ -648,3 +646,5 @@ impl EventHandler {
 static INSTRUCTIONS: &str = include_str!("../../res/instructions.txt");
 static INSTRUCTIONS_LINE_COUNT: usize = 70;
 static DESCRIPTION_LINE_COUNT: usize = 50;
+static POPUP_INSTRUCTIONS: &str =
+    "<i>info <esc>exit <space>play/pause\n<🠈/🠊>step back/next <🠉/🠋>faster/slower";
