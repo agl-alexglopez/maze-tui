@@ -28,6 +28,7 @@ pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBacken
 pub type Err = Box<dyn std::error::Error>;
 pub type Result<T> = std::result::Result<T, Err>;
 
+#[derive(Copy, Clone)]
 pub enum Process {
     Building,
     Solving,
@@ -420,7 +421,7 @@ impl<'a> Tui<'a> {
 
     pub fn info_popup(
         &mut self,
-        process: &Process,
+        process: Process,
         rect: &Rc<[Rect]>,
         replay_maze: &maze::Blueprint,
         scroll: &mut Scroller,

@@ -331,7 +331,7 @@ fn handle_reader(
     let mut scroll = tui::Scroller::default();
     let description = tables::load_desc(builder);
     'reading: loop {
-        tui.info_popup(&process, render_space, maze, &mut scroll, description)?;
+        tui.info_popup(process, render_space, maze, &mut scroll, description)?;
         if let Some(tui::Pack::Press(k)) = tui.events.try_next() {
             match k.code {
                 KeyCode::Char('i') => break 'reading,
