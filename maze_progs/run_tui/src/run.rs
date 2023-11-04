@@ -317,13 +317,13 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
             let now = Instant::now();
             if play.step_forward {
                 play.apply_solve_step();
-                tui.render_maze_frame(tui::SolveFrame { maze: &play.maze }, &render_space)?;
                 play.solve_tape.set_next();
+                tui.render_maze_frame(tui::SolveFrame { maze: &play.maze }, &render_space)?;
                 play.step_forward = false;
             } else if play.step_back {
                 play.apply_solve_step();
-                tui.render_maze_frame(tui::SolveFrame { maze: &play.maze }, &render_space)?;
                 play.solve_tape.set_prev();
+                tui.render_maze_frame(tui::SolveFrame { maze: &play.maze }, &render_space)?;
                 play.step_back = false;
             } else if !play.pause && now - play.last_render >= play.speed {
                 if play.forward {
