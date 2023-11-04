@@ -282,6 +282,7 @@ pub fn build_wall_line_history(maze: &mut maze::Maze, p: maze::Point) {
             burst,
         };
         burst += 1;
+        *maze.get_mut(p.row, p.col + 1) |= maze::WEST_WALL;
         wall |= maze::EAST_WALL;
     }
     wall_changes[burst - 1] = tape::Delta {
