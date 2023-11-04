@@ -2,7 +2,11 @@ use crate::build;
 use maze;
 use speed;
 
-pub fn add_cross(monitor: monitor::SolverReceiver) {
+pub fn add_cross_history(monitor: monitor::MazeMonitor) {
+    todo!();
+}
+
+pub fn add_cross(monitor: monitor::MazeReceiver) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
@@ -21,7 +25,7 @@ pub fn add_cross(monitor: monitor::SolverReceiver) {
     }
 }
 
-pub fn add_cross_animated(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn add_cross_animated(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
@@ -53,7 +57,7 @@ pub fn add_cross_animated(monitor: monitor::SolverReceiver, speed: speed::Speed)
     }
 }
 
-fn add_mini_cross_animated(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+fn add_mini_cross_animated(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
@@ -84,7 +88,11 @@ fn add_mini_cross_animated(monitor: monitor::SolverReceiver, speed: speed::Speed
     }
 }
 
-pub fn add_x(monitor: monitor::SolverReceiver) {
+pub fn add_x_history(monitor: monitor::MazeMonitor) {
+    todo!();
+}
+
+pub fn add_x(monitor: monitor::MazeReceiver) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
@@ -97,7 +105,7 @@ pub fn add_x(monitor: monitor::SolverReceiver) {
     }
 }
 
-pub fn add_x_animated(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn add_x_animated(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
@@ -119,7 +127,7 @@ pub fn add_x_animated(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     }
 }
 
-fn add_mini_x_animated(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+fn add_mini_x_animated(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),

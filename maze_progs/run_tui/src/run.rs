@@ -130,7 +130,7 @@ pub fn run() -> tui::Result<()> {
     Ok(())
 }
 
-fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Result<()> {
+fn render_maze(mut this_run: tables::HistoryRunner, tui: &mut tui::Tui) -> tui::Result<()> {
     let render_space = tui.inner_maze_rect();
     this_run.args.style = maze::MazeStyle::Contrast;
     let mut play = new_tape(&this_run);
@@ -198,18 +198,22 @@ fn handle_press(
     tui: &mut tui::Tui,
     ev: tui::Pack,
     process: tui::Process,
-    args: &tables::MazeRunner,
+    args: &tables::HistoryRunner,
     play: &mut Playback,
     render_space: &Rc<[Rect]>,
 ) -> bool {
     match ev {
         tui::Pack::Press(ev) => match ev.code {
             KeyCode::Char('i') => {
-                let description = match process {
-                    tui::Process::Building => tables::load_desc(&args.build),
-                    tui::Process::Solving => tables::load_desc(&args.solve),
-                };
-                if handle_reader(tui, process, description, &play.maze, render_space).is_err() {
+                if handle_reader(
+                    tui,
+                    process,
+                    tables::load_info(&args.build),
+                    &play.maze,
+                    render_space,
+                )
+                .is_err()
+                {
                     return false;
                 }
             }
@@ -248,10 +252,10 @@ fn handle_press(
     true
 }
 
-fn new_tape(run: &tables::MazeRunner) -> Playback {
-    let monitor = monitor::Solver::new(maze::Maze::new(run.args));
-    builders::recursive_backtracker::generate_history(monitor.clone());
-    solvers::bfs::hunt_history(monitor.clone());
+fn new_tape(run: &tables::HistoryRunner) -> Playback {
+    let monitor = monitor::Monitor::new(maze::Maze::new(run.args));
+    (run.build)(monitor.clone());
+    (run.solve)(monitor.clone());
     match Arc::into_inner(monitor) {
         Some(a) => match Mutex::into_inner(a) {
             Ok(mut solver) => {
@@ -274,10 +278,12 @@ fn new_tape(run: &tables::MazeRunner) -> Playback {
 
 fn new_home_tape(rect: Rect) -> Playback {
     let mut run_bg = set_random_args(&rect);
+    run_bg.build = builders::recursive_backtracker::generate_history;
+    run_bg.solve = solvers::bfs::hunt_history;
     run_bg.args.style = maze::MazeStyle::Contrast;
-    let bg_maze = monitor::Solver::new(maze::Maze::new(run_bg.args));
-    builders::recursive_backtracker::generate_history(bg_maze.clone());
-    solvers::bfs::hunt_history(bg_maze.clone());
+    let bg_maze = monitor::Monitor::new(maze::Maze::new(run_bg.args));
+    (run_bg.build)(bg_maze.clone());
+    (run_bg.solve)(bg_maze.clone());
     match Arc::into_inner(bg_maze) {
         Some(a) => match Mutex::into_inner(a) {
             Ok(mut solver) => {
@@ -321,8 +327,8 @@ fn handle_reader(
     Ok(())
 }
 
-pub fn set_command_args(cmd: String, tui: &mut tui::Tui) -> Result<tables::MazeRunner, String> {
-    let mut run = tables::MazeRunner::new();
+pub fn set_command_args(cmd: String, tui: &mut tui::Tui) -> Result<tables::HistoryRunner, String> {
+    let mut run = tables::HistoryRunner::new();
     let dimensions = tui.inner_dimensions();
     run.args.odd_rows = (dimensions.rows as f64 / 1.2) as i32;
     run.args.odd_cols = dimensions.cols;
@@ -369,45 +375,27 @@ pub fn set_command_args(cmd: String, tui: &mut tui::Tui) -> Result<tables::MazeR
     Ok(run)
 }
 
-fn set_arg(run: &mut tables::MazeRunner, args: &tables::FlagArg) -> Result<(), String> {
+fn set_arg(run: &mut tables::HistoryRunner, args: &tables::FlagArg) -> Result<(), String> {
     match args.flag {
-        "-b" => tables::search_table(args.arg, &tables::CURSOR_BUILDERS)
+        "-b" => tables::search_table(args.arg, &tables::HISTORY_BUILDERS)
             .map(|func_pair| run.build = func_pair)
             .ok_or(err_string(args)),
-        "-m" => tables::search_table(args.arg, &tables::CURSOR_MODIFICATIONS)
+        "-m" => tables::search_table(args.arg, &tables::HISTORY_MODIFICATIONS)
             .map(|mod_tuple| run.modify = Some(mod_tuple))
             .ok_or(err_string(args)),
-        "-s" => tables::search_table(args.arg, &tables::CURSOR_SOLVERS)
+        "-s" => tables::search_table(args.arg, &tables::HISTORY_SOLVERS)
             .map(|solve_tuple| run.solve = solve_tuple)
             .ok_or(err_string(args)),
         "-w" => tables::search_table(args.arg, &tables::WALL_STYLES)
             .map(|wall_style| run.args.style = wall_style)
             .ok_or(err_string(args)),
-        "-ba" => match tables::search_table(args.arg, &tables::SPEEDS) {
-            Some(speed) => {
-                run.build_speed = speed;
-                run.build_view = tables::ViewingMode::AnimatedPlayback;
-                Ok(())
-            }
-            None => Err(err_string(args)),
-        },
-        "-sa" => match tables::search_table(args.arg, &tables::SPEEDS) {
-            Some(speed) => {
-                run.solve_speed = speed;
-                run.solve_view = tables::ViewingMode::AnimatedPlayback;
-                Ok(())
-            }
-            None => Err(err_string(args)),
-        },
         _ => Err(err_string(args)),
     }
 }
 
-fn set_random_args(rect: &Rect) -> tables::MazeRunner {
+fn set_random_args(rect: &Rect) -> tables::HistoryRunner {
     let mut rng = thread_rng();
-    let mut this_run = tables::MazeRunner::new();
-    this_run.build_view = tables::ViewingMode::AnimatedPlayback;
-    this_run.solve_view = tables::ViewingMode::AnimatedPlayback;
+    let mut this_run = tables::HistoryRunner::new();
     this_run.args.odd_rows = (rect.height - 1) as i32;
     this_run.args.odd_cols = (rect.width - 1) as i32;
     this_run.args.offset = maze::Offset {
@@ -419,19 +407,11 @@ fn set_random_args(rect: &Rect) -> tables::MazeRunner {
         Some(&style) => style.1,
         None => print::maze_panic!("Styles not set for loop, broken"),
     };
-    this_run.build_speed = match tables::SPEEDS.choose(&mut rng) {
-        Some(&speed) => speed.1,
-        None => print::maze_panic!("Build speed array empty."),
-    };
-    this_run.solve_speed = match tables::SPEEDS.choose(&mut rng) {
-        Some(&speed) => speed.1,
-        None => print::maze_panic!("Solve speed array empty."),
-    };
-    this_run.build = match tables::CURSOR_BUILDERS.choose(&mut rng) {
+    this_run.build = match tables::HISTORY_BUILDERS.choose(&mut rng) {
         Some(&algo) => algo.1,
         None => print::maze_panic!("Build algorithm array empty."),
     };
-    this_run.solve = match tables::CURSOR_SOLVERS.choose(&mut rng) {
+    this_run.solve = match tables::HISTORY_SOLVERS.choose(&mut rng) {
         Some(&algo) => algo.1,
         None => print::maze_panic!("Solve algorithm array empty."),
     };
@@ -440,7 +420,7 @@ fn set_random_args(rect: &Rect) -> tables::MazeRunner {
         .expect("Bernoulli innefective")
         .sample(&mut rng)
     {
-        this_run.modify = match tables::CURSOR_MODIFICATIONS.choose(&mut rng) {
+        this_run.modify = match tables::HISTORY_MODIFICATIONS.choose(&mut rng) {
             Some(&m) => Some(m.1),
             None => print::maze_panic!("Modification table empty."),
         }

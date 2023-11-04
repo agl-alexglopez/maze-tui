@@ -19,7 +19,7 @@ impl MaxMap {
     }
 }
 
-pub struct Solver {
+pub struct Monitor {
     pub maze: maze::Maze,
     pub win: Option<usize>,
     pub win_path: Vec<(maze::Point, u16)>,
@@ -27,7 +27,7 @@ pub struct Solver {
     pub count: usize,
 }
 
-impl Solver {
+impl Monitor {
     pub fn new(boxed_maze: maze::Maze) -> Arc<Mutex<Self>> {
         Arc::new(Mutex::new(Self {
             maze: boxed_maze,
@@ -39,18 +39,18 @@ impl Solver {
     }
 }
 
-pub type SolverMonitor = Arc<Mutex<Solver>>;
+pub type MazeMonitor = Arc<Mutex<Monitor>>;
 
 #[derive(Clone)]
-pub struct SolverReceiver {
-    pub solver: SolverMonitor,
+pub struct MazeReceiver {
+    pub solver: MazeMonitor,
     pub quit_receiver: Receiver<bool>,
 }
 
-impl SolverReceiver {
+impl MazeReceiver {
     pub fn new(m: maze::Maze, quit_rx: Receiver<bool>) -> Self {
         Self {
-            solver: Solver::new(m),
+            solver: Monitor::new(m),
             quit_receiver: quit_rx,
         }
     }

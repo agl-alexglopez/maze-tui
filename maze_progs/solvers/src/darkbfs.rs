@@ -9,7 +9,7 @@ use std::{thread, time};
 
 // Public Solver Functions-------------------------------------------------------------------------
 
-pub fn animate_hunt(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn animate_hunt(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -76,7 +76,7 @@ pub fn animate_hunt(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     print::maze_panic!("Thread panicked with the lock");
 }
 
-fn animate_mini_hunt(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+fn animate_mini_hunt(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -133,7 +133,7 @@ fn animate_mini_hunt(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     print::maze_panic!("Thread panicked with the lock");
 }
 
-pub fn animate_gather(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn animate_gather(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -202,7 +202,7 @@ pub fn animate_gather(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     print::maze_panic!("Thread panicked with the lock!");
 }
 
-fn animate_mini_gather(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+fn animate_mini_gather(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -261,7 +261,7 @@ fn animate_mini_gather(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     print::maze_panic!("Thread panicked with the lock!");
 }
 
-pub fn animate_corner(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn animate_corner(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -343,7 +343,7 @@ pub fn animate_corner(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     print::maze_panic!("Thread panicked with the lock!");
 }
 
-fn animate_mini_corner(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+fn animate_mini_corner(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -417,7 +417,7 @@ fn animate_mini_corner(monitor: monitor::SolverReceiver, speed: speed::Speed) {
 
 // Dispatch Functions for each Thread--------------------------------------------------------------
 
-fn animated_hunter(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
+fn animated_hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     let mut parents = HashMap::from([(guide.start, maze::Point { row: -1, col: -1 })]);
     let mut bfs: VecDeque<maze::Point> = VecDeque::from([guide.start]);
     while let Some(mut cur) = bfs.pop_front() {
@@ -468,7 +468,7 @@ fn animated_hunter(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) 
     }
 }
 
-fn animated_mini_hunter(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
+fn animated_mini_hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     let mut parents = HashMap::from([(guide.start, maze::Point { row: -1, col: -1 })]);
     let mut bfs: VecDeque<maze::Point> = VecDeque::from([guide.start]);
     while let Some(mut cur) = bfs.pop_front() {
@@ -519,7 +519,7 @@ fn animated_mini_hunter(monitor: monitor::SolverReceiver, guide: solve::ThreadGu
     }
 }
 
-fn animated_gatherer(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
+fn animated_gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     let mut parents = HashMap::from([(guide.start, maze::Point { row: -1, col: -1 })]);
     let seen_bit: solve::ThreadCache = guide.paint << 4;
     let mut bfs: VecDeque<maze::Point> = VecDeque::from([guide.start]);
@@ -571,7 +571,7 @@ fn animated_gatherer(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide
     }
 }
 
-fn animated_mini_gatherer(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
+fn animated_mini_gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     let mut parents = HashMap::from([(guide.start, maze::Point { row: -1, col: -1 })]);
     let seen_bit: solve::ThreadCache = guide.paint << 4;
     let mut bfs: VecDeque<maze::Point> = VecDeque::from([guide.start]);

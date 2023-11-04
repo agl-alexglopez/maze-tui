@@ -14,7 +14,11 @@ struct RunPoint {
     cur: maze::Point,
 }
 
-pub fn paint_run_lengths(monitor: monitor::SolverReceiver) {
+pub fn paint_run_lengths_history(monitor: monitor::MazeMonitor) {
+    todo!()
+}
+
+pub fn paint_run_lengths(monitor: monitor::MazeReceiver) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("Lock panic."),
@@ -64,7 +68,7 @@ pub fn paint_run_lengths(monitor: monitor::SolverReceiver) {
     painter(&lk.maze, &map);
 }
 
-pub fn animate_run_lengths(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn animate_run_lengths(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -158,7 +162,7 @@ pub fn animate_run_lengths(monitor: monitor::SolverReceiver, speed: speed::Speed
     }
 }
 
-fn animate_mini_run_lengths(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+fn animate_mini_run_lengths(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let start: maze::Point = if let Ok(mut lk) = monitor.solver.lock() {
         let row_mid = lk.maze.row_size() / 2;
         let col_mid = lk.maze.col_size() / 2;
@@ -325,7 +329,7 @@ fn painter(maze: &maze::Maze, map: &monitor::MaxMap) {
 }
 
 fn painter_animated(
-    monitor: monitor::SolverReceiver,
+    monitor: monitor::MazeReceiver,
     guide: rgb::ThreadGuide,
     animation: rgb::SpeedUnit,
 ) {
@@ -381,7 +385,7 @@ fn painter_animated(
 }
 
 fn painter_mini_animated(
-    monitor: monitor::SolverReceiver,
+    monitor: monitor::MazeReceiver,
     guide: rgb::ThreadGuide,
     animation: rgb::SpeedUnit,
 ) {

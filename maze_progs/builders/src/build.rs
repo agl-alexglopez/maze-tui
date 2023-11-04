@@ -959,6 +959,65 @@ pub fn build_path(maze: &mut maze::Maze, p: maze::Point) {
     *maze.get_mut(p.row, p.col) |= maze::PATH_BIT;
 }
 
+pub fn build_path_history(maze: &mut maze::Maze, p: maze::Point) {
+    let mut wall_changes = [tape::Delta::default(); 5];
+    let mut burst = 1;
+    let mut square = maze.get(p.row, p.col);
+    wall_changes[0] = tape::Delta {
+        id: p,
+        before: square,
+        after: square | maze::PATH_BIT,
+        burst,
+    };
+    *maze.get_mut(p.row, p.col) |= maze::PATH_BIT;
+    if p.row > 0 {
+        burst += 1;
+        square = maze.get(p.row - 1, p.col);
+        wall_changes[0] = tape::Delta {
+            id: p,
+            before: square,
+            after: square & !maze::SOUTH_WALL,
+            burst,
+        };
+        *maze.get_mut(p.row - 1, p.col) &= !maze::SOUTH_WALL;
+    }
+    if p.row + 1 < maze.row_size() {
+        burst += 1;
+        square = maze.get(p.row + 1, p.col);
+        wall_changes[0] = tape::Delta {
+            id: p,
+            before: square,
+            after: square & !maze::NORTH_WALL,
+            burst,
+        };
+        *maze.get_mut(p.row + 1, p.col) &= !maze::NORTH_WALL;
+    }
+    if p.col > 0 {
+        burst += 1;
+        square = maze.get(p.row, p.col - 1);
+        wall_changes[0] = tape::Delta {
+            id: p,
+            before: square,
+            after: square & !maze::EAST_WALL,
+            burst,
+        };
+        *maze.get_mut(p.row, p.col - 1) &= !maze::EAST_WALL;
+    }
+    if p.col + 1 < maze.col_size() {
+        burst += 1;
+        square = maze.get(p.row, p.col + 1);
+        wall_changes[0] = tape::Delta {
+            id: p,
+            before: square,
+            after: square & !maze::WEST_WALL,
+            burst,
+        };
+        *maze.get_mut(p.row, p.col + 1) &= !maze::WEST_WALL;
+    }
+    wall_changes[0].burst = burst;
+    maze.build_history.push_burst(wall_changes.as_slice());
+}
+
 pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUnit) {
     *maze.get_mut(p.row, p.col) |= maze::PATH_BIT;
     flush_cursor_maze_coordinate(maze, p);

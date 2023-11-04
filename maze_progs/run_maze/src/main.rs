@@ -4,7 +4,7 @@ use crossbeam_channel::bounded;
 use std::env;
 
 fn main() {
-    let mut run = tables::MazeRunner::new();
+    let mut run = tables::CursorRunner::new();
     let mut prev_flag: &str = "";
     let mut process_current = false;
     for a in env::args().skip(1) {
@@ -68,7 +68,7 @@ fn main() {
     print::clear_screen();
     let maze = maze::Maze::new(run.args);
     build::print_overlap_key(&maze);
-    let monitor = monitor::SolverReceiver::new(maze, worker);
+    let monitor = monitor::MazeReceiver::new(maze, worker);
     match run.build_view {
         tables::ViewingMode::StaticImage => {
             run.build.0(monitor.clone());
@@ -114,7 +114,7 @@ fn main() {
     }
 }
 
-fn set_arg(run: &mut tables::MazeRunner, args: &tables::FlagArg) -> Result<(), String> {
+fn set_arg(run: &mut tables::CursorRunner, args: &tables::FlagArg) -> Result<(), String> {
     match args.flag {
         "-h" => Err("".to_string()),
         "-r" => {

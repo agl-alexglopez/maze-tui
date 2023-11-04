@@ -18,7 +18,11 @@ const MIN_CHAMBER: i32 = 3;
 
 // Public Functions-------------------------------------------------------------------------------
 
-pub fn generate_maze(monitor: monitor::SolverReceiver) {
+pub fn generate_history(_monitor: monitor::MazeMonitor) {
+    todo!();
+}
+
+pub fn generate_maze(monitor: monitor::MazeReceiver) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
@@ -91,7 +95,7 @@ pub fn generate_maze(monitor: monitor::SolverReceiver) {
     }
 }
 
-pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
@@ -177,7 +181,7 @@ pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     }
 }
 
-fn animate_mini_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),

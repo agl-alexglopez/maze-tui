@@ -8,7 +8,7 @@ use std::{thread, time};
 
 // Public Solver Functions-------------------------------------------------------------------------
 
-pub fn animate_hunt(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn animate_hunt(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -63,7 +63,7 @@ pub fn animate_hunt(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     }
 }
 
-fn animate_mini_hunt(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+fn animate_mini_hunt(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -108,7 +108,7 @@ fn animate_mini_hunt(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     }
 }
 
-pub fn animate_gather(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn animate_gather(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -165,7 +165,7 @@ pub fn animate_gather(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     }
 }
 
-fn animate_mini_gather(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+fn animate_mini_gather(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -212,7 +212,7 @@ fn animate_mini_gather(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     }
 }
 
-pub fn animate_corner(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn animate_corner(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -282,7 +282,7 @@ pub fn animate_corner(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     }
 }
 
-fn animate_mini_corner(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+fn animate_mini_corner(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -344,7 +344,7 @@ fn animate_mini_corner(monitor: monitor::SolverReceiver, speed: speed::Speed) {
 
 // Dispatch Functions for each Thread--------------------------------------------------------------
 
-fn animated_hunter(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
+fn animated_hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
@@ -405,7 +405,7 @@ fn animated_hunter(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) 
     }
 }
 
-fn animated_mini_hunter(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
+fn animated_mini_hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
@@ -466,7 +466,7 @@ fn animated_mini_hunter(monitor: monitor::SolverReceiver, guide: solve::ThreadGu
     }
 }
 
-fn animated_gatherer(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
+fn animated_gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
@@ -533,7 +533,7 @@ fn animated_gatherer(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide
     }
 }
 
-fn animated_mini_gatherer(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
+fn animated_mini_gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);

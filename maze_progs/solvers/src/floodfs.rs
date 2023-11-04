@@ -8,7 +8,19 @@ use std::{thread, time};
 
 // Public Solver Functions-------------------------------------------------------------------------
 
-pub fn hunt(monitor: monitor::SolverReceiver) {
+pub fn hunt_history(monitor: monitor::MazeMonitor) {
+    todo!();
+}
+
+pub fn gather_history(monitor: monitor::MazeMonitor) {
+    todo!();
+}
+
+pub fn corner_history(monitor: monitor::MazeMonitor) {
+    todo!();
+}
+
+pub fn hunt(monitor: monitor::MazeReceiver) {
     let all_start: maze::Point = if let Ok(mut lk) = monitor.solver.lock() {
         let all_start = solve::pick_random_point(&lk.maze);
         *lk.maze.get_mut(all_start.row, all_start.col) |= solve::START_BIT;
@@ -53,7 +65,7 @@ pub fn hunt(monitor: monitor::SolverReceiver) {
     print::maze_panic!("Solve thread print::maze_panic!");
 }
 
-pub fn gather(monitor: monitor::SolverReceiver) {
+pub fn gather(monitor: monitor::MazeReceiver) {
     let all_start: maze::Point = if let Ok(mut lk) = monitor.solver.lock() {
         let all_start = solve::pick_random_point(&lk.maze);
         *lk.maze.get_mut(all_start.row, all_start.col) |= solve::START_BIT;
@@ -100,7 +112,7 @@ pub fn gather(monitor: monitor::SolverReceiver) {
     print::maze_panic!("Solve thread print::maze_panic!");
 }
 
-pub fn corner(monitor: monitor::SolverReceiver) {
+pub fn corner(monitor: monitor::MazeReceiver) {
     let mut corner_starts: [maze::Point; 4] = if let Ok(mut lk) = monitor.solver.lock() {
         let corner_starts = solve::set_corner_starts(&lk.maze);
         for p in corner_starts {
@@ -159,7 +171,7 @@ pub fn corner(monitor: monitor::SolverReceiver) {
     print::maze_panic!("Solve thread print::maze_panic!");
 }
 
-pub fn animate_hunt(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn animate_hunt(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -215,7 +227,7 @@ pub fn animate_hunt(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     }
 }
 
-fn animate_mini_hunt(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+fn animate_mini_hunt(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -261,7 +273,7 @@ fn animate_mini_hunt(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     }
 }
 
-pub fn animate_gather(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn animate_gather(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -319,7 +331,7 @@ pub fn animate_gather(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     }
 }
 
-fn animate_mini_gather(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+fn animate_mini_gather(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -367,7 +379,7 @@ fn animate_mini_gather(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     }
 }
 
-pub fn animate_corner(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn animate_corner(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -442,7 +454,7 @@ pub fn animate_corner(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     }
 }
 
-fn animate_mini_corner(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+fn animate_mini_corner(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     if monitor.exit() {
         return;
     }
@@ -509,7 +521,7 @@ fn animate_mini_corner(monitor: monitor::SolverReceiver, speed: speed::Speed) {
 
 // Dispatch Functions for each Thread--------------------------------------------------------------
 
-fn hunter(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
+fn hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
@@ -557,7 +569,7 @@ fn hunter(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
     }
 }
 
-fn animated_hunter(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
+fn animated_hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
@@ -608,7 +620,7 @@ fn animated_hunter(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) 
     }
 }
 
-fn animated_mini_hunter(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
+fn animated_mini_hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
@@ -659,7 +671,7 @@ fn animated_mini_hunter(monitor: monitor::SolverReceiver, guide: solve::ThreadGu
     }
 }
 
-fn gatherer(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
+fn gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
@@ -709,7 +721,7 @@ fn gatherer(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
     }
 }
 
-fn animated_gatherer(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
+fn animated_gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
@@ -766,7 +778,7 @@ fn animated_gatherer(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide
     }
 }
 
-fn animated_mini_gatherer(monitor: monitor::SolverReceiver, guide: solve::ThreadGuide) {
+fn animated_mini_gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     let seen: solve::ThreadCache = guide.paint << solve::THREAD_TAG_OFFSET;
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);

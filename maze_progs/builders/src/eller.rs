@@ -27,57 +27,13 @@ struct IdMergeRequest {
     loser: SetId,
 }
 
-impl SlidingSetWindow {
-    fn new(maze: &maze::Maze) -> Self {
-        let mut ids = vec![0; WINDOW_SIZE * maze.col_size() as usize];
-        for (i, v) in ids.iter_mut().enumerate() {
-            *v = i;
-        }
-        Self {
-            cur_row: 0,
-            width: maze.col_size() as usize,
-            next_available_id: maze.col_size() as usize,
-            sets: ids,
-        }
-    }
-
-    fn slide_window(&mut self) {
-        self.cur_row = (self.cur_row + 1) % 2;
-    }
-
-    fn next_row_i(&self) -> usize {
-        (self.cur_row + 1) % WINDOW_SIZE
-    }
-
-    fn at(&self, row: usize, col: usize) -> SetId {
-        self.sets[row * self.width + col]
-    }
-
-    fn at_mut(&mut self, row: usize, col: usize) -> &mut SetId {
-        &mut self.sets[row * self.width + col]
-    }
-
-    fn row(&mut self, row: usize) -> &mut [SetId] {
-        &mut self.sets[(row * self.width)..(row * self.width + self.width)]
-    }
-
-    fn generate_sets(&mut self, row: usize) {
-        if row >= WINDOW_SIZE {
-            print::maze_panic!(
-                "Cannot generate sets for a row that does not exist, row: {}",
-                row
-            );
-        }
-        for e in &mut self.sets[(row * self.width)..(row * self.width + self.width)].iter_mut() {
-            *e = self.next_available_id;
-            self.next_available_id += 1;
-        }
-    }
-}
-
 // Public Builder Functions-----------------------------------------------------------------------
 
-pub fn generate_maze(monitor: monitor::SolverReceiver) {
+pub fn generate_history(_monitor: monitor::MazeMonitor) {
+    todo!();
+}
+
+pub fn generate_maze(monitor: monitor::MazeReceiver) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
@@ -143,7 +99,7 @@ pub fn generate_maze(monitor: monitor::SolverReceiver) {
     complete_final_row(&mut lk.maze, &mut window);
 }
 
-pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
@@ -227,7 +183,7 @@ pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     complete_final_row_animated(&mut lk.maze, &mut window, animation);
 }
 
-fn animate_mini_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
@@ -387,6 +343,54 @@ fn complete_final_mini_row_animated(
             if window.at(set_r, set_elem as usize) == neighbor_id {
                 *window.at_mut(set_r, set_elem as usize) = this_id;
             }
+        }
+    }
+}
+
+impl SlidingSetWindow {
+    fn new(maze: &maze::Maze) -> Self {
+        let mut ids = vec![0; WINDOW_SIZE * maze.col_size() as usize];
+        for (i, v) in ids.iter_mut().enumerate() {
+            *v = i;
+        }
+        Self {
+            cur_row: 0,
+            width: maze.col_size() as usize,
+            next_available_id: maze.col_size() as usize,
+            sets: ids,
+        }
+    }
+
+    fn slide_window(&mut self) {
+        self.cur_row = (self.cur_row + 1) % 2;
+    }
+
+    fn next_row_i(&self) -> usize {
+        (self.cur_row + 1) % WINDOW_SIZE
+    }
+
+    fn at(&self, row: usize, col: usize) -> SetId {
+        self.sets[row * self.width + col]
+    }
+
+    fn at_mut(&mut self, row: usize, col: usize) -> &mut SetId {
+        &mut self.sets[row * self.width + col]
+    }
+
+    fn row(&mut self, row: usize) -> &mut [SetId] {
+        &mut self.sets[(row * self.width)..(row * self.width + self.width)]
+    }
+
+    fn generate_sets(&mut self, row: usize) {
+        if row >= WINDOW_SIZE {
+            print::maze_panic!(
+                "Cannot generate sets for a row that does not exist, row: {}",
+                row
+            );
+        }
+        for e in &mut self.sets[(row * self.width)..(row * self.width + self.width)].iter_mut() {
+            *e = self.next_available_id;
+            self.next_available_id += 1;
         }
     }
 }

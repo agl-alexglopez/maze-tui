@@ -45,7 +45,7 @@ fn main() {
     })
     .expect("Could not set quit handler.");
     loop {
-        let mut run = tables::MazeRunner::new();
+        let mut run = tables::CursorRunner::new();
         run.args.odd_rows = dimensions.0;
         run.args.odd_cols = dimensions.1;
         print::clear_screen();
@@ -74,7 +74,7 @@ fn main() {
             None => print::maze_panic!("Build algo array empty."),
         };
         build::print_overlap_key(&maze);
-        let monitor = monitor::SolverReceiver::new(maze, worker.clone());
+        let monitor = monitor::MazeReceiver::new(maze, worker.clone());
         build_algo(monitor.clone(), build_speed);
 
         if modification_probability

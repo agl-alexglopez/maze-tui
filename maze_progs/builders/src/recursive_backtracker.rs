@@ -7,7 +7,7 @@ use std::{thread, time};
 // Backtracking was too fast because it just clears square. Slow down for animation.
 const BACKTRACK_DELAY: build::SpeedUnit = 8;
 
-pub fn generate_history(monitor: monitor::SolverMonitor) {
+pub fn generate_history(monitor: monitor::MazeMonitor) {
     let mut lk = match monitor.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("builder could not take lock"),
@@ -68,7 +68,7 @@ pub fn generate_history(monitor: monitor::SolverMonitor) {
     }
 }
 
-pub fn generate_maze(monitor: monitor::SolverReceiver) {
+pub fn generate_maze(monitor: monitor::MazeReceiver) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
@@ -115,7 +115,7 @@ pub fn generate_maze(monitor: monitor::SolverReceiver) {
     }
 }
 
-pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
@@ -177,7 +177,7 @@ pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     }
 }
 
-fn animate_mini_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),

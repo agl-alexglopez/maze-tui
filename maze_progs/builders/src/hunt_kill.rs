@@ -18,7 +18,11 @@ const WALL_UP_DOWN_RIGHT: maze::Square = 0b0111;
 const WALL_UP_DOWN_LEFT: maze::Square = 0b1101;
 const WALL_LEFT_RIGHT: maze::Square = 0b1010;
 
-pub fn generate_maze(monitor: monitor::SolverReceiver) {
+pub fn generate_history(monitor: monitor::MazeMonitor) {
+    todo!();
+}
+
+pub fn generate_maze(monitor: monitor::MazeReceiver) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
@@ -76,7 +80,7 @@ pub fn generate_maze(monitor: monitor::SolverReceiver) {
     }
 }
 
-pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
@@ -170,7 +174,7 @@ pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
     }
 }
 
-pub fn animate_mini_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
+pub fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
