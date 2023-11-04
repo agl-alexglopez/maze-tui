@@ -10,6 +10,8 @@ use std::{error, fmt, rc::Rc, sync::Arc, sync::Mutex, time::Duration, time::Inst
 use tui_textarea::{Input, Key};
 
 const DEFAULT_DURATION: Duration = Duration::from_micros(2000);
+const MAX_DURATION: Duration = Duration::from_secs(5);
+const MIN_DURATION: Duration = Duration::from_micros(1);
 
 #[derive(Debug)]
 pub struct Quit {
@@ -37,13 +39,47 @@ struct Playback {
     solve_tape: tape::Tape<maze::Point, maze::Square>,
     forward: bool,
     pause: bool,
-    step_forward: bool,
-    step_back: bool,
     speed: Duration,
     last_render: Instant,
 }
 
 impl Playback {
+    fn progress_build_tape(&mut self) -> bool {
+        if let Some(history) = self.build_tape.cur_step() {
+            if self.forward {
+                for delta in history {
+                    self.maze.buf[(delta.id.row * self.maze.cols + delta.id.col) as usize] =
+                        delta.after;
+                }
+                return self.build_tape.set_prev();
+            }
+            for delta in history.iter().rev() {
+                self.maze.buf[(delta.id.row * self.maze.cols + delta.id.col) as usize] =
+                    delta.before;
+            }
+            return self.build_tape.set_next();
+        }
+        false
+    }
+
+    fn progress_solve_tape(&mut self) -> bool {
+        if let Some(history) = self.solve_tape.cur_step() {
+            if self.forward {
+                for delta in history {
+                    self.maze.buf[(delta.id.row * self.maze.cols + delta.id.col) as usize] =
+                        delta.after;
+                }
+                return self.solve_tape.set_next();
+            }
+            for delta in history.iter().rev() {
+                self.maze.buf[(delta.id.row * self.maze.cols + delta.id.col) as usize] =
+                    delta.before;
+            }
+            return self.solve_tape.set_prev();
+        }
+        false
+    }
+
     fn apply_build_step(&mut self) -> bool {
         if let Some(history) = self.build_tape.cur_step() {
             if self.forward {
@@ -156,8 +192,6 @@ fn new_tape(run: &tables::MazeRunner) -> Playback {
                     solve_tape: solver.maze.solve_history,
                     forward: true,
                     pause: false,
-                    step_forward: false,
-                    step_back: false,
                     speed: DEFAULT_DURATION,
                     last_render: Instant::now(),
                 }
@@ -184,8 +218,6 @@ fn new_solve_tape(rect: Rect) -> Playback {
                     solve_tape: solver.maze.solve_history,
                     forward: true,
                     pause: false,
-                    step_forward: false,
-                    step_back: false,
                     speed: DEFAULT_DURATION,
                     last_render: Instant::now(),
                 }
@@ -202,13 +234,13 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
     let mut play = new_tape(&this_run);
     'rendering: loop {
         'building: loop {
-            play.apply_build_step();
             tui.render_maze_frame(
                 tui::BuildFrame {
                     maze: &mut play.maze,
                 },
                 &render_space,
             )?;
+            play.apply_build_step();
             if let Some(ev) = tui.events.try_next() {
                 match ev {
                     tui::Pack::Press(ev) => match ev.code {
@@ -227,21 +259,24 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
                         }
                         KeyCode::Char(' ') => play.pause = !play.pause,
                         KeyCode::Right => {
-                            play.step_forward = true;
                             play.forward = true;
                             play.pause = true;
+                            play.progress_build_tape();
                         }
                         KeyCode::Left => {
-                            play.step_back = true;
                             play.forward = false;
                             play.pause = true;
+                            play.progress_build_tape();
                         }
-                        KeyCode::Down => play.speed = play.speed.saturating_mul(2),
+                        KeyCode::Down => {
+                            play.speed = std::cmp::min(play.speed.saturating_mul(2), MAX_DURATION);
+                        }
                         KeyCode::Up => {
                             play.speed = match play.speed.checked_div(2) {
                                 Some(t) => t,
                                 None => Duration::ZERO,
-                            }
+                            };
+                            play.speed = std::cmp::max(play.speed, MIN_DURATION);
                         }
                         KeyCode::Esc => break 'rendering,
                         _ => {}
@@ -250,17 +285,7 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
                 }
             }
             let now = Instant::now();
-            if play.step_forward {
-                play.apply_build_step();
-                tui.render_maze_frame(tui::BuildFrame { maze: &play.maze }, &render_space)?;
-                play.build_tape.set_next();
-                play.step_forward = false;
-            } else if play.step_back {
-                play.apply_build_step();
-                tui.render_maze_frame(tui::BuildFrame { maze: &play.maze }, &render_space)?;
-                play.build_tape.set_prev();
-                play.step_back = false;
-            } else if !play.pause && now - play.last_render >= play.speed {
+            if !play.pause && now - play.last_render >= play.speed {
                 if play.forward {
                     if !play.build_tape.set_next() {
                         break 'building;
@@ -272,8 +297,8 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
             }
         }
         'solving: loop {
-            play.apply_solve_step();
             tui.render_maze_frame(tui::SolveFrame { maze: &play.maze }, &render_space)?;
+            play.apply_solve_step();
             if let Some(ev) = tui.events.try_next() {
                 match ev {
                     tui::Pack::Press(ev) => match ev.code {
@@ -292,21 +317,24 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
                         }
                         KeyCode::Char(' ') => play.pause = !play.pause,
                         KeyCode::Right => {
-                            play.step_forward = true;
                             play.forward = true;
                             play.pause = true;
+                            play.progress_solve_tape();
                         }
                         KeyCode::Left => {
-                            play.step_back = true;
                             play.forward = false;
                             play.pause = true;
+                            play.progress_solve_tape();
                         }
-                        KeyCode::Down => play.speed = play.speed.saturating_mul(2),
+                        KeyCode::Down => {
+                            play.speed = std::cmp::min(play.speed.saturating_mul(2), MAX_DURATION);
+                        }
                         KeyCode::Up => {
                             play.speed = match play.speed.checked_div(2) {
                                 Some(t) => t,
                                 None => Duration::ZERO,
-                            }
+                            };
+                            play.speed = std::cmp::max(play.speed, MIN_DURATION);
                         }
                         KeyCode::Esc => break 'rendering,
                         _ => {}
@@ -315,21 +343,10 @@ fn render_maze(mut this_run: tables::MazeRunner, tui: &mut tui::Tui) -> tui::Res
                 }
             }
             let now = Instant::now();
-            if play.step_forward {
-                play.apply_solve_step();
-                play.solve_tape.set_next();
-                tui.render_maze_frame(tui::SolveFrame { maze: &play.maze }, &render_space)?;
-                play.step_forward = false;
-            } else if play.step_back {
-                play.apply_solve_step();
-                play.solve_tape.set_prev();
-                tui.render_maze_frame(tui::SolveFrame { maze: &play.maze }, &render_space)?;
-                play.step_back = false;
-            } else if !play.pause && now - play.last_render >= play.speed {
+            if !play.pause && now - play.last_render >= play.speed {
                 if play.forward {
                     play.forward = play.solve_tape.set_next();
                 } else if !play.solve_tape.set_prev() {
-                    play.apply_solve_step();
                     tui.render_maze_frame(tui::SolveFrame { maze: &play.maze }, &render_space)?;
                     break 'solving;
                 }
