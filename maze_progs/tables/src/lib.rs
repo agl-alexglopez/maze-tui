@@ -194,10 +194,10 @@ pub const CURSOR_BUILDERS: [(&str, BuildCursorFunction); 10] = [
     ("grid", (grid::generate_maze, grid::animate_maze)),
 ];
 
-pub const HISTORY_BUILDERS: [(&str, BuildHistoryFunction); 3] = [
+pub const HISTORY_BUILDERS: [(&str, BuildHistoryFunction); 4] = [
     ("arena", arena::generate_history),
     ("rdfs", recursive_backtracker::generate_history),
-    // ("hunt-kill", hunt_kill::generate_history),
+    ("hunt-kill", hunt_kill::generate_history),
     // ("fractal", recursive_subdivision::generate_history),
     // ("prim", prim::generate_history),
     // ("kruskal", kruskal::generate_history),

@@ -12,7 +12,7 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
         Ok(l) => l,
         Err(_) => print::maze_panic!("builder could not take lock"),
     };
-    build::fill_maze_with_walls(&mut lk.maze);
+    build::fill_maze_history_with_walls(&mut lk.maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
         row: 2 * (gen.gen_range(1..lk.maze.row_size() - 2) / 2) + 1,
