@@ -127,8 +127,8 @@ pub fn print_paths(maze: &maze::Maze) {
 
 pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
     // We have some special printing for the finish square. Not here.
-    if (square & FINISH_BIT) != 0 {
-        let ansi = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+    if is_finish(square) {
+        let ansi = key::thread_color_code(color_index(square));
         Cell {
             symbol: 'F'.to_string(),
             fg: RatColor::Indexed(key::ANSI_CYN),
@@ -137,7 +137,7 @@ pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
             modifier: Modifier::BOLD | Modifier::SLOW_BLINK,
             skip: false,
         }
-    } else if (square & START_BIT) != 0 {
+    } else if is_start(square) {
         Cell {
             symbol: 'S'.to_string(),
             fg: RatColor::Indexed(key::ANSI_CYN),
@@ -146,9 +146,8 @@ pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
             modifier: Modifier::BOLD,
             skip: false,
         }
-    } else if (square & THREAD_MASK) != 0 {
-        let thread_color: key::ThreadColor =
-            key::thread_color(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+    } else if is_color(square) {
+        let thread_color: key::ThreadColor = key::thread_color(color_index(square));
         Cell {
             symbol: thread_color.block.to_string(),
             fg: RatColor::Indexed(thread_color.ansi),
@@ -157,7 +156,7 @@ pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
             modifier: Modifier::BOLD,
             skip: false,
         }
-    } else if (square & maze::PATH_BIT) == 0 {
+    } else if maze::is_wall(square) {
         Cell {
             symbol: wall_row[(square & maze::WALL_MASK) as usize].to_string(),
             fg: RatColor::Reset,
@@ -166,7 +165,7 @@ pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
             modifier: Modifier::empty(),
             skip: false,
         }
-    } else if (square & maze::PATH_BIT) != 0 {
+    } else if maze::is_path(square) {
         Cell {
             symbol: ' '.to_string(),
             fg: RatColor::Reset,
@@ -190,8 +189,8 @@ pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     );
     let square = maze.get(point.row, point.col);
     // We have some special printing for the finish square. Not here.
-    if (square & FINISH_BIT) != 0 {
-        let ansi = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+    if is_finish(square) {
+        let ansi = key::thread_color_code(color_index(square));
         match execute!(
             io::stdout(),
             SetAttribute(Attribute::SlowBlink),
@@ -205,7 +204,7 @@ pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
             Err(_) => maze_panic!("Could not mark Finish square"),
         }
     }
-    if (square & START_BIT) != 0 {
+    if is_start(square) {
         match execute!(
             io::stdout(),
             SetAttribute(Attribute::Bold),
@@ -217,9 +216,8 @@ pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
             Err(_) => maze_panic!("Could not mark Start square."),
         }
     }
-    if (square & THREAD_MASK) != 0 {
-        let thread_color: key::ThreadColor =
-            key::thread_color(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+    if is_color(square) {
+        let thread_color: key::ThreadColor = key::thread_color(color_index(square));
         match execute!(
             io::stdout(),
             SetForegroundColor(Color::AnsiValue(thread_color.ansi)),
@@ -230,16 +228,13 @@ pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
             Err(_) => maze_panic!("Could not mark thread color."),
         }
     }
-    if (square & maze::PATH_BIT) == 0 {
-        match execute!(
-            io::stdout(),
-            Print(maze.wall_char((square & maze::WALL_MASK) as usize)),
-        ) {
+    if maze::is_wall(square) {
+        match execute!(io::stdout(), Print(maze.wall_char(square)),) {
             Ok(_) => return,
             Err(_) => maze_panic!("Could not print wall."),
         }
     }
-    if (square & maze::PATH_BIT) != 0 {
+    if maze::is_path(square) {
         match execute!(io::stdout(), Print(' '),) {
             Ok(_) => return,
             Err(_) => maze_panic!("Could not print path."),
@@ -257,8 +252,8 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
         maze.offset(),
     );
     let square = maze.get(point.row, point.col);
-    if (square & FINISH_BIT) != 0 {
-        let ansi = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+    if is_finish(square) {
+        let ansi = key::thread_color_code(color_index(square));
         match queue!(
             io::stdout(),
             SetAttribute(Attribute::SlowBlink),
@@ -272,7 +267,7 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
             Err(_) => maze_panic!("Could not mark Finish square"),
         }
     }
-    if (square & START_BIT) != 0 {
+    if is_start(square) {
         match queue!(
             io::stdout(),
             SetAttribute(Attribute::Bold),
@@ -284,9 +279,8 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
             Err(_) => maze_panic!("Could not mark Start square."),
         }
     }
-    if (square & THREAD_MASK) != 0 {
-        let thread_color: key::ThreadColor =
-            key::thread_color(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
+    if is_color(square) {
+        let thread_color: key::ThreadColor = key::thread_color(color_index(square));
         match queue!(
             io::stdout(),
             SetForegroundColor(Color::AnsiValue(thread_color.ansi)),
@@ -297,16 +291,13 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
             Err(_) => maze_panic!("Could not mark thread color."),
         }
     }
-    if (square & maze::PATH_BIT) == 0 {
-        match queue!(
-            io::stdout(),
-            Print(maze.wall_char((square & maze::WALL_MASK) as usize)),
-        ) {
+    if maze::is_wall(square) {
+        match queue!(io::stdout(), Print(maze.wall_char(square)),) {
             Ok(_) => return,
             Err(_) => maze_panic!("Could not print wall."),
         }
     }
-    if (square & maze::PATH_BIT) != 0 {
+    if maze::is_path(square) {
         match queue!(io::stdout(), Print(' '),) {
             Ok(_) => return,
             Err(_) => maze_panic!("Could not print path."),
@@ -326,8 +317,8 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         maze.offset(),
     );
     let square = maze.get(point.row, point.col);
-    let this_color = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
-    if (square & (FINISH_BIT | START_BIT)) != 0 {
+    let this_color = key::thread_color_code(color_index(square));
+    if is_start_or_finish(square) {
         execute!(
             io::stdout(),
             SetAttribute(Attribute::SlowBlink),
@@ -343,7 +334,7 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     if point.row % 2 != 0 {
         if (maze.get(point.row - 1, point.col) & maze::PATH_BIT) != 0 {
             let neighbor_square = maze.get(point.row - 1, point.col);
-            if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
+            if is_start_or_finish(neighbor_square) {
                 execute!(
                     io::stdout(),
                     SetAttribute(Attribute::SlowBlink),
@@ -357,9 +348,9 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
             }
             execute!(
                 io::stdout(),
-                SetForegroundColor(Color::AnsiValue(key::thread_color_code(
-                    ((neighbor_square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize,
-                ))),
+                SetForegroundColor(Color::AnsiValue(key::thread_color_code(color_index(
+                    neighbor_square
+                )))),
                 SetBackgroundColor(Color::AnsiValue(this_color)),
                 Print('▀'),
                 ResetColor
@@ -380,7 +371,7 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     // Even rows but this still must be a path.
     if (maze.get(point.row + 1, point.col) & maze::PATH_BIT) != 0 {
         let neighbor_square = maze.get(point.row + 1, point.col);
-        if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
+        if is_start_or_finish(neighbor_square) {
             execute!(
                 io::stdout(),
                 SetAttribute(Attribute::SlowBlink),
@@ -394,9 +385,9 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         }
         execute!(
             io::stdout(),
-            SetForegroundColor(Color::AnsiValue(key::thread_color_code(
-                ((neighbor_square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize
-            ))),
+            SetForegroundColor(Color::AnsiValue(key::thread_color_code(color_index(
+                neighbor_square
+            )))),
             SetBackgroundColor(Color::AnsiValue(this_color)),
             Print('▀'),
             ResetColor
@@ -423,8 +414,8 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
         maze.offset(),
     );
     let square = maze.get(point.row, point.col);
-    let this_color = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
-    if (square & (FINISH_BIT | START_BIT)) != 0 {
+    let this_color = key::thread_color_code(color_index(square));
+    if is_start_or_finish(square) {
         queue!(
             io::stdout(),
             SetAttribute(Attribute::SlowBlink),
@@ -436,18 +427,14 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
         .expect("printer broke.");
         return;
     }
-    if square & maze::PATH_BIT == 0 {
-        queue!(
-            io::stdout(),
-            Print(maze.wall_char((square & maze::WALL_MASK) as usize)),
-        )
-        .expect("printer broke.");
+    if maze::is_wall(square) {
+        queue!(io::stdout(), Print(maze.wall_char(square)),).expect("printer broke.");
         return;
     }
     if point.row % 2 != 0 {
         if (maze.get(point.row - 1, point.col) & maze::PATH_BIT) != 0 {
             let neighbor_square = maze.get(point.row - 1, point.col);
-            if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
+            if is_start_or_finish(neighbor_square) {
                 queue!(
                     io::stdout(),
                     SetAttribute(Attribute::SlowBlink),
@@ -461,9 +448,9 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
             }
             queue!(
                 io::stdout(),
-                SetForegroundColor(Color::AnsiValue(key::thread_color_code(
-                    ((neighbor_square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize,
-                ))),
+                SetForegroundColor(Color::AnsiValue(key::thread_color_code(color_index(
+                    neighbor_square
+                )))),
                 SetBackgroundColor(Color::AnsiValue(this_color)),
                 Print('▀'),
                 ResetColor
@@ -484,7 +471,7 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
     // Even rows but this still must be a path.
     if (maze.get(point.row + 1, point.col) & maze::PATH_BIT) != 0 {
         let neighbor_square = maze.get(point.row + 1, point.col);
-        if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
+        if is_start_or_finish(neighbor_square) {
             queue!(
                 io::stdout(),
                 SetAttribute(Attribute::SlowBlink),
@@ -498,9 +485,9 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
         }
         queue!(
             io::stdout(),
-            SetForegroundColor(Color::AnsiValue(key::thread_color_code(
-                ((neighbor_square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize
-            ))),
+            SetForegroundColor(Color::AnsiValue(key::thread_color_code(color_index(
+                neighbor_square
+            )))),
             SetBackgroundColor(Color::AnsiValue(this_color)),
             Print('▀'),
             ResetColor
@@ -528,8 +515,8 @@ pub fn flush_dark_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         maze.offset(),
     );
     let square = maze.get(point.row, point.col);
-    let this_color = key::thread_color_code(((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize);
-    if (square & (FINISH_BIT | START_BIT)) != 0 {
+    let this_color = key::thread_color_code(color_index(square));
+    if is_start_or_finish(square) {
         execute!(
             io::stdout(),
             SetAttribute(Attribute::SlowBlink),
@@ -545,7 +532,7 @@ pub fn flush_dark_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     if point.row % 2 != 0 {
         if (maze.get(point.row - 1, point.col) & maze::PATH_BIT) != 0 {
             let neighbor_square = maze.get(point.row - 1, point.col);
-            if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
+            if is_start_or_finish(neighbor_square) {
                 execute!(
                     io::stdout(),
                     SetAttribute(Attribute::SlowBlink),
@@ -559,9 +546,9 @@ pub fn flush_dark_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
             }
             execute!(
                 io::stdout(),
-                SetForegroundColor(Color::AnsiValue(key::thread_color_code(
-                    ((neighbor_square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize,
-                ))),
+                SetForegroundColor(Color::AnsiValue(key::thread_color_code(color_index(
+                    neighbor_square
+                )))),
                 SetBackgroundColor(Color::AnsiValue(this_color)),
                 Print('▀'),
                 ResetColor
@@ -582,7 +569,7 @@ pub fn flush_dark_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     // Even rows but this still must be a path.
     if (maze.get(point.row + 1, point.col) & maze::PATH_BIT) != 0 {
         let neighbor_square = maze.get(point.row + 1, point.col);
-        if (neighbor_square & (START_BIT | FINISH_BIT)) != 0 {
+        if is_start_or_finish(neighbor_square) {
             execute!(
                 io::stdout(),
                 SetAttribute(Attribute::SlowBlink),
@@ -596,9 +583,9 @@ pub fn flush_dark_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         }
         execute!(
             io::stdout(),
-            SetForegroundColor(Color::AnsiValue(key::thread_color_code(
-                ((neighbor_square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize
-            ))),
+            SetForegroundColor(Color::AnsiValue(key::thread_color_code(color_index(
+                neighbor_square
+            )))),
             SetBackgroundColor(Color::AnsiValue(this_color)),
             Print('▀'),
             ResetColor
@@ -644,6 +631,7 @@ pub fn deluminate_maze(maze: &maze::Maze) {
 
 // Private Module Function
 
+#[inline]
 fn is_valid_start_or_finish(maze: &maze::Maze, choice: maze::Point) -> bool {
     choice.row > 0
         && choice.row < maze.row_size() - 1
@@ -652,6 +640,31 @@ fn is_valid_start_or_finish(maze: &maze::Maze, choice: maze::Point) -> bool {
         && (maze.get(choice.row, choice.col) & maze::PATH_BIT) != 0
         && (maze.get(choice.row, choice.col) & FINISH_BIT) == 0
         && (maze.get(choice.row, choice.col) & START_BIT) == 0
+}
+
+#[inline]
+fn color_index(square: maze::Square) -> usize {
+    ((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize
+}
+
+#[inline]
+fn is_start(square: maze::Square) -> bool {
+    (square & START_BIT) != 0
+}
+
+#[inline]
+fn is_finish(square: maze::Square) -> bool {
+    (square & FINISH_BIT) != 0
+}
+
+#[inline]
+fn is_start_or_finish(square: maze::Square) -> bool {
+    (square & (START_BIT | FINISH_BIT)) != 0
+}
+
+#[inline]
+fn is_color(square: maze::Square) -> bool {
+    (square & THREAD_MASK) != 0
 }
 
 // Read Only Data Available to All Solvers

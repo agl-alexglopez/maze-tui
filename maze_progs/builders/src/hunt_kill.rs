@@ -14,9 +14,9 @@ const CARVER: char = '█';
 // Same color for each looks good for now change for style.
 const CARVING: u8 = 9;
 const HUNTING: u8 = 9;
-const WALL_UP_DOWN_RIGHT: usize = 0b0111;
-const WALL_UP_DOWN_LEFT: usize = 0b1101;
-const WALL_LEFT_RIGHT: usize = 0b1010;
+const WALL_UP_DOWN_RIGHT: maze::Square = 0b0111;
+const WALL_UP_DOWN_LEFT: maze::Square = 0b1101;
+const WALL_LEFT_RIGHT: maze::Square = 0b1010;
 
 pub fn generate_maze(monitor: monitor::SolverReceiver) {
     let mut lk = match monitor.solver.lock() {
@@ -62,7 +62,7 @@ pub fn generate_maze(monitor: monitor::SolverReceiver) {
                             col: c + dir.col,
                         };
                         if build::is_square_within_perimeter_walls(&lk.maze, next)
-                            && (lk.maze.get(next.row, next.col) & build::BUILDER_BIT) != 0
+                            && build::is_built(lk.maze.get(next.row, next.col))
                         {
                             build::join_squares(&mut lk.maze, start_candidate, next);
                             cur = start_candidate;
@@ -150,7 +150,7 @@ pub fn animate_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) {
                             col: c + dir.col,
                         };
                         if build::is_square_within_perimeter_walls(&lk.maze, next)
-                            && (lk.maze.get(next.row, next.col) & build::BUILDER_BIT) != 0
+                            && build::is_built(lk.maze.get(next.row, next.col))
                         {
                             build::join_squares_animated(
                                 &mut lk.maze,
@@ -230,7 +230,7 @@ pub fn animate_mini_maze(monitor: monitor::SolverReceiver, speed: speed::Speed) 
                             col: c + dir.col,
                         };
                         if build::is_square_within_perimeter_walls(&lk.maze, next)
-                            && (lk.maze.get(next.row, next.col) & build::BUILDER_BIT) != 0
+                            && build::is_built(lk.maze.get(next.row, next.col))
                         {
                             build::join_minis_animated(
                                 &mut lk.maze,

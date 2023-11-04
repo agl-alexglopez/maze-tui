@@ -35,23 +35,11 @@ pub enum Process {
 }
 
 pub struct BuildFrame<'a> {
-    maze: &'a maze::Blueprint,
+    pub maze: &'a maze::Blueprint,
 }
 
 pub struct SolveFrame<'a> {
-    maze: &'a maze::Blueprint,
-}
-
-impl<'a> BuildFrame<'a> {
-    fn new(m: &'a maze::Blueprint) -> Self {
-        Self { maze: m }
-    }
-}
-
-impl<'a> SolveFrame<'a> {
-    fn new(m: &'a maze::Blueprint) -> Self {
-        Self { maze: m }
-    }
+    pub maze: &'a maze::Blueprint,
 }
 
 impl<'a> Widget for BuildFrame<'a> {
@@ -222,28 +210,10 @@ impl<'a> Tui<'a> {
         self.terminal.show_cursor()?;
         Ok(())
     }
-    pub fn home_animated(
-        &mut self,
-        forward: bool,
-        step: Option<&[tape::Delta<maze::Point, maze::Square>]>,
-        replay_maze: &mut maze::Blueprint,
-    ) -> Result<()> {
-        if let Some(history) = step {
-            if forward {
-                for delta in history {
-                    replay_maze.buf[(delta.id.row * replay_maze.cols + delta.id.col) as usize] =
-                        delta.after;
-                }
-            } else {
-                for delta in history.iter().rev() {
-                    replay_maze.buf[(delta.id.row * replay_maze.cols + delta.id.col) as usize] =
-                        delta.before;
-                }
-            }
-        }
+    pub fn home_animated(&mut self, maze_frame: impl Widget) -> Result<()> {
         let frame = self.padded_frame();
         self.terminal.draw(|f| {
-            f.render_widget(SolveFrame::new(replay_maze), frame);
+            f.render_widget(maze_frame, frame);
             let overall_layout = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints(vec![Constraint::Percentage(70), Constraint::Percentage(30)])
@@ -281,8 +251,8 @@ impl<'a> Tui<'a> {
                 Scrollbar::default()
                     .orientation(ScrollbarOrientation::VerticalRight)
                     .thumb_symbol("█")
-                    .begin_symbol(Some("↑"))
-                    .end_symbol(Some("↓")),
+                    .begin_symbol(Some("⮝"))
+                    .end_symbol(Some("⮟")),
                 popup_layout_h,
                 &mut self.scroll.state,
             );
@@ -313,10 +283,10 @@ impl<'a> Tui<'a> {
         self.scroll.scroll(dir)
     }
 
-    pub fn error_popup(&mut self, msg: String, replay_maze: &maze::Blueprint) -> Result<()> {
+    pub fn error_popup(&mut self, msg: String, maze_frame: impl Widget) -> Result<()> {
         let frame = self.padded_frame();
         self.terminal.draw(|f| {
-            f.render_widget(SolveFrame::new(replay_maze), frame);
+            f.render_widget(maze_frame, frame);
             let overall_layout = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints(vec![Constraint::Percentage(70), Constraint::Percentage(30)])
@@ -354,8 +324,8 @@ impl<'a> Tui<'a> {
                 Scrollbar::default()
                     .orientation(ScrollbarOrientation::VerticalRight)
                     .thumb_symbol("█")
-                    .begin_symbol(Some("↑"))
-                    .end_symbol(Some("↓")),
+                    .begin_symbol(Some("⮝"))
+                    .end_symbol(Some("⮟")),
                 popup_layout_h,
                 &mut self.scroll.state,
             );
@@ -429,8 +399,8 @@ impl<'a> Tui<'a> {
     ) -> Result<()> {
         self.terminal.draw(|f| {
             match process {
-                Process::Building => f.render_widget(BuildFrame::new(replay_maze), rect[0]),
-                Process::Solving => f.render_widget(SolveFrame::new(replay_maze), rect[0]),
+                Process::Building => f.render_widget(BuildFrame { maze: replay_maze }, rect[0]),
+                Process::Solving => f.render_widget(SolveFrame { maze: replay_maze }, rect[0]),
             }
             let overall_layout = Layout::default()
                 .direction(Direction::Vertical)
@@ -469,8 +439,8 @@ impl<'a> Tui<'a> {
                 Scrollbar::default()
                     .orientation(ScrollbarOrientation::VerticalRight)
                     .thumb_symbol("█")
-                    .begin_symbol(Some("↑"))
-                    .end_symbol(Some("↓")),
+                    .begin_symbol(Some("⮝"))
+                    .end_symbol(Some("⮟")),
                 popup_layout_h,
                 &mut scroll.state,
             );
@@ -482,13 +452,7 @@ impl<'a> Tui<'a> {
         self.cmd.input(input)
     }
 
-    pub fn render_builder_frame(
-        &mut self,
-        forward: bool,
-        step: Option<&[tape::Delta<maze::Point, maze::Square>]>,
-        replay_maze: &mut maze::Blueprint,
-        rect: &Rc<[Rect]>,
-    ) -> Result<()> {
+    pub fn render_maze_frame(&mut self, frame: impl Widget, rect: &Rc<[Rect]>) -> Result<()> {
         let popup_layout_v = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -514,73 +478,8 @@ impl<'a> Tui<'a> {
                     .style(Style::default().bg(Color::Black)),
             )
             .alignment(Alignment::Center);
-        if let Some(history) = step {
-            if forward {
-                for delta in history {
-                    replay_maze.buf[(delta.id.row * replay_maze.cols + delta.id.col) as usize] =
-                        delta.after;
-                }
-            } else {
-                for delta in history.iter().rev() {
-                    replay_maze.buf[(delta.id.row * replay_maze.cols + delta.id.col) as usize] =
-                        delta.before;
-                }
-            }
-        }
         self.terminal.draw(|f| {
-            f.render_widget(BuildFrame::new(replay_maze), rect[0]);
-            f.render_widget(popup_instructions, popup_layout_h);
-        })?;
-        Ok(())
-    }
-
-    pub fn render_solver_frame(
-        &mut self,
-        forward: bool,
-        step: Option<&[tape::Delta<maze::Point, maze::Square>]>,
-        replay_maze: &mut maze::Blueprint,
-        rect: &Rc<[Rect]>,
-    ) -> Result<()> {
-        let popup_layout_v = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Percentage((100 - 15) / 2),
-                Constraint::Min(4),
-                Constraint::Percentage((100 - 15) / 2),
-            ])
-            .split(rect[1]);
-        let popup_layout_h = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Percentage((100 - 50) / 2),
-                Constraint::Percentage(50),
-                Constraint::Percentage((100 - 50) / 2),
-            ])
-            .split(popup_layout_v[1])[1];
-        let popup_instructions = Paragraph::new(POPUP_INSTRUCTIONS)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_type(BorderType::Double)
-                    .border_style(Style::new().fg(Color::Yellow))
-                    .style(Style::default().bg(Color::Black)),
-            )
-            .alignment(Alignment::Center);
-        if let Some(history) = step {
-            if forward {
-                for delta in history {
-                    replay_maze.buf[(delta.id.row * replay_maze.cols + delta.id.col) as usize] =
-                        delta.after;
-                }
-            } else {
-                for delta in history.iter().rev() {
-                    replay_maze.buf[(delta.id.row * replay_maze.cols + delta.id.col) as usize] =
-                        delta.before;
-                }
-            }
-        }
-        self.terminal.draw(|f| {
-            f.render_widget(SolveFrame::new(replay_maze), rect[0]);
+            f.render_widget(frame, rect[0]);
             f.render_widget(popup_instructions, popup_layout_h);
         })?;
         Ok(())
@@ -648,4 +547,4 @@ static INSTRUCTIONS: &str = include_str!("../../res/instructions.txt");
 static INSTRUCTIONS_LINE_COUNT: usize = 70;
 static DESCRIPTION_LINE_COUNT: usize = 50;
 static POPUP_INSTRUCTIONS: &str =
-    "<i>info <esc>exit <space>play/pause\n<🠈/🠊>step back/next <🠉/🠋>faster/slower";
+    "<i>info <esc>exit <space>play/pause\n<⮜/⮞>step back/next <⮝/⮟>faster/slower";

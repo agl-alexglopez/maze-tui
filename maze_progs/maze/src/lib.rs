@@ -118,49 +118,70 @@ impl Maze {
         }
     }
 
+    #[inline]
     pub fn row_size(&self) -> i32 {
         self.maze.rows
     }
 
+    #[inline]
     pub fn offset(&self) -> Offset {
         self.maze.offset
     }
 
+    #[inline]
     pub fn col_size(&self) -> i32 {
         self.maze.cols
     }
 
-    pub fn wall_char(&self, wall_mask_index: usize) -> char {
-        WALL_STYLES[(self.maze.wall_style_index * WALL_ROW) + wall_mask_index]
+    #[inline]
+    pub fn wall_char(&self, square: Square) -> char {
+        WALL_STYLES[(self.maze.wall_style_index * WALL_ROW) + (square & WALL_MASK) as usize]
     }
 
+    #[inline]
     pub fn wall_row(&self) -> &[char] {
         &WALL_STYLES[self.maze.wall_style_index * WALL_ROW
             ..self.maze.wall_style_index * WALL_ROW + WALL_ROW]
     }
 
+    #[inline]
     pub fn style_index(&self) -> usize {
         self.maze.wall_style_index
     }
 
+    #[inline]
     pub fn is_mini(&self) -> bool {
         self.maze.wall_style_index == (MazeStyle::Mini as usize)
     }
 
+    #[inline]
     pub fn as_slice(&self) -> &[Square] {
         self.maze.buf.as_slice()
     }
 
+    #[inline]
     pub fn as_slice_mut(&mut self) -> &mut [Square] {
         self.maze.buf.as_mut_slice()
     }
 
+    #[inline]
     pub fn get_mut(&mut self, row: i32, col: i32) -> &mut Square {
         &mut self.maze.buf[(row * self.maze.cols + col) as usize]
     }
 
+    #[inline]
     pub fn get(&self, row: i32, col: i32) -> Square {
         self.maze.buf[(row * self.maze.cols + col) as usize]
+    }
+
+    #[inline]
+    pub fn wall_at(&self, row: i32, col: i32) -> bool {
+        (self.maze.buf[(row * self.maze.cols + col) as usize] & PATH_BIT) == 0
+    }
+
+    #[inline]
+    pub fn path_at(&self, row: i32, col: i32) -> bool {
+        (self.maze.buf[(row * self.maze.cols + col) as usize] & PATH_BIT) != 0
     }
 }
 
@@ -177,8 +198,19 @@ impl Default for MazeArgs {
 
 // Read Only Data Available to Any Maze Users
 
+#[inline]
 pub fn wall_row(row_index: usize) -> &'static [char] {
     &WALL_STYLES[row_index * WALL_ROW..row_index * WALL_ROW + WALL_ROW]
+}
+
+#[inline]
+pub fn is_wall(square: Square) -> bool {
+    (square & PATH_BIT) == 0
+}
+
+#[inline]
+pub fn is_path(square: Square) -> bool {
+    (square & PATH_BIT) != 0
 }
 
 // Any modification made to these bits by a builder MUST be cleared before build process completes.
