@@ -193,7 +193,7 @@ pub fn build_wall_outline_history(maze: &mut maze::Maze) {
                 build_wall_carefully(maze, maze::Point { row: r, col: c });
                 continue;
             }
-            build_path(maze, maze::Point { row: r, col: c });
+            build_path_history(maze, maze::Point { row: r, col: c });
         }
     }
 }
@@ -426,18 +426,20 @@ pub fn build_mini_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, spee
 pub fn fill_maze_history_with_walls(maze: &mut maze::Maze) {
     for r in 0..maze.row_size() {
         for c in 0..maze.col_size() {
-            build_wall(maze, maze::Point { row: r, col: c });
+            build_wall_history(maze, maze::Point { row: r, col: c });
         }
     }
+    let burst = (maze.row_size() * maze.col_size()) as usize;
+    maze.build_history[0].burst = burst;
+    maze.build_history[burst - 1].burst = burst;
 }
 
 pub fn fill_maze_with_walls(maze: &mut maze::Maze) {
     for r in 0..maze.row_size() {
         for c in 0..maze.col_size() {
-            build_wall_history(maze, maze::Point { row: r, col: c });
+            build_wall(maze, maze::Point { row: r, col: c });
         }
     }
-    maze.build_history[0].burst = (maze.row_size() * maze.col_size()) as usize;
 }
 
 pub fn mark_origin(maze: &mut maze::Maze, walk: maze::Point, next: maze::Point) {
@@ -833,6 +835,27 @@ pub fn join_squares(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point) 
     *maze.get_mut(next.row, next.col) |= BUILDER_BIT;
 }
 
+pub fn join_squares_history(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point) {
+    build_path_history(maze, cur);
+    *maze.get_mut(cur.row, cur.col) |= BUILDER_BIT;
+    let mut wall = cur;
+    if next.row < cur.row {
+        wall.row -= 1;
+    } else if next.row > cur.row {
+        wall.row += 1;
+    } else if next.col < cur.col {
+        wall.col -= 1;
+    } else if next.col > cur.col {
+        wall.col += 1;
+    } else {
+        print::maze_panic!("Cell join error. Cur: {:?} Next: {:?}", cur, next);
+    }
+    build_path_history(maze, wall);
+    *maze.get_mut(wall.row, wall.col) |= BUILDER_BIT;
+    build_path_history(maze, next);
+    *maze.get_mut(next.row, next.col) |= BUILDER_BIT;
+}
+
 pub fn join_squares_animated(
     maze: &mut maze::Maze,
     cur: maze::Point,
@@ -971,47 +994,59 @@ pub fn build_path_history(maze: &mut maze::Maze, p: maze::Point) {
     };
     *maze.get_mut(p.row, p.col) |= maze::PATH_BIT;
     if p.row > 0 {
-        burst += 1;
         square = maze.get(p.row - 1, p.col);
-        wall_changes[0] = tape::Delta {
-            id: p,
+        wall_changes[burst] = tape::Delta {
+            id: maze::Point {
+                row: p.row - 1,
+                col: p.col,
+            },
             before: square,
             after: square & !maze::SOUTH_WALL,
-            burst,
+            burst: burst + 1,
         };
+        burst += 1;
         *maze.get_mut(p.row - 1, p.col) &= !maze::SOUTH_WALL;
     }
     if p.row + 1 < maze.row_size() {
-        burst += 1;
         square = maze.get(p.row + 1, p.col);
-        wall_changes[0] = tape::Delta {
-            id: p,
+        wall_changes[burst] = tape::Delta {
+            id: maze::Point {
+                row: p.row + 1,
+                col: p.col,
+            },
             before: square,
             after: square & !maze::NORTH_WALL,
-            burst,
+            burst: burst + 1,
         };
+        burst += 1;
         *maze.get_mut(p.row + 1, p.col) &= !maze::NORTH_WALL;
     }
     if p.col > 0 {
-        burst += 1;
         square = maze.get(p.row, p.col - 1);
-        wall_changes[0] = tape::Delta {
-            id: p,
+        wall_changes[burst] = tape::Delta {
+            id: maze::Point {
+                row: p.row,
+                col: p.col - 1,
+            },
             before: square,
             after: square & !maze::EAST_WALL,
-            burst,
+            burst: burst + 1,
         };
+        burst += 1;
         *maze.get_mut(p.row, p.col - 1) &= !maze::EAST_WALL;
     }
     if p.col + 1 < maze.col_size() {
-        burst += 1;
         square = maze.get(p.row, p.col + 1);
-        wall_changes[0] = tape::Delta {
-            id: p,
+        wall_changes[burst] = tape::Delta {
+            id: maze::Point {
+                row: p.row,
+                col: p.col + 1,
+            },
             before: square,
             after: square & !maze::WEST_WALL,
-            burst,
+            burst: burst + 1,
         };
+        burst += 1;
         *maze.get_mut(p.row, p.col + 1) &= !maze::WEST_WALL;
     }
     wall_changes[0].burst = burst;
@@ -1221,6 +1256,57 @@ pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
         }
     } else {
         print::maze_panic!("Printed a maze square without a category.");
+    }
+}
+
+pub fn decode_mini_square(maze: &maze::Blueprint, p: maze::Point) -> Cell {
+    let square = maze.get(p.row, p.col);
+    if maze::is_wall(square) {
+        if p.row % 2 != 0 {
+            // By defenition of 0 indexing row - 1 is safe now.
+            return Cell {
+                symbol: maze.wall_char(maze.get(p.row - 1, p.col)).to_string(),
+                fg: RatColor::Reset,
+                bg: RatColor::Reset,
+                underline_color: RatColor::Reset,
+                modifier: Modifier::empty(),
+                skip: false,
+            };
+        }
+        return Cell {
+            symbol: maze.wall_char(square).to_string(),
+            fg: RatColor::Reset,
+            bg: RatColor::Reset,
+            underline_color: RatColor::Reset,
+            modifier: Modifier::empty(),
+            skip: false,
+        };
+    }
+    if p.row % 2 == 0 {
+        return Cell {
+            symbol: match maze.wall_at(p.row + 1, p.col) {
+                true => '▄',
+                false => ' ',
+            }
+            .to_string(),
+            fg: RatColor::Reset,
+            bg: RatColor::Reset,
+            underline_color: RatColor::Reset,
+            modifier: Modifier::empty(),
+            skip: false,
+        };
+    }
+    Cell {
+        symbol: match maze.wall_at(p.row - 1, p.col) {
+            true => '▀',
+            false => ' ',
+        }
+        .to_string(),
+        fg: RatColor::Reset,
+        bg: RatColor::Reset,
+        underline_color: RatColor::Reset,
+        modifier: Modifier::empty(),
+        skip: false,
     }
 }
 

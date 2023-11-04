@@ -130,9 +130,8 @@ pub fn run() -> tui::Result<()> {
     Ok(())
 }
 
-fn render_maze(mut this_run: tables::HistoryRunner, tui: &mut tui::Tui) -> tui::Result<()> {
+fn render_maze(this_run: tables::HistoryRunner, tui: &mut tui::Tui) -> tui::Result<()> {
     let render_space = tui.inner_maze_rect();
-    this_run.args.style = maze::MazeStyle::Contrast;
     let mut play = new_tape(&this_run);
     'rendering: loop {
         'building: loop {
@@ -280,7 +279,6 @@ fn new_home_tape(rect: Rect) -> Playback {
     let mut run_bg = set_random_args(&rect);
     run_bg.build = builders::recursive_backtracker::generate_history;
     run_bg.solve = solvers::bfs::hunt_history;
-    run_bg.args.style = maze::MazeStyle::Contrast;
     let bg_maze = monitor::Monitor::new(maze::Maze::new(run_bg.args));
     (run_bg.build)(bg_maze.clone());
     (run_bg.solve)(bg_maze.clone());
@@ -330,7 +328,7 @@ fn handle_reader(
 pub fn set_command_args(cmd: String, tui: &mut tui::Tui) -> Result<tables::HistoryRunner, String> {
     let mut run = tables::HistoryRunner::new();
     let dimensions = tui.inner_dimensions();
-    run.args.odd_rows = (dimensions.rows as f64 / 1.2) as i32;
+    run.args.odd_rows = dimensions.rows;
     run.args.odd_cols = dimensions.cols;
     run.args.offset = dimensions.offset;
     let mut prev_flag: &str = "";

@@ -44,14 +44,32 @@ pub struct SolveFrame<'a> {
 
 impl<'a> Widget for BuildFrame<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let buf_area = buf.area;
-        let row_len = cmp::min(buf_area.height - area.top(), self.maze.rows as u16);
-        let col_len = cmp::min(buf_area.width - area.left(), self.maze.cols as u16);
-        let wall_row = &maze::wall_row(self.maze.wall_style_index);
-        let cols = col_len as usize;
-        for (r, y) in (area.top()..area.top() + row_len).enumerate() {
-            for (c, x) in (area.left()..area.left() + col_len).enumerate() {
-                *buf.get_mut(x, y) = build::decode_square(wall_row, self.maze.buf[r * cols + c]);
+        if self.maze.is_mini() {
+            let buf_area = buf.area;
+            let row_len = cmp::min(buf_area.height - area.top(), (self.maze.rows / 2) as u16);
+            let col_len = cmp::min(buf_area.width - area.left(), self.maze.cols as u16);
+            for (r, y) in (area.top()..(area.top() + row_len) * 2 + 1).enumerate() {
+                for (c, x) in (area.left()..area.left() + col_len).enumerate() {
+                    *buf.get_mut(x, y / 2) = build::decode_mini_square(
+                        self.maze,
+                        maze::Point {
+                            row: r as i32,
+                            col: c as i32,
+                        },
+                    );
+                }
+            }
+        } else {
+            let buf_area = buf.area;
+            let row_len = cmp::min(buf_area.height - area.top(), self.maze.rows as u16);
+            let col_len = cmp::min(buf_area.width - area.left(), self.maze.cols as u16);
+            let wall_row = &maze::wall_row(self.maze.wall_style_index);
+            let cols = col_len as usize;
+            for (r, y) in (area.top()..area.top() + row_len).enumerate() {
+                for (c, x) in (area.left()..area.left() + col_len).enumerate() {
+                    *buf.get_mut(x, y) =
+                        build::decode_square(wall_row, self.maze.buf[r * cols + c]);
+                }
             }
         }
     }

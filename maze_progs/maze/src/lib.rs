@@ -151,7 +151,7 @@ impl Maze {
 
     #[inline]
     pub fn is_mini(&self) -> bool {
-        self.maze.wall_style_index == (MazeStyle::Mini as usize)
+        self.maze.is_mini()
     }
 
     #[inline]
@@ -166,22 +166,59 @@ impl Maze {
 
     #[inline]
     pub fn get_mut(&mut self, row: i32, col: i32) -> &mut Square {
-        &mut self.maze.buf[(row * self.maze.cols + col) as usize]
+        self.maze.get_mut(row, col)
     }
 
     #[inline]
     pub fn get(&self, row: i32, col: i32) -> Square {
-        self.maze.buf[(row * self.maze.cols + col) as usize]
+        self.maze.get(row, col)
     }
 
     #[inline]
     pub fn wall_at(&self, row: i32, col: i32) -> bool {
-        (self.maze.buf[(row * self.maze.cols + col) as usize] & PATH_BIT) == 0
+        self.maze.wall_at(row, col)
     }
 
     #[inline]
     pub fn path_at(&self, row: i32, col: i32) -> bool {
-        (self.maze.buf[(row * self.maze.cols + col) as usize] & PATH_BIT) != 0
+        self.maze.path_at(row, col)
+    }
+}
+
+impl Blueprint {
+    #[inline]
+    pub fn get(&self, row: i32, col: i32) -> Square {
+        self.buf[(row * self.cols + col) as usize]
+    }
+
+    #[inline]
+    pub fn get_mut(&mut self, row: i32, col: i32) -> &mut Square {
+        &mut self.buf[(row * self.cols + col) as usize]
+    }
+
+    #[inline]
+    pub fn wall_char(&self, square: Square) -> char {
+        WALL_STYLES[(self.wall_style_index * WALL_ROW) + (square & WALL_MASK) as usize]
+    }
+
+    #[inline]
+    pub fn wall_row(&self) -> &[char] {
+        &WALL_STYLES[self.wall_style_index * WALL_ROW..self.wall_style_index * WALL_ROW + WALL_ROW]
+    }
+
+    #[inline]
+    pub fn wall_at(&self, row: i32, col: i32) -> bool {
+        (self.buf[(row * self.cols + col) as usize] & PATH_BIT) == 0
+    }
+
+    #[inline]
+    pub fn path_at(&self, row: i32, col: i32) -> bool {
+        (self.buf[(row * self.cols + col) as usize] & PATH_BIT) != 0
+    }
+
+    #[inline]
+    pub fn is_mini(&self) -> bool {
+        self.wall_style_index == (MazeStyle::Mini as usize)
     }
 }
 
@@ -201,6 +238,11 @@ impl Default for MazeArgs {
 #[inline]
 pub fn wall_row(row_index: usize) -> &'static [char] {
     &WALL_STYLES[row_index * WALL_ROW..row_index * WALL_ROW + WALL_ROW]
+}
+
+#[inline]
+pub fn wall_char(style_index: usize, square: Square) -> char {
+    WALL_STYLES[style_index * WALL_ROW + (square & WALL_MASK) as usize]
 }
 
 #[inline]

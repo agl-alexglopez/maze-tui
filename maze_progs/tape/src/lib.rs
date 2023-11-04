@@ -129,11 +129,15 @@ where
     }
 
     pub fn push_burst(&mut self, steps: &[Delta<ID, T>]) {
-        if steps.is_empty()
-            || steps[0].burst != steps.len()
-            || steps[steps.len() - 1].burst != steps.len()
+        if !steps.is_empty()
+            && (steps[0].burst != steps.len() || steps[steps.len() - 1].burst != steps.len())
         {
-            panic!("ill formed burst input burst");
+            panic!(
+                "ill formed burst input burst burst[0]={},burst[burst-1]={}, len {}",
+                steps[0].burst,
+                steps[steps.len() - 1].burst,
+                steps.len()
+            );
         }
         for s in steps.iter() {
             self.steps.push(*s);

@@ -29,8 +29,70 @@ struct IdMergeRequest {
 
 // Public Builder Functions-----------------------------------------------------------------------
 
-pub fn generate_history(_monitor: monitor::MazeMonitor) {
-    todo!();
+pub fn generate_history(monitor: monitor::MazeMonitor) {
+    let mut lk = match monitor.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    build::fill_maze_history_with_walls(&mut lk.maze);
+    let mut rng = thread_rng();
+    let coin = Bernoulli::new(0.66);
+    let mut window = SlidingSetWindow::new(&lk.maze);
+    let mut sets_in_this_row: HashMap<SetId, Vec<maze::Point>> = HashMap::new();
+    for r in (1..lk.maze.row_size() - 2).step_by(2) {
+        window.generate_sets(window.next_row_i());
+        for c in (1..lk.maze.col_size() - 1).step_by(2) {
+            let cur_id = window.at(window.cur_row, c as usize);
+            let next = maze::Point {
+                row: r,
+                col: c + NEIGHBOR_DIST,
+            };
+            if !build::is_square_within_perimeter_walls(&lk.maze, next)
+                || cur_id == window.at(window.cur_row, next.col as usize)
+                || !coin.expect("Bernoulli coin flip broke").sample(&mut rng)
+            {
+                continue;
+            }
+            let neighbor_id = window.at(window.cur_row, next.col as usize);
+            build::join_squares_history(&mut lk.maze, maze::Point { row: r, col: c }, next);
+            merge_cur_row_sets(
+                &mut window,
+                IdMergeRequest {
+                    winner: cur_id,
+                    loser: neighbor_id,
+                },
+            );
+        }
+
+        for c in (1..lk.maze.col_size() - 1).step_by(2) {
+            sets_in_this_row
+                .entry(window.at(window.cur_row, c as usize))
+                .or_default()
+                .push(maze::Point { row: r, col: c });
+        }
+
+        for set in sets_in_this_row.iter() {
+            for _drop in 0..rng.gen_range(1..=set.1.len()) {
+                let chose: &maze::Point = &set.1[rng.gen_range(0..set.1.len())];
+                if build::is_built(lk.maze.get(chose.row + DROP_DIST, chose.col)) {
+                    continue;
+                }
+                let next_row = window.next_row_i();
+                *window.at_mut(next_row, chose.col as usize) = *set.0;
+                build::join_squares_history(
+                    &mut lk.maze,
+                    *chose,
+                    maze::Point {
+                        row: chose.row + DROP_DIST,
+                        col: chose.col,
+                    },
+                );
+            }
+        }
+        window.slide_window();
+        sets_in_this_row.clear();
+    }
+    complete_final_row_history(&mut lk.maze, &mut window);
 }
 
 pub fn generate_maze(monitor: monitor::MazeReceiver) {
@@ -287,6 +349,28 @@ fn complete_final_row(maze: &mut maze::Maze, window: &mut SlidingSetWindow) {
             continue;
         }
         build::join_squares(maze, maze::Point { row: r, col: c }, next);
+        for set_elem in (next.col..maze.col_size() - 1).step_by(2) {
+            if window.at(set_r, set_elem as usize) == neighbor_id {
+                *window.at_mut(set_r, set_elem as usize) = this_id;
+            }
+        }
+    }
+}
+
+fn complete_final_row_history(maze: &mut maze::Maze, window: &mut SlidingSetWindow) {
+    let r = maze.row_size() - 2;
+    let set_r = window.cur_row;
+    for c in (1..maze.col_size() - 2).step_by(2) {
+        let this_id = window.at(set_r, c as usize);
+        let next = maze::Point {
+            row: r,
+            col: c + NEIGHBOR_DIST,
+        };
+        let neighbor_id = window.at(set_r, (c + NEIGHBOR_DIST) as usize);
+        if this_id == neighbor_id {
+            continue;
+        }
+        build::join_squares_history(maze, maze::Point { row: r, col: c }, next);
         for set_elem in (next.col..maze.col_size() - 1).step_by(2) {
             if window.at(set_r, set_elem as usize) == neighbor_id {
                 *window.at_mut(set_r, set_elem as usize) = this_id;

@@ -194,14 +194,14 @@ pub const CURSOR_BUILDERS: [(&str, BuildCursorFunction); 10] = [
     ("grid", (grid::generate_maze, grid::animate_maze)),
 ];
 
-pub const HISTORY_BUILDERS: [(&str, BuildHistoryFunction); 2] = [
+pub const HISTORY_BUILDERS: [(&str, BuildHistoryFunction); 3] = [
     ("arena", arena::generate_history),
     ("rdfs", recursive_backtracker::generate_history),
     // ("hunt-kill", hunt_kill::generate_history),
     // ("fractal", recursive_subdivision::generate_history),
     // ("prim", prim::generate_history),
     // ("kruskal", kruskal::generate_history),
-    // ("eller", eller::generate_history),
+    ("eller", eller::generate_history),
     // ("wilson", wilson_carver::generate_history),
     // ("wilson-walls", wilson_adder::generate_history),
     // ("grid", grid::generate_history),
@@ -294,7 +294,7 @@ pub static DESCRIPTIONS: [(BuildCursorFunction, BuildHistoryFunction, &str); 10]
             builders::arena::generate_maze,
             builders::arena::animate_maze,
         ),
-        builders::arena::generate_history,
+        builders::recursive_backtracker::generate_history,
         include_str!("../../res/arena.txt"),
     ),
     (
@@ -302,12 +302,12 @@ pub static DESCRIPTIONS: [(BuildCursorFunction, BuildHistoryFunction, &str); 10]
             builders::eller::generate_maze,
             builders::eller::animate_maze,
         ),
-        builders::eller::generate_history,
+        builders::recursive_backtracker::generate_history,
         include_str!("../../res/eller.txt"),
     ),
     (
         (builders::grid::generate_maze, builders::grid::animate_maze),
-        builders::grid::generate_history,
+        builders::recursive_backtracker::generate_history,
         include_str!("../../res/grid.txt"),
     ),
     (
@@ -315,7 +315,7 @@ pub static DESCRIPTIONS: [(BuildCursorFunction, BuildHistoryFunction, &str); 10]
             builders::hunt_kill::generate_maze,
             builders::hunt_kill::animate_maze,
         ),
-        builders::hunt_kill::generate_history,
+        builders::recursive_backtracker::generate_history,
         include_str!("../../res/hunt_kill.txt"),
     ),
     (
@@ -323,12 +323,12 @@ pub static DESCRIPTIONS: [(BuildCursorFunction, BuildHistoryFunction, &str); 10]
             builders::kruskal::generate_maze,
             builders::kruskal::animate_maze,
         ),
-        builders::kruskal::generate_history,
+        builders::recursive_backtracker::generate_history,
         include_str!("../../res/kruskal.txt"),
     ),
     (
         (builders::prim::generate_maze, builders::prim::animate_maze),
-        builders::prim::generate_history,
+        builders::recursive_backtracker::generate_history,
         include_str!("../../res/prim.txt"),
     ),
     (
@@ -344,7 +344,7 @@ pub static DESCRIPTIONS: [(BuildCursorFunction, BuildHistoryFunction, &str); 10]
             builders::recursive_subdivision::generate_maze,
             builders::recursive_subdivision::animate_maze,
         ),
-        builders::recursive_subdivision::generate_history,
+        builders::recursive_backtracker::generate_history,
         include_str!("../../res/recursive_subdivision.txt"),
     ),
     (
@@ -352,7 +352,7 @@ pub static DESCRIPTIONS: [(BuildCursorFunction, BuildHistoryFunction, &str); 10]
             builders::wilson_adder::generate_maze,
             builders::wilson_adder::animate_maze,
         ),
-        builders::wilson_adder::generate_history,
+        builders::recursive_backtracker::generate_history,
         include_str!("../../res/wilson_adder.txt"),
     ),
     (
@@ -360,7 +360,7 @@ pub static DESCRIPTIONS: [(BuildCursorFunction, BuildHistoryFunction, &str); 10]
             builders::wilson_carver::generate_maze,
             builders::wilson_carver::animate_maze,
         ),
-        builders::wilson_carver::generate_history,
+        builders::recursive_backtracker::generate_history,
         include_str!("../../res/wilson_carver.txt"),
     ),
 ];
