@@ -292,7 +292,7 @@ pub fn build_wall_line_history(maze: &mut maze::Maze, p: maze::Point) {
         burst,
     };
     *maze.get_mut(p.row, p.col) = (square | wall | BUILDER_BIT) & !maze::PATH_BIT;
-    maze.build_history.push_burst(wall_changes.as_slice());
+    maze.build_history.push_burst(&wall_changes[0..burst]);
 }
 
 pub fn build_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUnit) {
@@ -1163,7 +1163,7 @@ pub fn build_path_history(maze: &mut maze::Maze, p: maze::Point) {
         *maze.get_mut(p.row, p.col + 1) &= !maze::WEST_WALL;
     }
     wall_changes[0].burst = burst;
-    maze.build_history.push_burst(wall_changes.as_slice());
+    maze.build_history.push_burst(&wall_changes[0..burst]);
 }
 
 pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUnit) {
