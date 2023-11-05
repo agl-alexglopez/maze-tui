@@ -308,6 +308,137 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
 
 // These printers for the Mini wall style are brutal. If you ever think of something better, fix.
 
+// This is really bad, there must be a better way. Coloring halves correctly is a challenge.
+pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
+    let square = maze.get(p.row, p.col);
+    let this_color = key::thread_color_code(color_index(square));
+    if is_start_or_finish(square) {
+        return Cell {
+            symbol: '▀'.to_string(),
+            fg: RatColor::Indexed(key::ANSI_CYN),
+            bg: RatColor::Indexed(this_color),
+            underline_color: RatColor::Reset,
+            modifier: Modifier::SLOW_BLINK,
+            skip: false,
+        };
+    }
+    // An odd square will always have something above but we could be a path or wall.
+    if p.row % 2 != 0 {
+        if maze.path_at(p.row, p.col) {
+            if maze.path_at(p.row - 1, p.col) {
+                let neighbor_square = maze.get(p.row - 1, p.col);
+                if is_start_or_finish(neighbor_square) {
+                    // A special square is our neighbor.
+                    return Cell {
+                        symbol: '▀'.to_string(),
+                        fg: RatColor::Indexed(key::ANSI_CYN),
+                        bg: RatColor::Indexed(this_color),
+                        underline_color: RatColor::Reset,
+                        modifier: Modifier::SLOW_BLINK,
+                        skip: false,
+                    };
+                }
+                // Another thread may be above us so grab the color invariantly just in case.
+                return Cell {
+                    symbol: '▀'.to_string(),
+                    fg: RatColor::Indexed(key::thread_color_code(color_index(neighbor_square))),
+                    bg: RatColor::Indexed(this_color),
+                    underline_color: RatColor::Reset,
+                    modifier: Modifier::empty(),
+                    skip: false,
+                };
+            }
+            // A wall is above a path so no extra color logic needed.
+            return Cell {
+                symbol: '▀'.to_string(),
+                fg: RatColor::Reset,
+                bg: RatColor::Indexed(this_color),
+                underline_color: RatColor::Reset,
+                modifier: Modifier::empty(),
+                skip: false,
+            };
+        }
+        // The only odd wall sqares are those connecting two even rows above and below.
+        return Cell {
+            symbol: '█'.to_string(),
+            fg: RatColor::Reset,
+            bg: RatColor::Reset,
+            underline_color: RatColor::Reset,
+            modifier: Modifier::empty(),
+            skip: false,
+        };
+    }
+    // This is an even row. Let's run the logic for both paths and walls being here.
+    if maze.path_at(p.row, p.col) {
+        if maze.path_at(p.row + 1, p.col) {
+            let neighbor_square = maze.get(p.row + 1, p.col);
+            if is_start_or_finish(neighbor_square) {
+                // A special neighbor is below us so we must split the square colors.
+                return Cell {
+                    symbol: '▀'.to_string(),
+                    fg: RatColor::Indexed(key::ANSI_CYN),
+                    bg: RatColor::Indexed(this_color),
+                    underline_color: RatColor::Reset,
+                    modifier: Modifier::SLOW_BLINK,
+                    skip: false,
+                };
+            }
+            // Another thread may be below us so grab the color invariantly just in case.
+            return Cell {
+                symbol: '▀'.to_string(),
+                fg: RatColor::Indexed(key::thread_color_code(color_index(neighbor_square))),
+                bg: RatColor::Indexed(this_color),
+                underline_color: RatColor::Reset,
+                modifier: Modifier::empty(),
+                skip: false,
+            };
+        }
+        // A wall is below a path so not coloring of the block this time.
+        return Cell {
+            symbol: '▄'.to_string(),
+            fg: RatColor::Reset,
+            bg: RatColor::Indexed(this_color),
+            underline_color: RatColor::Reset,
+            modifier: Modifier::empty(),
+            skip: false,
+        };
+    }
+    // This is a wall square in an even row. A path or other wall can be below.
+    if p.row + 1 < maze.rows && maze.path_at(p.row + 1, p.col) {
+        let neighbor_square = maze.get(p.row + 1, p.col);
+        if is_start_or_finish(neighbor_square) {
+            // The wall has a special neighbor so color halves appropriately.
+            return Cell {
+                symbol: '▀'.to_string(),
+                fg: RatColor::Reset,
+                bg: RatColor::Indexed(key::ANSI_CYN),
+                underline_color: RatColor::Reset,
+                modifier: Modifier::SLOW_BLINK,
+                skip: false,
+            };
+        }
+        // The wall may have a thread below so grab the color just in case.
+        return Cell {
+            symbol: '▀'.to_string(),
+            fg: RatColor::Reset,
+            bg: RatColor::Indexed(key::thread_color_code(color_index(neighbor_square))),
+            underline_color: RatColor::Reset,
+            modifier: Modifier::empty(),
+            skip: false,
+        };
+    }
+    // Edge case. If a wall is below us in an even row it will print the full block for us when we
+    // get to it. If not we are at the end of the maze and this is the right square to print.
+    Cell {
+        symbol: '▀'.to_string(),
+        fg: RatColor::Reset,
+        bg: RatColor::Reset,
+        underline_color: RatColor::Reset,
+        modifier: Modifier::empty(),
+        skip: false,
+    }
+}
+
 pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     print::set_cursor_position(
         maze::Point {
