@@ -251,11 +251,56 @@ fn complete_walk_history(maze: &mut maze::Maze, mut walk: RandomWalk) -> Option<
         };
         return Some(walk);
     }
-    build::mark_origin_history(maze, walk.walk, walk.next);
+    mark_line_history(maze, walk.walk, walk.next);
     walk.prev = walk.walk;
     walk.walk = walk.next;
     Some(walk)
 }
+
+pub fn mark_line_history(maze: &mut maze::Maze, walk: maze::Point, next: maze::Point) {
+    let mut wall = walk;
+    let next_before = maze.get(next.row, next.col);
+    let wall_before = if next.row > walk.row {
+        wall.row += 1;
+        let before = maze.get(wall.row, wall.col);
+        *maze.get_mut(wall.row, wall.col) = (before | build::FROM_NORTH) & !maze::PATH_BIT;
+        *maze.get_mut(next.row, next.col) = (next_before | build::FROM_NORTH) & !maze::PATH_BIT;
+        before
+    } else if next.row < walk.row {
+        wall.row -= 1;
+        let before = maze.get(wall.row, wall.col);
+        *maze.get_mut(wall.row, wall.col) = (before | build::FROM_SOUTH) & !maze::PATH_BIT;
+        *maze.get_mut(next.row, next.col) = (next_before | build::FROM_SOUTH) & !maze::PATH_BIT;
+        before
+    } else if next.col < walk.col {
+        wall.col -= 1;
+        let before = maze.get(wall.row, wall.col);
+        *maze.get_mut(wall.row, wall.col) = (before | build::FROM_EAST) & !maze::PATH_BIT;
+        *maze.get_mut(next.row, next.col) = (next_before | build::FROM_EAST) & !maze::PATH_BIT;
+        before
+    } else if next.col > walk.col {
+        wall.col += 1;
+        let before = maze.get(wall.row, wall.col);
+        *maze.get_mut(wall.row, wall.col) = (before | build::FROM_WEST) & !maze::PATH_BIT;
+        *maze.get_mut(next.row, next.col) = (next_before | build::FROM_WEST) & !maze::PATH_BIT;
+        before
+    } else {
+        print::maze_panic!("next cannot be equal to walk");
+    };
+    maze.build_history.push(tape::Delta {
+        id: wall,
+        before: wall_before,
+        after: maze.get(wall.row, wall.col),
+        burst: 1,
+    });
+    maze.build_history.push(tape::Delta {
+        id: next,
+        before: next_before,
+        after: maze.get(next.row, next.col),
+        burst: 1,
+    });
+}
+
 fn erase_loop_history(maze: &mut maze::Maze, mut walk: Loop) {
     while walk.walk != walk.root {
         let walk_square = maze.get(walk.walk.row, walk.walk.col);
@@ -273,18 +318,19 @@ fn erase_loop_history(maze: &mut maze::Maze, mut walk: Loop) {
         maze.build_history.push(tape::Delta {
             id: walk.walk,
             before: walk_square,
-            after: (walk_square & !WALK_BIT) & !build::MARKERS_MASK,
+            after: ((walk_square & !WALK_BIT) & !build::MARKERS_MASK) | maze::PATH_BIT,
             burst: 1,
         });
         maze.build_history.push(tape::Delta {
             id: half_step,
             before: half_square,
-            after: half_square & !build::MARKERS_MASK,
+            after: (half_square & !build::MARKERS_MASK) | maze::PATH_BIT,
             burst: 1,
         });
-        *maze.get_mut(half_step.row, half_step.col) &= !build::MARKERS_MASK;
+        *maze.get_mut(half_step.row, half_step.col) =
+            (half_square & !build::MARKERS_MASK) | maze::PATH_BIT;
         *maze.get_mut(walk.walk.row, walk.walk.col) =
-            (walk_square & !WALK_BIT) & !build::MARKERS_MASK;
+            ((walk_square & !WALK_BIT) & !build::MARKERS_MASK) | maze::PATH_BIT;
         walk.walk = next;
     }
 }

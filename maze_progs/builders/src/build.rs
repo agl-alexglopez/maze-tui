@@ -1394,9 +1394,33 @@ pub fn decode_mini_square(maze: &maze::Blueprint, p: maze::Point) -> Cell {
     if maze::is_wall(square) {
         // Need this for wilson backtracking while random walking.
         if is_marked(square) {
+            if p.row % 2 == 0 {
+                let fg = match get_mark(maze.get(p.row + 1, p.col)) {
+                    BacktrackSymbol {
+                        arrow: ' ',
+                        ansi: 0,
+                    } => RatColor::Reset,
+                    any => RatColor::Indexed(any.ansi),
+                };
+                return Cell {
+                    symbol: '▀'.to_string(),
+                    fg,
+                    bg: RatColor::Indexed(get_mark(square).ansi),
+                    underline_color: RatColor::Reset,
+                    modifier: Modifier::empty(),
+                    skip: false,
+                };
+            }
+            let fg = match get_mark(maze.get(p.row - 1, p.col)) {
+                BacktrackSymbol {
+                    arrow: ' ',
+                    ansi: 0,
+                } => RatColor::Reset,
+                any => RatColor::Indexed(any.ansi),
+            };
             return Cell {
                 symbol: '▀'.to_string(),
-                fg: RatColor::Reset,
+                fg,
                 bg: RatColor::Indexed(get_mark(square).ansi),
                 underline_color: RatColor::Reset,
                 modifier: Modifier::empty(),
@@ -1420,26 +1444,40 @@ pub fn decode_mini_square(maze: &maze::Blueprint, p: maze::Point) -> Cell {
     }
     // We know this is a path but because we are half blocks we need to render correctly.
     if p.row % 2 == 0 {
+        let fg = match get_mark(maze.get(p.row + 1, p.col)) {
+            BacktrackSymbol {
+                arrow: ' ',
+                ansi: 0,
+            } => RatColor::Reset,
+            any => RatColor::Indexed(any.ansi),
+        };
         return Cell {
             symbol: match maze.wall_at(p.row + 1, p.col) {
                 true => '▄',
                 false => ' ',
             }
             .to_string(),
-            fg: RatColor::Reset,
+            fg,
             bg: RatColor::Indexed(get_mark(square).ansi),
             underline_color: RatColor::Reset,
             modifier: Modifier::empty(),
             skip: false,
         };
     }
+    let fg = match get_mark(maze.get(p.row - 1, p.col)) {
+        BacktrackSymbol {
+            arrow: ' ',
+            ansi: 0,
+        } => RatColor::Reset,
+        any => RatColor::Indexed(any.ansi),
+    };
     Cell {
         symbol: match maze.wall_at(p.row - 1, p.col) {
             true => '▀',
             false => ' ',
         }
         .to_string(),
-        fg: RatColor::Reset,
+        fg,
         bg: RatColor::Indexed(get_mark(square).ansi),
         underline_color: RatColor::Reset,
         modifier: Modifier::empty(),
@@ -1507,9 +1545,7 @@ pub fn flush_mini_backtracker_coordinate(maze: &maze::Maze, p: maze::Point) {
         if square & MARKERS_MASK != 0 {
             execute!(
                 io::stdout(),
-                SetBackgroundColor(Color::AnsiValue(
-                    BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize].ansi
-                )),
+                SetBackgroundColor(Color::AnsiValue(get_mark(square).ansi)),
                 Print('▀'),
                 ResetColor
             )
@@ -1539,9 +1575,7 @@ pub fn flush_mini_backtracker_coordinate(maze: &maze::Maze, p: maze::Point) {
     if p.row % 2 == 0 {
         execute!(
             io::stdout(),
-            SetBackgroundColor(Color::AnsiValue(
-                BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize].ansi
-            )),
+            SetBackgroundColor(Color::AnsiValue(get_mark(square).ansi)),
             Print(match maze.wall_at(p.row + 1, p.col) {
                 true => '▄',
                 false => ' ',
@@ -1553,9 +1587,7 @@ pub fn flush_mini_backtracker_coordinate(maze: &maze::Maze, p: maze::Point) {
     }
     execute!(
         io::stdout(),
-        SetBackgroundColor(Color::AnsiValue(
-            BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize].ansi
-        )),
+        SetBackgroundColor(Color::AnsiValue(get_mark(square).ansi)),
         Print(match maze.wall_at(p.row - 1, p.col) {
             true => '▀',
             false => ' ',
