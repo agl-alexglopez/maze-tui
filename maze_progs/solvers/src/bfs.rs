@@ -7,6 +7,8 @@ use rand::prelude::*;
 use std::collections::{HashMap, VecDeque};
 use std::{thread, time};
 
+const BURST: usize = 4;
+
 // Public Solver Functions-------------------------------------------------------------------------
 
 pub fn hunt_history(monitor: monitor::MazeMonitor) {
@@ -64,12 +66,15 @@ pub fn hunt_history(monitor: monitor::MazeMonitor) {
     }
 
     if let Ok(mut lk) = monitor.lock() {
-        let burst = 4;
-        for i in (0..lk.maze.solve_history.len()).step_by(burst) {
-            if i + burst <= lk.maze.solve_history.len() {
-                lk.maze.solve_history[i].burst = burst;
-                lk.maze.solve_history[i + burst - 1].burst = burst;
-            }
+        // I kind of cheated by having every history claim it was a 4-burst. That works but we need
+        // to tidy up so when we start reversing from the end the jumps by 4-bursts are correct.
+        let len = lk.maze.solve_history.len();
+        if len % BURST != 0 {
+            lk.maze
+                .solve_history
+                .slice_mut(len - (len % BURST) + 1, len)
+                .iter_mut()
+                .for_each(|s| s.burst = 1);
         }
         for i in 0..lk.win_path.len() {
             let p = lk.win_path[i];
@@ -84,6 +89,10 @@ pub fn hunt_history(monitor: monitor::MazeMonitor) {
         return;
     }
     print::maze_panic!("Thread panicked with the lock!");
+}
+
+pub fn gather_history(monitor: monitor::MazeMonitor) {
+    todo!();
 }
 
 pub fn hunt(monitor: monitor::MazeReceiver) {
@@ -266,10 +275,6 @@ fn animate_mini_hunt(monitor: monitor::MazeReceiver, speed: speed::Speed) {
         return;
     }
     print::maze_panic!("Thread panicked with the lock!");
-}
-
-pub fn gather_history(monitor: monitor::MazeMonitor) {
-    todo!();
 }
 
 pub fn gather(monitor: monitor::MazeReceiver) {
@@ -681,7 +686,7 @@ fn hunter_history(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
                     id: cur,
                     before: square,
                     after: square | guide.paint,
-                    burst: 1,
+                    burst: BURST,
                 });
                 *lk.maze.get_mut(cur.row, cur.col) |= guide.paint;
                 lk.win.get_or_insert(guide.index);
@@ -702,7 +707,7 @@ fn hunter_history(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
                 id: cur,
                 before: square,
                 after: square | guide.paint,
-                burst: 1,
+                burst: BURST,
             });
             *lk.maze.get_mut(cur.row, cur.col) |= guide.paint;
         } else {

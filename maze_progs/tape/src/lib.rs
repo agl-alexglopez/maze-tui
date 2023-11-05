@@ -52,6 +52,10 @@ where
         &self.steps[start..end]
     }
 
+    pub fn slice_mut(&mut self, start: usize, end: usize) -> &mut [Delta<ID, T>] {
+        &mut self.steps[start..end]
+    }
+
     pub fn is_empty(&self) -> bool {
         self.steps.is_empty()
     }
@@ -145,9 +149,6 @@ where
     }
 
     pub fn push(&mut self, s: Delta<ID, T>) {
-        if s.burst != 1 {
-            panic!("single delta has burst length of {}", s.burst);
-        }
         self.steps.push(s);
     }
 
