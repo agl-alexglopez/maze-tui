@@ -173,13 +173,13 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
 
 fn load_shuffled_walls(maze: &maze::Maze) -> Vec<maze::Point> {
     let mut walls = Vec::new();
-    for r in (1..maze.row_size() - 1).step_by(2) {
-        for c in (2..maze.col_size() - 1).step_by(2) {
+    for r in (1..maze.rows() - 1).step_by(2) {
+        for c in (2..maze.cols() - 1).step_by(2) {
             walls.push(maze::Point { row: r, col: c });
         }
     }
-    for r in (2..maze.row_size() - 1).step_by(2) {
-        for c in (1..maze.col_size() - 1).step_by(2) {
+    for r in (2..maze.rows() - 1).step_by(2) {
+        for c in (1..maze.cols() - 1).step_by(2) {
             walls.push(maze::Point { row: r, col: c });
         }
     }
@@ -190,8 +190,8 @@ fn load_shuffled_walls(maze: &maze::Maze) -> Vec<maze::Point> {
 fn tag_cells(maze: &maze::Maze) -> HashMap<maze::Point, usize> {
     let mut set_ids = HashMap::new();
     let mut id = 0;
-    for r in (1..maze.row_size() - 1).step_by(2) {
-        for c in (1..maze.col_size() - 1).step_by(2) {
+    for r in (1..maze.rows() - 1).step_by(2) {
+        for c in (1..maze.cols() - 1).step_by(2) {
             set_ids.insert(maze::Point { row: r, col: c }, id);
             id += 1;
         }

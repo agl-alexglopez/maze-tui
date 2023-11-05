@@ -23,8 +23,8 @@ pub fn paint_run_lengths(monitor: monitor::MazeReceiver) {
         Ok(l) => l,
         Err(_) => print::maze_panic!("Lock panic."),
     };
-    let row_mid = lk.maze.row_size() / 2;
-    let col_mid = lk.maze.col_size() / 2;
+    let row_mid = lk.maze.rows() / 2;
+    let col_mid = lk.maze.cols() / 2;
     let start = maze::Point {
         row: row_mid + 1 - (row_mid % 2),
         col: col_mid + 1 - (col_mid % 2),
@@ -83,8 +83,8 @@ pub fn animate_run_lengths(monitor: monitor::MazeReceiver, speed: speed::Speed) 
         return;
     }
     let start: maze::Point = if let Ok(mut lk) = monitor.solver.lock() {
-        let row_mid = lk.maze.row_size() / 2;
-        let col_mid = lk.maze.col_size() / 2;
+        let row_mid = lk.maze.rows() / 2;
+        let col_mid = lk.maze.cols() / 2;
         let start = maze::Point {
             row: row_mid + 1 - (row_mid % 2),
             col: col_mid + 1 - (col_mid % 2),
@@ -164,8 +164,8 @@ pub fn animate_run_lengths(monitor: monitor::MazeReceiver, speed: speed::Speed) 
 
 fn animate_mini_run_lengths(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let start: maze::Point = if let Ok(mut lk) = monitor.solver.lock() {
-        let row_mid = lk.maze.row_size() / 2;
-        let col_mid = lk.maze.col_size() / 2;
+        let row_mid = lk.maze.rows() / 2;
+        let col_mid = lk.maze.cols() / 2;
         let start = maze::Point {
             row: row_mid + 1 - (row_mid % 2),
             col: col_mid + 1 - (col_mid % 2),
@@ -252,8 +252,8 @@ fn painter(maze: &maze::Maze, map: &monitor::MaxMap) {
     let mut rng = thread_rng();
     let rand_color_choice: usize = rng.gen_range(0..3);
     if maze.style_index() == (maze::MazeStyle::Mini as usize) {
-        for r in 0..maze.row_size() {
-            for c in 0..maze.col_size() {
+        for r in 0..maze.rows() {
+            for c in 0..maze.cols() {
                 let cur = maze::Point { row: r, col: c };
                 if let Some(run) = map.distances.get(&cur) {
                     let intensity = (map.max - run) as f64 / map.max as f64;
@@ -308,8 +308,8 @@ fn painter(maze: &maze::Maze, map: &monitor::MaxMap) {
             }
         }
     } else {
-        for r in 0..maze.row_size() {
-            for c in 0..maze.col_size() {
+        for r in 0..maze.rows() {
+            for c in 0..maze.cols() {
                 let cur = maze::Point { row: r, col: c };
                 match map.distances.get(&cur) {
                     Some(dist) => {

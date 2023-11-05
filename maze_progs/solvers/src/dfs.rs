@@ -120,8 +120,8 @@ pub fn corner(monitor: monitor::MazeReceiver) {
             *lk.maze.get_mut(p.row, p.col) |= solve::START_BIT;
         }
         let finish = maze::Point {
-            row: lk.maze.row_size() / 2,
-            col: lk.maze.col_size() / 2,
+            row: lk.maze.rows() / 2,
+            col: lk.maze.cols() / 2,
         };
         for d in maze::ALL_DIRECTIONS {
             let next = maze::Point {
@@ -404,8 +404,8 @@ pub fn animate_corner(monitor: monitor::MazeReceiver, speed: speed::Speed) {
         }
 
         let finish = maze::Point {
-            row: lk.maze.row_size() / 2,
-            col: lk.maze.col_size() / 2,
+            row: lk.maze.rows() / 2,
+            col: lk.maze.cols() / 2,
         };
         for d in maze::ALL_DIRECTIONS {
             let next = maze::Point {
@@ -469,8 +469,8 @@ fn animate_mini_corner(monitor: monitor::MazeReceiver, speed: speed::Speed) {
         }
 
         let finish = maze::Point {
-            row: lk.maze.row_size() / 2,
-            col: lk.maze.col_size() / 2,
+            row: lk.maze.rows() / 2,
+            col: lk.maze.cols() / 2,
         };
         for d in maze::ALL_DIRECTIONS {
             let next = maze::Point {

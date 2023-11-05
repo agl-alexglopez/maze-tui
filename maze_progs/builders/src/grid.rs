@@ -22,8 +22,8 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
     build::fill_maze_history_with_walls(&mut lk.maze);
     let mut rng = thread_rng();
     let mut dfs: Vec<maze::Point> = Vec::from([maze::Point {
-        row: 2 * (rng.gen_range(1..lk.maze.row_size() - 1) / 2) + 1,
-        col: 2 * (rng.gen_range(1..lk.maze.col_size() - 1) / 2) + 1,
+        row: 2 * (rng.gen_range(1..lk.maze.rows() - 1) / 2) + 1,
+        col: 2 * (rng.gen_range(1..lk.maze.cols() - 1) / 2) + 1,
     }]);
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     while let Some(run) = dfs.last().cloned() {
@@ -55,8 +55,8 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
     build::fill_maze_with_walls(&mut lk.maze);
     let mut rng = thread_rng();
     let mut dfs: Vec<maze::Point> = Vec::from([maze::Point {
-        row: 2 * (rng.gen_range(1..lk.maze.row_size() - 1) / 2) + 1,
-        col: 2 * (rng.gen_range(1..lk.maze.col_size() - 1) / 2) + 1,
+        row: 2 * (rng.gen_range(1..lk.maze.rows() - 1) / 2) + 1,
+        col: 2 * (rng.gen_range(1..lk.maze.cols() - 1) / 2) + 1,
     }]);
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     while let Some(run) = dfs.last().cloned() {
@@ -96,8 +96,8 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     build::print_overlap_key_animated(&lk.maze);
     let mut rng = thread_rng();
     let mut dfs: Vec<maze::Point> = Vec::from([maze::Point {
-        row: 2 * (rng.gen_range(1..lk.maze.row_size() - 1) / 2) + 1,
-        col: 2 * (rng.gen_range(1..lk.maze.col_size() - 1) / 2) + 1,
+        row: 2 * (rng.gen_range(1..lk.maze.rows() - 1) / 2) + 1,
+        col: 2 * (rng.gen_range(1..lk.maze.cols() - 1) / 2) + 1,
     }]);
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     while let Some(run) = dfs.last().cloned() {
@@ -142,8 +142,8 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     build::print_overlap_key_animated(&lk.maze);
     let mut rng = thread_rng();
     let mut dfs: Vec<maze::Point> = Vec::from([maze::Point {
-        row: 2 * (rng.gen_range(1..lk.maze.row_size() - 1) / 2) + 1,
-        col: 2 * (rng.gen_range(1..lk.maze.col_size() - 1) / 2) + 1,
+        row: 2 * (rng.gen_range(1..lk.maze.rows() - 1) / 2) + 1,
+        col: 2 * (rng.gen_range(1..lk.maze.cols() - 1) / 2) + 1,
     }]);
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     while let Some(run) = dfs.last().cloned() {

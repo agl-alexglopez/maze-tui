@@ -33,6 +33,7 @@ pub struct BacktrackSymbol {
 
 // Any builders that choose to cache seen squares in place can use this bit.
 pub const BUILDER_BIT: maze::Square = 0b0001_0000_0000_0000;
+pub const NOT_ZERO: i32 = i32::MAX;
 // Data that will help backtracker algorithms like recursive backtracker and Wilson's.
 pub const MARKER_SHIFT: u8 = 4;
 pub const NUM_DIRECTIONS: usize = 4;
@@ -107,8 +108,8 @@ pub fn reset_build(maze: &mut maze::Maze) {
 
 pub fn choose_arbitrary_point(maze: &maze::Maze, parity: ParityPoint) -> Option<maze::Point> {
     let init = if parity == ParityPoint::Even { 2 } else { 1 };
-    for r in (init..maze.row_size() - 1).step_by(2) {
-        for c in (init..maze.col_size() - 1).step_by(2) {
+    for r in (init..maze.rows() - 1).step_by(2) {
+        for c in (init..maze.cols() - 1).step_by(2) {
             if (maze.get(r, c) & BUILDER_BIT) == 0 {
                 return Some(maze::Point { row: r, col: c });
             }
@@ -126,8 +127,8 @@ pub fn choose_point_from_row_start(
     if (row_start % 2) != (init % 2) {
         maze_panic!("Row start parity did not match requested parity.");
     }
-    for r in (row_start..maze.row_size() - 1).step_by(2) {
-        for c in (init..maze.col_size() - 1).step_by(2) {
+    for r in (row_start..maze.rows() - 1).step_by(2) {
+        for c in (init..maze.cols() - 1).step_by(2) {
             if (maze.get(r, c) & BUILDER_BIT) == 0 {
                 return Some(maze::Point { row: r, col: c });
             }
@@ -139,9 +140,9 @@ pub fn choose_point_from_row_start(
 #[inline]
 pub fn can_build_new_square(maze: &maze::Maze, next: maze::Point) -> bool {
     next.row > 0
-        && next.row < maze.row_size() - 1
+        && next.row < maze.rows() - 1
         && next.col > 0
-        && next.col < maze.col_size() - 1
+        && next.col < maze.cols() - 1
         && (maze.get(next.row, next.col) & BUILDER_BIT) == 0
 }
 
@@ -157,7 +158,7 @@ pub fn is_built(square: maze::Square) -> bool {
 
 #[inline]
 pub fn is_square_within_perimeter_walls(maze: &maze::Maze, next: maze::Point) -> bool {
-    next.row < maze.row_size() - 1 && next.row > 0 && next.col < maze.col_size() - 1 && next.col > 0
+    next.row < maze.rows() - 1 && next.row > 0 && next.col < maze.cols() - 1 && next.col > 0
 }
 
 #[inline]
@@ -173,9 +174,9 @@ fn get_mark(square: maze::Square) -> BacktrackSymbol {
 /// WALL ADDER HELPERS-------------------------------------------------------------------
 
 pub fn build_wall_outline(maze: &mut maze::Maze) {
-    for r in 0..maze.row_size() {
-        for c in 0..maze.col_size() {
-            if c == 0 || c == maze.col_size() - 1 || r == 0 || r == maze.row_size() - 1 {
+    for r in 0..maze.rows() {
+        for c in 0..maze.cols() {
+            if c == 0 || c == maze.cols() - 1 || r == 0 || r == maze.rows() - 1 {
                 *maze.get_mut(r, c) |= BUILDER_BIT;
                 build_wall_carefully(maze, maze::Point { row: r, col: c });
                 continue;
@@ -186,9 +187,9 @@ pub fn build_wall_outline(maze: &mut maze::Maze) {
 }
 
 pub fn build_wall_outline_history(maze: &mut maze::Maze) {
-    for r in 0..maze.row_size() {
-        for c in 0..maze.col_size() {
-            if c == 0 || c == maze.col_size() - 1 || r == 0 || r == maze.row_size() - 1 {
+    for r in 0..maze.rows() {
+        for c in 0..maze.cols() {
+            if c == 0 || c == maze.cols() - 1 || r == 0 || r == maze.rows() - 1 {
                 *maze.get_mut(r, c) |= BUILDER_BIT;
                 build_wall_carefully(maze, maze::Point { row: r, col: c });
                 continue;
@@ -204,7 +205,7 @@ pub fn build_wall_line(maze: &mut maze::Maze, p: maze::Point) {
         wall |= maze::NORTH_WALL;
         *maze.get_mut(p.row - 1, p.col) |= maze::SOUTH_WALL;
     }
-    if p.row + 1 < maze.row_size() && maze.wall_at(p.row + 1, p.col) {
+    if p.row + 1 < maze.rows() && maze.wall_at(p.row + 1, p.col) {
         wall |= maze::SOUTH_WALL;
         *maze.get_mut(p.row + 1, p.col) |= maze::NORTH_WALL;
     }
@@ -212,7 +213,7 @@ pub fn build_wall_line(maze: &mut maze::Maze, p: maze::Point) {
         wall |= maze::WEST_WALL;
         *maze.get_mut(p.row, p.col - 1) |= maze::EAST_WALL;
     }
-    if p.col + 1 < maze.col_size() && maze.wall_at(p.row, p.col + 1) {
+    if p.col + 1 < maze.cols() && maze.wall_at(p.row, p.col + 1) {
         wall |= maze::EAST_WALL;
         *maze.get_mut(p.row, p.col + 1) |= maze::WEST_WALL;
     }
@@ -240,7 +241,7 @@ pub fn build_wall_line_history(maze: &mut maze::Maze, p: maze::Point) {
         *maze.get_mut(p.row - 1, p.col) |= maze::SOUTH_WALL;
         wall |= maze::NORTH_WALL;
     }
-    if p.row + 1 < maze.row_size() && maze.wall_at(p.row + 1, p.col) {
+    if p.row + 1 < maze.rows() && maze.wall_at(p.row + 1, p.col) {
         let neighbor = maze.get(p.row + 1, p.col);
         wall_changes[burst - 1] = tape::Delta {
             id: maze::Point {
@@ -270,7 +271,7 @@ pub fn build_wall_line_history(maze: &mut maze::Maze, p: maze::Point) {
         *maze.get_mut(p.row, p.col - 1) |= maze::EAST_WALL;
         wall |= maze::WEST_WALL;
     }
-    if p.col + 1 < maze.col_size() && maze.wall_at(p.row, p.col + 1) {
+    if p.col + 1 < maze.cols() && maze.wall_at(p.row, p.col + 1) {
         let neighbor = maze.get(p.row, p.col + 1);
         wall_changes[burst - 1] = tape::Delta {
             id: maze::Point {
@@ -309,7 +310,7 @@ pub fn build_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, speed: Sp
         );
         thread::sleep(time::Duration::from_micros(speed));
     }
-    if p.row + 1 < maze.row_size() && maze.wall_at(p.row + 1, p.col) {
+    if p.row + 1 < maze.rows() && maze.wall_at(p.row + 1, p.col) {
         wall |= maze::SOUTH_WALL;
         *maze.get_mut(p.row + 1, p.col) |= maze::NORTH_WALL;
         flush_cursor_maze_coordinate(
@@ -333,7 +334,7 @@ pub fn build_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, speed: Sp
         );
         thread::sleep(time::Duration::from_micros(speed));
     }
-    if p.col + 1 < maze.col_size() && maze.wall_at(p.row, p.col + 1) {
+    if p.col + 1 < maze.cols() && maze.wall_at(p.row, p.col + 1) {
         wall |= maze::EAST_WALL;
         *maze.get_mut(p.row, p.col + 1) |= maze::WEST_WALL;
         flush_cursor_maze_coordinate(
@@ -372,7 +373,7 @@ pub fn build_mini_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, spee
         );
         thread::sleep(time::Duration::from_micros(speed));
     }
-    if p.row + 1 < maze.row_size() && maze.wall_at(p.row + 1, p.col) {
+    if p.row + 1 < maze.rows() && maze.wall_at(p.row + 1, p.col) {
         wall |= maze::SOUTH_WALL;
         *maze.get_mut(p.row + 1, p.col) |= maze::NORTH_WALL;
         flush_mini_backtracker_coordinate(
@@ -396,7 +397,7 @@ pub fn build_mini_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, spee
         );
         thread::sleep(time::Duration::from_micros(speed));
     }
-    if p.col + 1 < maze.col_size() && maze.wall_at(p.row, p.col + 1) {
+    if p.col + 1 < maze.cols() && maze.wall_at(p.row, p.col + 1) {
         wall |= maze::EAST_WALL;
         *maze.get_mut(p.row, p.col + 1) |= maze::WEST_WALL;
         flush_mini_backtracker_coordinate(
@@ -424,19 +425,19 @@ pub fn build_mini_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, spee
 /// PATH CARVING HELPERS-------------------------------------------------------------------
 
 pub fn fill_maze_history_with_walls(maze: &mut maze::Maze) {
-    for r in 0..maze.row_size() {
-        for c in 0..maze.col_size() {
+    for r in 0..maze.rows() {
+        for c in 0..maze.cols() {
             build_wall_history(maze, maze::Point { row: r, col: c });
         }
     }
-    let burst = (maze.row_size() * maze.col_size()) as usize;
+    let burst = (maze.rows() * maze.cols()) as usize;
     maze.build_history[0].burst = burst;
     maze.build_history[burst - 1].burst = burst;
 }
 
 pub fn fill_maze_with_walls(maze: &mut maze::Maze) {
-    for r in 0..maze.row_size() {
-        for c in 0..maze.col_size() {
+    for r in 0..maze.rows() {
+        for c in 0..maze.cols() {
             build_wall(maze, maze::Point { row: r, col: c });
         }
     }
@@ -519,13 +520,13 @@ pub fn carve_path_walls(maze: &mut maze::Maze, p: maze::Point) {
     if p.row > 0 {
         *maze.get_mut(p.row - 1, p.col) &= !maze::SOUTH_WALL;
     }
-    if p.row + 1 < maze.row_size() {
+    if p.row + 1 < maze.rows() {
         *maze.get_mut(p.row + 1, p.col) &= !maze::NORTH_WALL;
     }
     if p.col > 0 {
         *maze.get_mut(p.row, p.col - 1) &= !maze::EAST_WALL;
     }
-    if p.col + 1 < maze.col_size() {
+    if p.col + 1 < maze.cols() {
         *maze.get_mut(p.row, p.col + 1) &= !maze::WEST_WALL;
     }
 }
@@ -553,7 +554,7 @@ pub fn carve_wall_history(maze: &mut maze::Maze, p: maze::Point, backtracking: B
         burst += 1;
         *maze.get_mut(p.row - 1, p.col) &= !maze::SOUTH_WALL;
     }
-    if p.row + 1 < maze.row_size() {
+    if p.row + 1 < maze.rows() {
         wall_changes[burst] = tape::Delta {
             id: maze::Point {
                 row: p.row + 1,
@@ -579,7 +580,7 @@ pub fn carve_wall_history(maze: &mut maze::Maze, p: maze::Point, backtracking: B
         burst += 1;
         *maze.get_mut(p.row, p.col - 1) &= !maze::EAST_WALL;
     }
-    if p.col + 1 < maze.col_size() {
+    if p.col + 1 < maze.cols() {
         wall_changes[burst] = tape::Delta {
             id: maze::Point {
                 row: p.row,
@@ -612,7 +613,7 @@ pub fn carve_path_walls_animated(maze: &mut maze::Maze, p: maze::Point, speed: S
         );
         thread::sleep(time::Duration::from_micros(speed));
     }
-    if p.row + 1 < maze.row_size() && maze.wall_at(p.row + 1, p.col) {
+    if p.row + 1 < maze.rows() && maze.wall_at(p.row + 1, p.col) {
         *maze.get_mut(p.row + 1, p.col) &= !maze::NORTH_WALL;
         flush_cursor_maze_coordinate(
             maze,
@@ -634,7 +635,7 @@ pub fn carve_path_walls_animated(maze: &mut maze::Maze, p: maze::Point, speed: S
         );
         thread::sleep(time::Duration::from_micros(speed));
     }
-    if p.col + 1 < maze.col_size() && maze.wall_at(p.row, p.col + 1) {
+    if p.col + 1 < maze.cols() && maze.wall_at(p.row, p.col + 1) {
         *maze.get_mut(p.row, p.col + 1) &= !maze::WEST_WALL;
         flush_cursor_maze_coordinate(
             maze,
@@ -669,7 +670,7 @@ pub fn carve_mini_walls_animated(maze: &mut maze::Maze, p: maze::Point, speed: S
         );
         thread::sleep(time::Duration::from_micros(speed));
     }
-    if p.row + 1 < maze.row_size() && maze.wall_at(p.row + 1, p.col) {
+    if p.row + 1 < maze.rows() && maze.wall_at(p.row + 1, p.col) {
         *maze.get_mut(p.row + 1, p.col) &= !maze::NORTH_WALL;
         flush_mini_backtracker_coordinate(
             maze,
@@ -691,7 +692,7 @@ pub fn carve_mini_walls_animated(maze: &mut maze::Maze, p: maze::Point, speed: S
         );
         thread::sleep(time::Duration::from_micros(speed));
     }
-    if p.col + 1 < maze.col_size() && maze.wall_at(p.row, p.col + 1) {
+    if p.col + 1 < maze.cols() && maze.wall_at(p.row, p.col + 1) {
         *maze.get_mut(p.row, p.col + 1) &= !maze::WEST_WALL;
         flush_mini_backtracker_coordinate(
             maze,
@@ -902,46 +903,29 @@ pub fn join_minis_animated(
     carve_mini_walls_animated(maze, wall, speed);
 }
 
+// Don't mind these, just bumming instructions for fun. Good to keep the mind sharp with bitwise
+// ops every now and again. You should be able to see this is maze bounds checking but yes, yes
+// you are right, I'm sorry. This is a personal project after all ¯\_(ツ)_/¯
+
 pub fn build_wall_history(maze: &mut maze::Maze, p: maze::Point) {
-    let mut wall: maze::WallLine = 0b0;
-    if p.row > 0 {
-        wall |= maze::NORTH_WALL;
-    }
-    if p.row + 1 < maze.row_size() {
-        wall |= maze::SOUTH_WALL;
-    }
-    if p.col > 0 {
-        wall |= maze::WEST_WALL;
-    }
-    if p.col + 1 < maze.col_size() {
-        wall |= maze::EAST_WALL;
-    }
+    let wall: maze::WallLine = ((p.row & NOT_ZERO) != 0) as u16
+        | (((p.col & NOT_ZERO) != 0) as u16) << maze::WEST_WALL_SHIFT
+        | ((p.row ^ (maze.rows() - 1) != 0) as u16) << maze::SOUTH_WALL_SHIFT
+        | ((p.col ^ (maze.cols() - 1) != 0) as u16) << maze::EAST_WALL_SHIFT;
     maze.build_history.push(tape::Delta {
         id: p,
         before: 0b0,
-        after: wall & !maze::PATH_BIT,
+        after: wall,
         burst: 1,
     });
     *maze.get_mut(p.row, p.col) |= wall;
-    *maze.get_mut(p.row, p.col) &= !maze::PATH_BIT;
 }
 
 pub fn build_wall(maze: &mut maze::Maze, p: maze::Point) {
-    let mut wall: maze::WallLine = 0b0;
-    if p.row > 0 {
-        wall |= maze::NORTH_WALL;
-    }
-    if p.row + 1 < maze.row_size() {
-        wall |= maze::SOUTH_WALL;
-    }
-    if p.col > 0 {
-        wall |= maze::WEST_WALL;
-    }
-    if p.col + 1 < maze.col_size() {
-        wall |= maze::EAST_WALL;
-    }
-    *maze.get_mut(p.row, p.col) |= wall;
-    *maze.get_mut(p.row, p.col) &= !maze::PATH_BIT;
+    *maze.get_mut(p.row, p.col) = ((p.row & NOT_ZERO) != 0) as u16
+        | (((p.col & NOT_ZERO) != 0) as u16) << maze::WEST_WALL_SHIFT
+        | ((p.row ^ (maze.rows() - 1) != 0) as u16) << maze::SOUTH_WALL_SHIFT
+        | ((p.col ^ (maze.cols() - 1) != 0) as u16) << maze::EAST_WALL_SHIFT
 }
 
 pub fn build_wall_carefully(maze: &mut maze::Maze, p: maze::Point) {
@@ -950,7 +934,7 @@ pub fn build_wall_carefully(maze: &mut maze::Maze, p: maze::Point) {
         wall |= maze::NORTH_WALL;
         *maze.get_mut(p.row - 1, p.col) |= maze::SOUTH_WALL;
     }
-    if p.row + 1 < maze.row_size() && maze.wall_at(p.row + 1, p.col) {
+    if p.row + 1 < maze.rows() && maze.wall_at(p.row + 1, p.col) {
         wall |= maze::SOUTH_WALL;
         *maze.get_mut(p.row + 1, p.col) |= maze::NORTH_WALL;
     }
@@ -958,7 +942,7 @@ pub fn build_wall_carefully(maze: &mut maze::Maze, p: maze::Point) {
         wall |= maze::WEST_WALL;
         *maze.get_mut(p.row, p.col - 1) |= maze::EAST_WALL;
     }
-    if p.col + 1 < maze.col_size() && maze.wall_at(p.row, p.col + 1) {
+    if p.col + 1 < maze.cols() && maze.wall_at(p.row, p.col + 1) {
         wall |= maze::EAST_WALL;
         *maze.get_mut(p.row, p.col + 1) |= maze::WEST_WALL;
     }
@@ -970,13 +954,13 @@ pub fn build_path(maze: &mut maze::Maze, p: maze::Point) {
     if p.row > 0 {
         *maze.get_mut(p.row - 1, p.col) &= !maze::SOUTH_WALL;
     }
-    if p.row + 1 < maze.row_size() {
+    if p.row + 1 < maze.rows() {
         *maze.get_mut(p.row + 1, p.col) &= !maze::NORTH_WALL;
     }
     if p.col > 0 {
         *maze.get_mut(p.row, p.col - 1) &= !maze::EAST_WALL;
     }
-    if p.col + 1 < maze.col_size() {
+    if p.col + 1 < maze.cols() {
         *maze.get_mut(p.row, p.col + 1) &= !maze::WEST_WALL;
     }
     *maze.get_mut(p.row, p.col) |= maze::PATH_BIT;
@@ -1007,7 +991,7 @@ pub fn build_path_history(maze: &mut maze::Maze, p: maze::Point) {
         burst += 1;
         *maze.get_mut(p.row - 1, p.col) &= !maze::SOUTH_WALL;
     }
-    if p.row + 1 < maze.row_size() {
+    if p.row + 1 < maze.rows() {
         square = maze.get(p.row + 1, p.col);
         wall_changes[burst] = tape::Delta {
             id: maze::Point {
@@ -1035,7 +1019,7 @@ pub fn build_path_history(maze: &mut maze::Maze, p: maze::Point) {
         burst += 1;
         *maze.get_mut(p.row, p.col - 1) &= !maze::EAST_WALL;
     }
-    if p.col + 1 < maze.col_size() {
+    if p.col + 1 < maze.cols() {
         square = maze.get(p.row, p.col + 1);
         wall_changes[burst] = tape::Delta {
             id: maze::Point {
@@ -1068,7 +1052,7 @@ pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUn
         );
         thread::sleep(time::Duration::from_micros(speed));
     }
-    if p.row + 1 < maze.row_size() && maze.wall_at(p.row + 1, p.col) {
+    if p.row + 1 < maze.rows() && maze.wall_at(p.row + 1, p.col) {
         *maze.get_mut(p.row + 1, p.col) &= !maze::NORTH_WALL;
         flush_cursor_maze_coordinate(
             maze,
@@ -1090,7 +1074,7 @@ pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUn
         );
         thread::sleep(time::Duration::from_micros(speed));
     }
-    if p.col + 1 < maze.col_size() && maze.wall_at(p.row, p.col + 1) {
+    if p.col + 1 < maze.cols() && maze.wall_at(p.row, p.col + 1) {
         *maze.get_mut(p.row, p.col + 1) &= !maze::WEST_WALL;
         flush_cursor_maze_coordinate(
             maze,
@@ -1118,7 +1102,7 @@ pub fn build_mini_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: Sp
         );
         thread::sleep(time::Duration::from_micros(speed));
     }
-    if p.row + 1 < maze.row_size() && maze.wall_at(p.row + 1, p.col) {
+    if p.row + 1 < maze.rows() && maze.wall_at(p.row + 1, p.col) {
         *maze.get_mut(p.row + 1, p.col) &= !maze::NORTH_WALL;
         flush_mini_coordinate(
             maze,
@@ -1140,7 +1124,7 @@ pub fn build_mini_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: Sp
         );
         thread::sleep(time::Duration::from_micros(speed));
     }
-    if p.col + 1 < maze.col_size() && maze.wall_at(p.row, p.col + 1) {
+    if p.col + 1 < maze.cols() && maze.wall_at(p.row, p.col + 1) {
         *maze.get_mut(p.row, p.col + 1) &= !maze::WEST_WALL;
         flush_mini_coordinate(
             maze,
@@ -1156,9 +1140,9 @@ pub fn build_mini_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: Sp
 pub fn print_overlap_key(maze: &maze::Maze) {
     let offset = maze::Offset {
         add_rows: if maze.style_index() == (maze::MazeStyle::Mini as usize) {
-            maze.offset().add_rows + maze.row_size() / 2 + 1
+            maze.offset().add_rows + maze.rows() / 2 + 1
         } else {
-            maze.offset().add_rows + maze.row_size()
+            maze.offset().add_rows + maze.rows()
         },
         add_cols: maze.offset().add_cols,
     };
@@ -1191,9 +1175,9 @@ pub fn print_overlap_key(maze: &maze::Maze) {
 pub fn print_overlap_key_animated(maze: &maze::Maze) {
     let offset = maze::Offset {
         add_rows: if maze.style_index() == (maze::MazeStyle::Mini as usize) {
-            maze.offset().add_rows + maze.row_size() / 2 + 1
+            maze.offset().add_rows + maze.rows() / 2 + 1
         } else {
-            maze.offset().add_rows + maze.row_size()
+            maze.offset().add_rows + maze.rows()
         },
         add_cols: maze.offset().add_cols,
     };
@@ -1384,7 +1368,7 @@ pub fn flush_mini_backtracker_coordinate(maze: &maze::Maze, p: maze::Point) {
             color = BACKTRACKING_SYMBOLS
                 [((maze.get(p.row - 1, p.col) & MARKERS_MASK) >> MARKER_SHIFT) as usize]
                 .ansi;
-        } else if p.row + 1 < maze.row_size() {
+        } else if p.row + 1 < maze.rows() {
             color = BACKTRACKING_SYMBOLS
                 [((maze.get(p.row + 1, p.col) & MARKERS_MASK) >> MARKER_SHIFT) as usize]
                 .ansi;
@@ -1523,8 +1507,8 @@ pub fn print_mini_coordinate(maze: &maze::Maze, p: maze::Point) {
 
 pub fn flush_grid(maze: &maze::Maze) {
     if maze.style_index() == (maze::MazeStyle::Mini as usize) {
-        for r in 0..maze.row_size() {
-            for c in 0..maze.col_size() {
+        for r in 0..maze.rows() {
+            for c in 0..maze.cols() {
                 print_mini_coordinate(maze, maze::Point { row: r, col: c });
             }
             match queue!(io::stdout(), Print('\n')) {
@@ -1533,8 +1517,8 @@ pub fn flush_grid(maze: &maze::Maze) {
             };
         }
     } else {
-        for r in 0..maze.row_size() {
-            for c in 0..maze.col_size() {
+        for r in 0..maze.rows() {
+            for c in 0..maze.cols() {
                 print_square(maze, maze::Point { row: r, col: c });
             }
             match queue!(io::stdout(), Print('\n')) {
@@ -1549,8 +1533,8 @@ pub fn flush_grid(maze: &maze::Maze) {
 // Debug function
 
 pub fn flush_bit_vals(maze: &maze::Maze) {
-    for r in 0..maze.row_size() {
-        for c in 0..maze.col_size() {
+    for r in 0..maze.rows() {
+        for c in 0..maze.cols() {
             let square = maze.get(r, c);
             eprint!(
                 "{},{:2}|",

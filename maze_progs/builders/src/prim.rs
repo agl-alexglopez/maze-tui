@@ -49,8 +49,8 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
     let start = PriorityPoint {
         priority: weight_range.sample(&mut rng),
         p: maze::Point {
-            row: 2 * rng.gen_range(1..((lk.maze.row_size() - 2) / 2)) + 1,
-            col: 2 * rng.gen_range(1..((lk.maze.col_size() - 2) / 2)) + 1,
+            row: 2 * rng.gen_range(1..((lk.maze.rows() - 2) / 2)) + 1,
+            col: 2 * rng.gen_range(1..((lk.maze.cols() - 2) / 2)) + 1,
         },
     };
     let mut lookup_weights: HashMap<maze::Point, u8> = HashMap::from([(start.p, start.priority)]);
@@ -111,8 +111,8 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let start = PriorityPoint {
         priority: weight_range.sample(&mut rng),
         p: maze::Point {
-            row: 2 * rng.gen_range(1..((lk.maze.row_size() - 2) / 2)) + 1,
-            col: 2 * rng.gen_range(1..((lk.maze.col_size() - 2) / 2)) + 1,
+            row: 2 * rng.gen_range(1..((lk.maze.rows() - 2) / 2)) + 1,
+            col: 2 * rng.gen_range(1..((lk.maze.cols() - 2) / 2)) + 1,
         },
     };
     let mut lookup_weights: HashMap<maze::Point, u8> = HashMap::from([(start.p, start.priority)]);
@@ -168,8 +168,8 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let start = PriorityPoint {
         priority: weight_range.sample(&mut rng),
         p: maze::Point {
-            row: 2 * rng.gen_range(1..((&lk.maze.row_size() - 2) / 2)) + 1,
-            col: 2 * rng.gen_range(1..((&lk.maze.col_size() - 2) / 2)) + 1,
+            row: 2 * rng.gen_range(1..((&lk.maze.rows() - 2) / 2)) + 1,
+            col: 2 * rng.gen_range(1..((&lk.maze.cols() - 2) / 2)) + 1,
         },
     };
     let mut lookup_weights: HashMap<maze::Point, u8> = HashMap::from([(start.p, start.priority)]);

@@ -8,8 +8,8 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
         Err(_) => print::maze_panic!("builder could not take lock"),
     };
     build::fill_maze_history_with_walls(&mut lk.maze);
-    for r in 1..lk.maze.row_size() - 1 {
-        for c in 1..lk.maze.col_size() - 1 {
+    for r in 1..lk.maze.rows() - 1 {
+        for c in 1..lk.maze.cols() - 1 {
             build::build_path_history(&mut lk.maze, maze::Point { row: r, col: c });
         }
     }
@@ -21,8 +21,8 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
         Err(_) => print::maze_panic!("uncontested lock failure"),
     };
     build::fill_maze_with_walls(&mut lk.maze);
-    for r in 1..lk.maze.row_size() - 1 {
-        for c in 1..lk.maze.col_size() - 1 {
+    for r in 1..lk.maze.rows() - 1 {
+        for c in 1..lk.maze.cols() - 1 {
             build::build_path(&mut lk.maze, maze::Point { row: r, col: c });
         }
     }
@@ -42,11 +42,11 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
     build::print_overlap_key_animated(&lk.maze);
-    for r in 1..lk.maze.row_size() - 1 {
+    for r in 1..lk.maze.rows() - 1 {
         if monitor.exit() {
             return;
         }
-        for c in 1..lk.maze.col_size() - 1 {
+        for c in 1..lk.maze.cols() - 1 {
             build::carve_path_walls_animated(
                 &mut lk.maze,
                 maze::Point { row: r, col: c },
@@ -65,11 +65,11 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
     build::print_overlap_key_animated(&lk.maze);
-    for r in 1..lk.maze.row_size() - 1 {
+    for r in 1..lk.maze.rows() - 1 {
         if monitor.exit() {
             return;
         }
-        for c in 1..lk.maze.col_size() - 1 {
+        for c in 1..lk.maze.cols() - 1 {
             build::carve_mini_walls_animated(
                 &mut lk.maze,
                 maze::Point { row: r, col: c },

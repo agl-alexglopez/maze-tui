@@ -26,8 +26,8 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
     build::fill_maze_history_with_walls(&mut lk.maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
-        row: 2 * (gen.gen_range(1..lk.maze.row_size() - 2) / 2) + 1,
-        col: 2 * (gen.gen_range(1..lk.maze.col_size() - 2) / 2) + 1,
+        row: 2 * (gen.gen_range(1..lk.maze.rows() - 2) / 2) + 1,
+        col: 2 * (gen.gen_range(1..lk.maze.cols() - 2) / 2) + 1,
     };
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     let mut cur: maze::Point = start;
@@ -48,8 +48,8 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
         }
 
         let mut set_highest_completed_row = false;
-        for r in (highest_completed_row..lk.maze.row_size() - 1).step_by(2) {
-            for c in (1..lk.maze.col_size() - 1).step_by(2) {
+        for r in (highest_completed_row..lk.maze.rows() - 1).step_by(2) {
+            for c in (1..lk.maze.cols() - 1).step_by(2) {
                 let start_candidate = maze::Point { row: r, col: c };
                 if (lk.maze.get(r, c) & build::BUILDER_BIT) == 0 {
                     if !set_highest_completed_row {
@@ -87,8 +87,8 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
     build::fill_maze_with_walls(&mut lk.maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
-        row: 2 * (gen.gen_range(1..lk.maze.row_size() - 2) / 2) + 1,
-        col: 2 * (gen.gen_range(1..lk.maze.col_size() - 2) / 2) + 1,
+        row: 2 * (gen.gen_range(1..lk.maze.rows() - 2) / 2) + 1,
+        col: 2 * (gen.gen_range(1..lk.maze.cols() - 2) / 2) + 1,
     };
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     let mut cur: maze::Point = start;
@@ -109,8 +109,8 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
         }
 
         let mut set_highest_completed_row = false;
-        for r in (highest_completed_row..lk.maze.row_size() - 1).step_by(2) {
-            for c in (1..lk.maze.col_size() - 1).step_by(2) {
+        for r in (highest_completed_row..lk.maze.rows() - 1).step_by(2) {
+            for c in (1..lk.maze.cols() - 1).step_by(2) {
                 let start_candidate = maze::Point { row: r, col: c };
                 if (lk.maze.get(r, c) & build::BUILDER_BIT) == 0 {
                     if !set_highest_completed_row {
@@ -153,8 +153,8 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     build::print_overlap_key_animated(&lk.maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
-        row: 2 * (gen.gen_range(1..lk.maze.row_size() - 2) / 2) + 1,
-        col: 2 * (gen.gen_range(1..lk.maze.col_size() - 2) / 2) + 1,
+        row: 2 * (gen.gen_range(1..lk.maze.rows() - 2) / 2) + 1,
+        col: 2 * (gen.gen_range(1..lk.maze.cols() - 2) / 2) + 1,
     };
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     let mut cur: maze::Point = start;
@@ -196,9 +196,9 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
         }
 
         let mut set_highest_completed_row = false;
-        for r in (highest_completed_row..lk.maze.row_size() - 1).step_by(2) {
+        for r in (highest_completed_row..lk.maze.rows() - 1).step_by(2) {
             shoot_hunter_laser(&lk.maze, r);
-            for c in (1..lk.maze.col_size() - 1).step_by(2) {
+            for c in (1..lk.maze.cols() - 1).step_by(2) {
                 let start_candidate = maze::Point { row: r, col: c };
                 if (lk.maze.get(r, c) & build::BUILDER_BIT) == 0 {
                     if !set_highest_completed_row {
@@ -242,8 +242,8 @@ pub fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     build::print_overlap_key_animated(&lk.maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
-        row: 2 * (gen.gen_range(1..lk.maze.row_size() - 2) / 2) + 1,
-        col: 2 * (gen.gen_range(1..lk.maze.col_size() - 2) / 2) + 1,
+        row: 2 * (gen.gen_range(1..lk.maze.rows() - 2) / 2) + 1,
+        col: 2 * (gen.gen_range(1..lk.maze.cols() - 2) / 2) + 1,
     };
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     let mut cur: maze::Point = start;
@@ -276,9 +276,9 @@ pub fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
         }
 
         let mut set_highest_completed_row = false;
-        for r in (highest_completed_row..lk.maze.row_size() - 1).step_by(2) {
+        for r in (highest_completed_row..lk.maze.rows() - 1).step_by(2) {
             shoot_mini_laser(&lk.maze, r);
-            for c in (1..lk.maze.col_size() - 1).step_by(2) {
+            for c in (1..lk.maze.cols() - 1).step_by(2) {
                 let start_candidate = maze::Point { row: r, col: c };
                 if (lk.maze.get(r, c) & build::BUILDER_BIT) == 0 {
                     if !set_highest_completed_row {
@@ -313,7 +313,7 @@ pub fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
 
 fn hunter_laser_history(maze: &mut maze::Maze, current_row: i32) {
     let mut delta_vec = Vec::new();
-    for c in 0..maze.col_size() {
+    for c in 0..maze.cols() {
         let square = maze.get(current_row, c);
         delta_vec.push(tape::Delta {
             id: maze::Point {
@@ -326,14 +326,14 @@ fn hunter_laser_history(maze: &mut maze::Maze, current_row: i32) {
         });
         *maze.get_mut(current_row, c) |= build::FROM_SOUTH;
     }
-    delta_vec[0].burst = maze.col_size() as usize;
-    delta_vec[(maze.col_size() - 1) as usize].burst = maze.col_size() as usize;
+    delta_vec[0].burst = maze.cols() as usize;
+    delta_vec[(maze.cols() - 1) as usize].burst = maze.cols() as usize;
     maze.build_history.push_burst(delta_vec.as_slice());
 }
 
 fn reset_hunter_laser_history(maze: &mut maze::Maze, current_row: i32) {
     let mut delta_vec = Vec::new();
-    for c in 0..maze.col_size() {
+    for c in 0..maze.cols() {
         let square = maze.get(current_row, c);
         delta_vec.push(tape::Delta {
             id: maze::Point {
@@ -346,8 +346,8 @@ fn reset_hunter_laser_history(maze: &mut maze::Maze, current_row: i32) {
         });
         *maze.get_mut(current_row, c) &= !build::FROM_SOUTH;
     }
-    delta_vec[0].burst = maze.col_size() as usize;
-    delta_vec[(maze.col_size() - 1) as usize].burst = maze.col_size() as usize;
+    delta_vec[0].burst = maze.cols() as usize;
+    delta_vec[(maze.cols() - 1) as usize].burst = maze.cols() as usize;
     maze.build_history.push_burst(delta_vec.as_slice());
 }
 
@@ -367,7 +367,7 @@ fn shoot_hunter_laser(maze: &maze::Maze, current_row: i32) {
         Print(maze.wall_char(WALL_UP_DOWN_RIGHT)),
     )
     .expect("Printer broke");
-    for c in 1..maze.col_size() - 1 {
+    for c in 1..maze.cols() - 1 {
         print::set_cursor_position(
             maze::Point {
                 row: current_row,
@@ -380,7 +380,7 @@ fn shoot_hunter_laser(maze: &maze::Maze, current_row: i32) {
     print::set_cursor_position(
         maze::Point {
             row: current_row,
-            col: maze.col_size() - 1,
+            col: maze.cols() - 1,
         },
         maze.offset(),
     );
@@ -397,7 +397,7 @@ fn shoot_hunter_laser(maze: &maze::Maze, current_row: i32) {
 
 fn shoot_mini_laser(maze: &maze::Maze, current_row: i32) {
     let mut stdout = io::stdout();
-    for c in 0..maze.col_size() {
+    for c in 0..maze.cols() {
         print::set_cursor_position(
             maze::Point {
                 row: current_row / 2,
@@ -428,7 +428,7 @@ fn shoot_mini_laser(maze: &maze::Maze, current_row: i32) {
 }
 
 fn reset_row(maze: &maze::Maze, current_row: i32) {
-    for c in 0..maze.col_size() {
+    for c in 0..maze.cols() {
         build::print_square(
             maze,
             maze::Point {
@@ -441,7 +441,7 @@ fn reset_row(maze: &maze::Maze, current_row: i32) {
 }
 
 fn reset_mini_row(maze: &maze::Maze, current_row: i32) {
-    for c in 0..maze.col_size() {
+    for c in 0..maze.cols() {
         build::print_mini_coordinate(
             maze,
             maze::Point {

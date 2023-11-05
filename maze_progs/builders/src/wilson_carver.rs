@@ -36,8 +36,8 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
     build::fill_maze_with_walls(&mut lk.maze);
     let mut rng = thread_rng();
     let start = maze::Point {
-        row: 2 * (rng.gen_range(2..lk.maze.row_size() - 1) / 2) + 1,
-        col: 2 * (rng.gen_range(2..lk.maze.col_size() - 1) / 2) + 1,
+        row: 2 * (rng.gen_range(2..lk.maze.rows() - 1) / 2) + 1,
+        col: 2 * (rng.gen_range(2..lk.maze.cols() - 1) / 2) + 1,
     };
     build::build_path(&mut lk.maze, start);
     *lk.maze.get_mut(start.row, start.col) |= build::BUILDER_BIT;
@@ -90,8 +90,8 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     build::print_overlap_key_animated(&lk.maze);
     let mut rng = thread_rng();
     let start = maze::Point {
-        row: 2 * (rng.gen_range(2..lk.maze.row_size() - 1) / 2) + 1,
-        col: 2 * (rng.gen_range(2..lk.maze.col_size() - 1) / 2) + 1,
+        row: 2 * (rng.gen_range(2..lk.maze.rows() - 1) / 2) + 1,
+        col: 2 * (rng.gen_range(2..lk.maze.cols() - 1) / 2) + 1,
     };
     build::build_path_animated(&mut lk.maze, start, animation);
     build::flush_cursor_maze_coordinate(&lk.maze, start);
@@ -144,8 +144,8 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     build::print_overlap_key_animated(&lk.maze);
     let mut rng = thread_rng();
     let start = maze::Point {
-        row: 2 * (rng.gen_range(2..lk.maze.row_size() - 1) / 2) + 1,
-        col: 2 * (rng.gen_range(2..lk.maze.col_size() - 1) / 2) + 1,
+        row: 2 * (rng.gen_range(2..lk.maze.rows() - 1) / 2) + 1,
+        col: 2 * (rng.gen_range(2..lk.maze.cols() - 1) / 2) + 1,
     };
     build::build_mini_path_animated(&mut lk.maze, start, animation);
     build::flush_mini_coordinate(&lk.maze, start);
@@ -534,9 +534,9 @@ fn build_with_mini_marks_animated(
 
 fn is_valid_step(maze: &maze::Maze, next: maze::Point, prev: maze::Point) -> bool {
     next.row > 0
-        && next.row < maze.row_size() - 1
+        && next.row < maze.rows() - 1
         && next.col > 0
-        && next.col < maze.col_size() - 1
+        && next.col < maze.cols() - 1
         && next != prev
 }
 

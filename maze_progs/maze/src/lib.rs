@@ -119,7 +119,7 @@ impl Maze {
     }
 
     #[inline]
-    pub fn row_size(&self) -> i32 {
+    pub fn rows(&self) -> i32 {
         self.maze.rows
     }
 
@@ -129,7 +129,7 @@ impl Maze {
     }
 
     #[inline]
-    pub fn col_size(&self) -> i32 {
+    pub fn cols(&self) -> i32 {
         self.maze.cols
     }
 
@@ -264,9 +264,13 @@ pub const PATH_BIT: Square = 0b0010_0000_0000_0000;
 pub const WALL_MASK: WallLine = 0b1111;
 pub const FLOATING_WALL: WallLine = 0b0000;
 pub const NORTH_WALL: WallLine = 0b0001;
+pub const NORTH_WALL_SHIFT: WallLine = 0;
 pub const EAST_WALL: WallLine = 0b0010;
+pub const EAST_WALL_SHIFT: WallLine = 1;
 pub const SOUTH_WALL: WallLine = 0b0100;
+pub const SOUTH_WALL_SHIFT: WallLine = 2;
 pub const WEST_WALL: WallLine = 0b1000;
+pub const WEST_WALL_SHIFT: WallLine = 3;
 // Walls are constructed in terms of other walls they need to connect to. For example, read
 // 0b0011 as, "this is a wall square that must connect to other walls to the East and North."
 const WALL_ROW: usize = 16;

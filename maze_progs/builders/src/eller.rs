@@ -39,9 +39,9 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
     let coin = Bernoulli::new(0.66);
     let mut window = SlidingSetWindow::new(&lk.maze);
     let mut sets_in_this_row: HashMap<SetId, Vec<maze::Point>> = HashMap::new();
-    for r in (1..lk.maze.row_size() - 2).step_by(2) {
+    for r in (1..lk.maze.rows() - 2).step_by(2) {
         window.generate_sets(window.next_row_i());
-        for c in (1..lk.maze.col_size() - 1).step_by(2) {
+        for c in (1..lk.maze.cols() - 1).step_by(2) {
             let cur_id = window.at(window.cur_row, c as usize);
             let next = maze::Point {
                 row: r,
@@ -64,7 +64,7 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
             );
         }
 
-        for c in (1..lk.maze.col_size() - 1).step_by(2) {
+        for c in (1..lk.maze.cols() - 1).step_by(2) {
             sets_in_this_row
                 .entry(window.at(window.cur_row, c as usize))
                 .or_default()
@@ -105,9 +105,9 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
     let coin = Bernoulli::new(0.66);
     let mut window = SlidingSetWindow::new(&lk.maze);
     let mut sets_in_this_row: HashMap<SetId, Vec<maze::Point>> = HashMap::new();
-    for r in (1..lk.maze.row_size() - 2).step_by(2) {
+    for r in (1..lk.maze.rows() - 2).step_by(2) {
         window.generate_sets(window.next_row_i());
-        for c in (1..lk.maze.col_size() - 1).step_by(2) {
+        for c in (1..lk.maze.cols() - 1).step_by(2) {
             let cur_id = window.at(window.cur_row, c as usize);
             let next = maze::Point {
                 row: r,
@@ -130,7 +130,7 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
             );
         }
 
-        for c in (1..lk.maze.col_size() - 1).step_by(2) {
+        for c in (1..lk.maze.cols() - 1).step_by(2) {
             sets_in_this_row
                 .entry(window.at(window.cur_row, c as usize))
                 .or_default()
@@ -179,9 +179,9 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let coin = Bernoulli::new(0.66);
     let mut window = SlidingSetWindow::new(&lk.maze);
     let mut sets_in_this_row: HashMap<SetId, Vec<maze::Point>> = HashMap::new();
-    for r in (1..lk.maze.row_size() - 2).step_by(2) {
+    for r in (1..lk.maze.rows() - 2).step_by(2) {
         window.generate_sets(window.next_row_i());
-        for c in (1..lk.maze.col_size() - 1).step_by(2) {
+        for c in (1..lk.maze.cols() - 1).step_by(2) {
             let cur_id = window.at(window.cur_row, c as usize);
             let next = maze::Point {
                 row: r,
@@ -213,7 +213,7 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
             return;
         }
 
-        for c in (1..lk.maze.col_size() - 1).step_by(2) {
+        for c in (1..lk.maze.cols() - 1).step_by(2) {
             sets_in_this_row
                 .entry(window.at(window.cur_row, c as usize))
                 .or_default()
@@ -258,9 +258,9 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let coin = Bernoulli::new(0.66);
     let mut window = SlidingSetWindow::new(&lk.maze);
     let mut sets_in_this_row: HashMap<SetId, Vec<maze::Point>> = HashMap::new();
-    for r in (1..lk.maze.row_size() - 2).step_by(2) {
+    for r in (1..lk.maze.rows() - 2).step_by(2) {
         window.generate_sets(window.next_row_i());
-        for c in (1..lk.maze.col_size() - 1).step_by(2) {
+        for c in (1..lk.maze.cols() - 1).step_by(2) {
             let cur_id = window.at(window.cur_row, c as usize);
             let next = maze::Point {
                 row: r,
@@ -292,7 +292,7 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
             return;
         }
 
-        for c in (1..lk.maze.col_size() - 1).step_by(2) {
+        for c in (1..lk.maze.cols() - 1).step_by(2) {
             sets_in_this_row
                 .entry(window.at(window.cur_row, c as usize))
                 .or_default()
@@ -336,9 +336,9 @@ fn merge_cur_row_sets(window: &mut SlidingSetWindow, request: IdMergeRequest) {
 }
 
 fn complete_final_row(maze: &mut maze::Maze, window: &mut SlidingSetWindow) {
-    let r = maze.row_size() - 2;
+    let r = maze.rows() - 2;
     let set_r = window.cur_row;
-    for c in (1..maze.col_size() - 2).step_by(2) {
+    for c in (1..maze.cols() - 2).step_by(2) {
         let this_id = window.at(set_r, c as usize);
         let next = maze::Point {
             row: r,
@@ -349,7 +349,7 @@ fn complete_final_row(maze: &mut maze::Maze, window: &mut SlidingSetWindow) {
             continue;
         }
         build::join_squares(maze, maze::Point { row: r, col: c }, next);
-        for set_elem in (next.col..maze.col_size() - 1).step_by(2) {
+        for set_elem in (next.col..maze.cols() - 1).step_by(2) {
             if window.at(set_r, set_elem as usize) == neighbor_id {
                 *window.at_mut(set_r, set_elem as usize) = this_id;
             }
@@ -358,9 +358,9 @@ fn complete_final_row(maze: &mut maze::Maze, window: &mut SlidingSetWindow) {
 }
 
 fn complete_final_row_history(maze: &mut maze::Maze, window: &mut SlidingSetWindow) {
-    let r = maze.row_size() - 2;
+    let r = maze.rows() - 2;
     let set_r = window.cur_row;
-    for c in (1..maze.col_size() - 2).step_by(2) {
+    for c in (1..maze.cols() - 2).step_by(2) {
         let this_id = window.at(set_r, c as usize);
         let next = maze::Point {
             row: r,
@@ -371,7 +371,7 @@ fn complete_final_row_history(maze: &mut maze::Maze, window: &mut SlidingSetWind
             continue;
         }
         build::join_squares_history(maze, maze::Point { row: r, col: c }, next);
-        for set_elem in (next.col..maze.col_size() - 1).step_by(2) {
+        for set_elem in (next.col..maze.cols() - 1).step_by(2) {
             if window.at(set_r, set_elem as usize) == neighbor_id {
                 *window.at_mut(set_r, set_elem as usize) = this_id;
             }
@@ -384,9 +384,9 @@ fn complete_final_row_animated(
     window: &mut SlidingSetWindow,
     animation: build::SpeedUnit,
 ) {
-    let r = maze.row_size() - 2;
+    let r = maze.rows() - 2;
     let set_r = window.cur_row;
-    for c in (1..maze.col_size() - 2).step_by(2) {
+    for c in (1..maze.cols() - 2).step_by(2) {
         let this_id = window.at(set_r, c as usize);
         let next = maze::Point {
             row: r,
@@ -397,7 +397,7 @@ fn complete_final_row_animated(
             continue;
         }
         build::join_squares_animated(maze, maze::Point { row: r, col: c }, next, animation);
-        for set_elem in (next.col..maze.col_size() - 1).step_by(2) {
+        for set_elem in (next.col..maze.cols() - 1).step_by(2) {
             if window.at(set_r, set_elem as usize) == neighbor_id {
                 *window.at_mut(set_r, set_elem as usize) = this_id;
             }
@@ -410,9 +410,9 @@ fn complete_final_mini_row_animated(
     window: &mut SlidingSetWindow,
     animation: build::SpeedUnit,
 ) {
-    let r = maze.row_size() - 2;
+    let r = maze.rows() - 2;
     let set_r = window.cur_row;
-    for c in (1..maze.col_size() - 2).step_by(2) {
+    for c in (1..maze.cols() - 2).step_by(2) {
         let this_id = window.at(set_r, c as usize);
         let next = maze::Point {
             row: r,
@@ -423,7 +423,7 @@ fn complete_final_mini_row_animated(
             continue;
         }
         build::join_minis_animated(maze, maze::Point { row: r, col: c }, next, animation);
-        for set_elem in (next.col..maze.col_size() - 1).step_by(2) {
+        for set_elem in (next.col..maze.cols() - 1).step_by(2) {
             if window.at(set_r, set_elem as usize) == neighbor_id {
                 *window.at_mut(set_r, set_elem as usize) = this_id;
             }
@@ -433,14 +433,14 @@ fn complete_final_mini_row_animated(
 
 impl SlidingSetWindow {
     fn new(maze: &maze::Maze) -> Self {
-        let mut ids = vec![0; WINDOW_SIZE * maze.col_size() as usize];
+        let mut ids = vec![0; WINDOW_SIZE * maze.cols() as usize];
         for (i, v) in ids.iter_mut().enumerate() {
             *v = i;
         }
         Self {
             cur_row: 0,
-            width: maze.col_size() as usize,
-            next_available_id: maze.col_size() as usize,
+            width: maze.cols() as usize,
+            next_available_id: maze.cols() as usize,
             sets: ids,
         }
     }

@@ -40,8 +40,8 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
         prev_row_start: 2,
         prev: maze::Point { row: 0, col: 0 },
         walk: maze::Point {
-            row: 2 * (rng.gen_range(2..lk.maze.row_size() - 1) / 2),
-            col: 2 * (rng.gen_range(2..lk.maze.col_size() - 1) / 2),
+            row: 2 * (rng.gen_range(2..lk.maze.rows() - 1) / 2),
+            col: 2 * (rng.gen_range(2..lk.maze.cols() - 1) / 2),
         },
         next: maze::Point { row: 0, col: 0 },
     };
@@ -90,8 +90,8 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
         prev_row_start: 2,
         prev: maze::Point { row: 0, col: 0 },
         walk: maze::Point {
-            row: 2 * (rng.gen_range(2..lk.maze.row_size() - 1) / 2),
-            col: 2 * (rng.gen_range(2..lk.maze.col_size() - 1) / 2),
+            row: 2 * (rng.gen_range(2..lk.maze.rows() - 1) / 2),
+            col: 2 * (rng.gen_range(2..lk.maze.cols() - 1) / 2),
         },
         next: maze::Point { row: 0, col: 0 },
     };
@@ -139,8 +139,8 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
         prev_row_start: 2,
         prev: maze::Point { row: 0, col: 0 },
         walk: maze::Point {
-            row: 2 * (rng.gen_range(2..lk.maze.row_size() - 1) / 2),
-            col: 2 * (rng.gen_range(2..lk.maze.col_size() - 1) / 2),
+            row: 2 * (rng.gen_range(2..lk.maze.rows() - 1) / 2),
+            col: 2 * (rng.gen_range(2..lk.maze.cols() - 1) / 2),
         },
         next: maze::Point { row: 0, col: 0 },
     };
@@ -530,9 +530,9 @@ fn build_with_mini_marks_animated(
 
 fn is_valid_step(maze: &maze::Maze, next: maze::Point, prev: maze::Point) -> bool {
     next.row >= 0
-        && next.row < maze.row_size()
+        && next.row < maze.rows()
         && next.col >= 0
-        && next.col < maze.col_size()
+        && next.col < maze.cols()
         && next != prev
 }
 

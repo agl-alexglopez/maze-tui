@@ -31,8 +31,8 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
     let mut rng = thread_rng();
     let mut chamber_stack: Vec<Chamber> = Vec::from([Chamber {
         offset: maze::Point { row: 0, col: 0 },
-        h: lk.maze.row_size(),
-        w: lk.maze.col_size(),
+        h: lk.maze.rows(),
+        w: lk.maze.cols(),
     }]);
     while let Some(chamber) = chamber_stack.pop() {
         if chamber.h >= chamber.w && chamber.w > MIN_CHAMBER {
@@ -112,8 +112,8 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let mut rng = thread_rng();
     let mut chamber_stack: Vec<Chamber> = Vec::from([Chamber {
         offset: maze::Point { row: 0, col: 0 },
-        h: lk.maze.row_size(),
-        w: lk.maze.col_size(),
+        h: lk.maze.rows(),
+        w: lk.maze.cols(),
     }]);
     while let Some(chamber) = chamber_stack.pop() {
         if monitor.exit() {
@@ -193,8 +193,8 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let mut rng = thread_rng();
     let mut chamber_stack: Vec<Chamber> = Vec::from([Chamber {
         offset: maze::Point { row: 0, col: 0 },
-        h: lk.maze.row_size(),
-        w: lk.maze.col_size(),
+        h: lk.maze.rows(),
+        w: lk.maze.cols(),
     }]);
     while let Some(chamber) = chamber_stack.pop() {
         if monitor.exit() {

@@ -15,8 +15,8 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
     build::fill_maze_history_with_walls(&mut lk.maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
-        row: 2 * (gen.gen_range(1..lk.maze.row_size() - 2) / 2) + 1,
-        col: 2 * (gen.gen_range(1..lk.maze.col_size() - 2) / 2) + 1,
+        row: 2 * (gen.gen_range(1..lk.maze.rows() - 2) / 2) + 1,
+        col: 2 * (gen.gen_range(1..lk.maze.cols() - 2) / 2) + 1,
     };
     let mut random_direction_indices: [usize; build::NUM_DIRECTIONS] = [0, 1, 2, 3];
     let mut cur: maze::Point = start;
@@ -76,8 +76,8 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
     build::fill_maze_with_walls(&mut lk.maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
-        row: 2 * (gen.gen_range(1..lk.maze.row_size() - 2) / 2) + 1,
-        col: 2 * (gen.gen_range(1..lk.maze.col_size() - 2) / 2) + 1,
+        row: 2 * (gen.gen_range(1..lk.maze.rows() - 2) / 2) + 1,
+        col: 2 * (gen.gen_range(1..lk.maze.cols() - 2) / 2) + 1,
     };
     let mut random_direction_indices: [usize; build::NUM_DIRECTIONS] = [0, 1, 2, 3];
     let mut cur: maze::Point = start;
@@ -131,8 +131,8 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     build::print_overlap_key_animated(&lk.maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
-        row: 2 * (gen.gen_range(1..lk.maze.row_size() - 2) / 2) + 1,
-        col: 2 * (gen.gen_range(1..lk.maze.col_size() - 2) / 2) + 1,
+        row: 2 * (gen.gen_range(1..lk.maze.rows() - 2) / 2) + 1,
+        col: 2 * (gen.gen_range(1..lk.maze.cols() - 2) / 2) + 1,
     };
     let mut random_direction_indices: [usize; build::NUM_DIRECTIONS] = [0, 1, 2, 3];
     let mut cur: maze::Point = start;
@@ -188,8 +188,8 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     build::print_overlap_key_animated(&lk.maze);
     let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
-        row: 2 * (gen.gen_range(1..lk.maze.row_size() - 2) / 2) + 1,
-        col: 2 * (gen.gen_range(1..lk.maze.col_size() - 2) / 2) + 1,
+        row: 2 * (gen.gen_range(1..lk.maze.rows() - 2) / 2) + 1,
+        col: 2 * (gen.gen_range(1..lk.maze.cols() - 2) / 2) + 1,
     };
     let mut random_direction_indices: [usize; build::NUM_DIRECTIONS] = [0, 1, 2, 3];
     let mut cur: maze::Point = start;

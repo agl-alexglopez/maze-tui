@@ -96,9 +96,9 @@ fn main() {
             print::set_cursor_position(
                 maze::Point {
                     row: if lk.maze.style_index() == (maze::MazeStyle::Mini as usize) {
-                        lk.maze.row_size() / 2 + 3
+                        lk.maze.rows() / 2 + 3
                     } else {
-                        lk.maze.row_size() + 2
+                        lk.maze.rows() + 2
                     },
                     col: 0,
                 },

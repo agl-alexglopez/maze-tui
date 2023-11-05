@@ -43,21 +43,21 @@ pub fn set_corner_starts(maze: &maze::Maze) -> [maze::Point; 4] {
     }
     let mut point2: maze::Point = maze::Point {
         row: 1,
-        col: maze.col_size() - 2,
+        col: maze.cols() - 2,
     };
     if (maze.get(point2.row, point2.col) & maze::PATH_BIT) == 0 {
         point2 = find_nearest_square(maze, point2);
     }
     let mut point3: maze::Point = maze::Point {
-        row: maze.row_size() - 2,
+        row: maze.rows() - 2,
         col: 1,
     };
     if (maze.get(point3.row, point3.col) & maze::PATH_BIT) == 0 {
         point3 = find_nearest_square(maze, point3);
     }
     let mut point4: maze::Point = maze::Point {
-        row: maze.row_size() - 2,
-        col: maze.col_size() - 2,
+        row: maze.rows() - 2,
+        col: maze.cols() - 2,
     };
     if (maze.get(point4.row, point4.col) & maze::PATH_BIT) == 0 {
         point4 = find_nearest_square(maze, point4);
@@ -68,8 +68,8 @@ pub fn set_corner_starts(maze: &maze::Maze) -> [maze::Point; 4] {
 pub fn pick_random_point(maze: &maze::Maze) -> maze::Point {
     let mut gen = thread_rng();
     let choice = maze::Point {
-        row: gen.gen_range(1..maze.row_size() - 2),
-        col: gen.gen_range(1..maze.col_size() - 2),
+        row: gen.gen_range(1..maze.rows() - 2),
+        col: gen.gen_range(1..maze.cols() - 2),
     };
     if is_valid_start_or_finish(maze, choice) {
         return choice;
@@ -87,8 +87,8 @@ pub fn find_nearest_square(maze: &maze::Maze, choice: maze::Point) -> maze::Poin
             return next;
         }
     }
-    for r in 1..maze.row_size() - 1 {
-        for c in 1..maze.col_size() - 1 {
+    for r in 1..maze.rows() - 1 {
+        for c in 1..maze.cols() - 1 {
             let cur = maze::Point { row: r, col: c };
             if is_valid_start_or_finish(maze, cur) {
                 return cur;
@@ -101,8 +101,8 @@ pub fn find_nearest_square(maze: &maze::Maze, choice: maze::Point) -> maze::Poin
 
 pub fn print_paths(maze: &maze::Maze) {
     if maze.style_index() == (maze::MazeStyle::Mini as usize) {
-        for r in 0..maze.row_size() {
-            for c in 0..maze.col_size() {
+        for r in 0..maze.rows() {
+            for c in 0..maze.cols() {
                 print_mini_point(maze, maze::Point { row: r, col: c });
             }
             match queue!(io::stdout(), Print('\n'),) {
@@ -113,8 +113,8 @@ pub fn print_paths(maze: &maze::Maze) {
         print::flush();
         return;
     }
-    for r in 0..maze.row_size() {
-        for c in 0..maze.col_size() {
+    for r in 0..maze.rows() {
+        for c in 0..maze.cols() {
             print_point(maze, maze::Point { row: r, col: c });
         }
         match queue!(io::stdout(), Print('\n'),) {
@@ -605,8 +605,8 @@ pub fn flush_dark_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
 
 pub fn deluminate_maze(maze: &maze::Maze) {
     if maze.style_index() == (maze::MazeStyle::Mini as usize) {
-        for r in 0..(maze.row_size() + 1) / 2 {
-            for c in 0..maze.col_size() {
+        for r in 0..(maze.rows() + 1) / 2 {
+            for c in 0..maze.cols() {
                 let p = maze::Point { row: r, col: c };
                 print::set_cursor_position(p, maze.offset());
                 match queue!(io::stdout(), Print(' '),) {
@@ -616,8 +616,8 @@ pub fn deluminate_maze(maze: &maze::Maze) {
             }
         }
     } else {
-        for r in 0..maze.row_size() {
-            for c in 0..maze.col_size() {
+        for r in 0..maze.rows() {
+            for c in 0..maze.cols() {
                 let p = maze::Point { row: r, col: c };
                 print::set_cursor_position(p, maze.offset());
                 match queue!(io::stdout(), Print(' '),) {
@@ -634,9 +634,9 @@ pub fn deluminate_maze(maze: &maze::Maze) {
 #[inline]
 fn is_valid_start_or_finish(maze: &maze::Maze, choice: maze::Point) -> bool {
     choice.row > 0
-        && choice.row < maze.row_size() - 1
+        && choice.row < maze.rows() - 1
         && choice.col > 0
-        && choice.col < maze.col_size() - 1
+        && choice.col < maze.cols() - 1
         && (maze.get(choice.row, choice.col) & maze::PATH_BIT) != 0
         && (maze.get(choice.row, choice.col) & FINISH_BIT) == 0
         && (maze.get(choice.row, choice.col) & START_BIT) == 0
