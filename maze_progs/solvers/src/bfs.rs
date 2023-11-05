@@ -19,7 +19,7 @@ pub fn hunt_history(monitor: monitor::MazeMonitor) {
             id: start,
             before: start_square,
             after: start_square | solve::START_BIT,
-            burst: 1,
+            burst: 4,
         });
         *lk.maze.get_mut(start.row, start.col) |= solve::START_BIT;
         let finish: maze::Point = solve::pick_random_point(&lk.maze);
@@ -28,7 +28,7 @@ pub fn hunt_history(monitor: monitor::MazeMonitor) {
             id: finish,
             before: finish_square,
             after: finish_square | solve::FINISH_BIT,
-            burst: 1,
+            burst: 4,
         });
         *lk.maze.get_mut(finish.row, finish.col) |= solve::FINISH_BIT;
         start
