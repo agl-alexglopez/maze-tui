@@ -32,6 +32,7 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
     let mut random_direction_indices: Vec<usize> = (0..build::NUM_DIRECTIONS).collect();
     let mut cur: maze::Point = start;
     let mut highest_completed_row = 1;
+    hunter_laser_history(&mut lk.maze, highest_completed_row);
     'carving: loop {
         random_direction_indices.shuffle(&mut gen);
         for &i in random_direction_indices.iter() {
@@ -53,9 +54,11 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
                 let start_candidate = maze::Point { row: r, col: c };
                 if (lk.maze.get(r, c) & build::BUILDER_BIT) == 0 {
                     if !set_highest_completed_row {
-                        reset_hunter_laser_history(&mut lk.maze, highest_completed_row);
+                        if r != highest_completed_row {
+                            reset_hunter_laser_history(&mut lk.maze, highest_completed_row);
+                            hunter_laser_history(&mut lk.maze, r);
+                        }
                         highest_completed_row = r;
-                        hunter_laser_history(&mut lk.maze, highest_completed_row);
                         set_highest_completed_row = true;
                     }
                     for dir in &build::GENERATE_DIRECTIONS {
