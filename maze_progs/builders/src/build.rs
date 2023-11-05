@@ -33,7 +33,6 @@ pub struct BacktrackSymbol {
 
 // Any builders that choose to cache seen squares in place can use this bit.
 pub const BUILDER_BIT: maze::Square = 0b0001_0000_0000_0000;
-pub const NOT_ZERO: i32 = i32::MAX;
 // Data that will help backtracker algorithms like recursive backtracker and Wilson's.
 pub const MARKER_SHIFT: u8 = 4;
 pub const NUM_DIRECTIONS: usize = 4;
@@ -903,29 +902,44 @@ pub fn join_minis_animated(
     carve_mini_walls_animated(maze, wall, speed);
 }
 
-// Don't mind these, just bumming instructions for fun. Good to keep the mind sharp with bitwise
-// ops every now and again. You should be able to see this is maze bounds checking but yes, yes
-// you are right, I'm sorry. This is a personal project after all ¯\_(ツ)_/¯
-
 pub fn build_wall_history(maze: &mut maze::Maze, p: maze::Point) {
-    let wall: maze::WallLine = ((p.row & NOT_ZERO) != 0) as u16
-        | (((p.col & NOT_ZERO) != 0) as u16) << maze::WEST_WALL_SHIFT
-        | ((p.row ^ (maze.rows() - 1) != 0) as u16) << maze::SOUTH_WALL_SHIFT
-        | ((p.col ^ (maze.cols() - 1) != 0) as u16) << maze::EAST_WALL_SHIFT;
+    let mut wall: maze::WallLine = 0b0;
+    if p.row > 0 {
+        wall |= maze::NORTH_WALL;
+    }
+    if p.row + 1 < maze.rows() {
+        wall |= maze::SOUTH_WALL;
+    }
+    if p.col > 0 {
+        wall |= maze::WEST_WALL;
+    }
+    if p.col + 1 < maze.cols() {
+        wall |= maze::EAST_WALL;
+    }
     maze.build_history.push(tape::Delta {
         id: p,
         before: 0b0,
         after: wall,
         burst: 1,
     });
-    *maze.get_mut(p.row, p.col) |= wall;
+    *maze.get_mut(p.row, p.col) = wall;
 }
 
 pub fn build_wall(maze: &mut maze::Maze, p: maze::Point) {
-    *maze.get_mut(p.row, p.col) = ((p.row & NOT_ZERO) != 0) as u16
-        | (((p.col & NOT_ZERO) != 0) as u16) << maze::WEST_WALL_SHIFT
-        | ((p.row ^ (maze.rows() - 1) != 0) as u16) << maze::SOUTH_WALL_SHIFT
-        | ((p.col ^ (maze.cols() - 1) != 0) as u16) << maze::EAST_WALL_SHIFT
+    let mut wall: maze::WallLine = 0b0;
+    if p.row > 0 {
+        wall |= maze::NORTH_WALL;
+    }
+    if p.row + 1 < maze.rows() {
+        wall |= maze::SOUTH_WALL;
+    }
+    if p.col > 0 {
+        wall |= maze::WEST_WALL;
+    }
+    if p.col + 1 < maze.cols() {
+        wall |= maze::EAST_WALL;
+    }
+    *maze.get_mut(p.row, p.col) = wall;
 }
 
 pub fn build_wall_carefully(maze: &mut maze::Maze, p: maze::Point) {
