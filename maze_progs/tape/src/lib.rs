@@ -171,4 +171,9 @@ where
         self.i = self.peek_next_index();
         self.i != prev
     }
+
+    pub fn validate_deltas(&self) -> Result<(), String> {
+        // We need to catch some solver bugs.
+        todo!()
+    }
 }

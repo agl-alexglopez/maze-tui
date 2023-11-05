@@ -261,7 +261,7 @@ pub const CURSOR_SOLVERS: [(&str, SolveCursorFunction); 26] = [
     ("runs", (runs::paint_run_lengths, runs::animate_run_lengths)),
 ];
 
-pub const HISTORY_SOLVERS: [(&str, SolveHistoryFunction); 1] = [
+pub const HISTORY_SOLVERS: [(&str, SolveHistoryFunction); 3] = [
     // ("dfs-hunt", dfs::hunt_history),
     // ("dfs-gather", dfs::gather_history),
     // ("dfs-corner", dfs::corner_history),
@@ -269,8 +269,8 @@ pub const HISTORY_SOLVERS: [(&str, SolveHistoryFunction); 1] = [
     // ("rdfs-gather", rdfs::gather_history),
     // ("rdfs-corner", rdfs::corner_history),
     ("bfs-hunt", bfs::hunt_history),
-    // ("bfs-gather", bfs::gather_history),
-    // ("bfs-corner", bfs::corner_history),
+    ("bfs-gather", bfs::gather_history),
+    ("bfs-corner", bfs::corner_history),
     // ("floodfs-hunt", floodfs::hunt_history),
     // ("floodfs-gather", floodfs::gather_history),
     // ("floodfs-corner", floodfs::corner_history),
