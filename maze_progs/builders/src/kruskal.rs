@@ -9,8 +9,51 @@ use std::collections::HashMap;
 
 // Public Builder Functions-----------------------------------------------------------------------
 
-pub fn generate_history(_monitor: monitor::MazeMonitor) {
-    todo!();
+pub fn generate_history(monitor: monitor::MazeMonitor) {
+    let mut lk = match monitor.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    build::fill_maze_history_with_walls(&mut lk.maze);
+    let walls = load_shuffled_walls(&lk.maze);
+    let ids = tag_cells(&lk.maze);
+    let mut sets = disjoint::DisjointSet::new(ids.len());
+
+    for w in &walls {
+        if w.row % 2 == 0 {
+            let above = maze::Point {
+                row: w.row - 1,
+                col: w.col,
+            };
+            let below = maze::Point {
+                row: w.row + 1,
+                col: w.col,
+            };
+            if let (Some(a_id), Some(b_id)) = (ids.get(&above), ids.get(&below)) {
+                if sets.made_union(*a_id, *b_id) {
+                    build::join_squares_history(&mut lk.maze, above, below);
+                }
+            } else {
+                print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
+            }
+            continue;
+        }
+        let left = maze::Point {
+            row: w.row,
+            col: w.col - 1,
+        };
+        let right = maze::Point {
+            row: w.row,
+            col: w.col + 1,
+        };
+        if let (Some(l_id), Some(r_id)) = (ids.get(&left), ids.get(&right)) {
+            if sets.made_union(*l_id, *r_id) {
+                build::join_squares_history(&mut lk.maze, right, left);
+            }
+        } else {
+            print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
+        }
+    }
 }
 
 pub fn generate_maze(monitor: monitor::MazeReceiver) {
