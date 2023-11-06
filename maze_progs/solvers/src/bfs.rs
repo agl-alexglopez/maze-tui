@@ -154,9 +154,6 @@ pub fn gather_history(monitor: monitor::MazeMonitor) {
                 .iter_mut()
                 .for_each(|s| s.burst = 1);
         }
-        if let Err(fail) = lk.maze.solve_history.validate_deltas() {
-            panic!("{}", fail);
-        }
         return;
     }
     print::maze_panic!("thread panick.");

@@ -171,31 +171,4 @@ where
         self.i = self.peek_next_index();
         self.i != prev
     }
-
-    pub fn validate_deltas(&mut self) -> Result<(), String> {
-        while self.i < self.steps.len() {
-            if self.i + self.steps[self.i].burst > self.steps.len() {
-                return Err("a burst exceeds the tape length".to_string());
-            }
-            self.set_next();
-        }
-        if self.i != self.steps.len() {
-            return Err(format!(
-                "final burst placed us at {}. len is {}",
-                self.i,
-                self.steps.len()
-            ));
-        }
-        while self.i > 0 {
-            if self.i.overflowing_sub(self.steps[self.i - 1].burst).1 {
-                return Err(format!(
-                    "rewinding overflowed. index {}, proposed burst {}",
-                    self.i,
-                    self.steps[self.i - 1].burst
-                ));
-            }
-            self.set_prev();
-        }
-        Ok(())
-    }
 }
