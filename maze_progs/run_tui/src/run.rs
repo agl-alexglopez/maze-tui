@@ -394,8 +394,8 @@ fn set_arg(run: &mut tables::HistoryRunner, args: &tables::FlagArg) -> Result<()
 fn set_random_args(rect: &Rect) -> tables::HistoryRunner {
     let mut rng = thread_rng();
     let mut this_run = tables::HistoryRunner::new();
-    this_run.args.odd_rows = (rect.height - 1) as i32;
-    this_run.args.odd_cols = (rect.width - 1) as i32;
+    this_run.args.odd_rows = (rect.height - 2) as i32;
+    this_run.args.odd_cols = (rect.width - 2) as i32;
     this_run.args.offset = maze::Offset {
         add_rows: rect.y as i32,
         add_cols: rect.x as i32,

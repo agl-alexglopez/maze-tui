@@ -1390,6 +1390,9 @@ pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
 }
 
 pub fn decode_mini_square(maze: &maze::Blueprint, p: maze::Point) -> Cell {
+    if p.row >= maze.rows || p.col >= maze.cols {
+        print::maze_panic!("out of bounds request.");
+    }
     let square = maze.get(p.row, p.col);
     if maze::is_wall(square) {
         // Need this for wilson backtracking while random walking.

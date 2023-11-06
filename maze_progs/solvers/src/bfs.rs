@@ -72,7 +72,7 @@ pub fn hunt_history(monitor: monitor::MazeMonitor) {
         if len % BURST != 0 {
             lk.maze
                 .solve_history
-                .slice_mut(len - (len % BURST) + 1, len)
+                .slice_mut(len - (len % BURST), len)
                 .iter_mut()
                 .for_each(|s| s.burst = 1);
         }
@@ -150,9 +150,12 @@ pub fn gather_history(monitor: monitor::MazeMonitor) {
         if len % BURST != 0 {
             lk.maze
                 .solve_history
-                .slice_mut(len - (len % BURST) + 1, len)
+                .slice_mut(len - (len % BURST), len)
                 .iter_mut()
                 .for_each(|s| s.burst = 1);
+        }
+        if let Err(fail) = lk.maze.solve_history.validate_deltas() {
+            panic!("{}", fail);
         }
         return;
     }

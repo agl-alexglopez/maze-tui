@@ -310,6 +310,9 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
 
 // This is really bad, there must be a better way. Coloring halves correctly is a challenge.
 pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
+    if p.row >= maze.rows || p.col >= maze.cols {
+        print::maze_panic!("out of bounds request.");
+    }
     let square = maze.get(p.row, p.col);
     let this_color = key::thread_color_code(color_index(square));
     if is_start_or_finish(square) {

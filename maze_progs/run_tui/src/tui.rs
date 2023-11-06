@@ -9,7 +9,7 @@ use ratatui::{
     prelude::{Alignment, Color, Modifier, Rect},
     style::Style,
     widgets::{
-        Block, BorderType, Borders, Clear, Padding, Paragraph, ScrollDirection, Scrollbar,
+        Block, BorderType, Borders, Clear, Paragraph, ScrollDirection, Scrollbar,
         ScrollbarOrientation, ScrollbarState, Wrap,
     },
 };
@@ -43,32 +43,34 @@ pub struct SolveFrame<'a> {
 }
 
 impl<'a> Widget for BuildFrame<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+    fn render(self, _area: Rect, buf: &mut Buffer) {
         if self.maze.is_mini() {
             let buf_area = buf.area;
-            let row_len = cmp::min(buf_area.height - area.top(), (self.maze.rows / 2) as u16);
-            let col_len = cmp::min(buf_area.width - area.left(), self.maze.cols as u16);
-            for (r, y) in (area.top()..(area.top() + row_len) * 2 + 1).enumerate() {
-                for (c, x) in (area.left()..area.left() + col_len).enumerate() {
+            let row_len = cmp::min(buf_area.height, (self.maze.rows / 2) as u16);
+            let col_len = cmp::min(buf_area.width, self.maze.cols as u16);
+            for y in 0..row_len * 2 + 1 {
+                for x in 0..col_len {
                     *buf.get_mut(x, y / 2) = build::decode_mini_square(
                         self.maze,
                         maze::Point {
-                            row: r as i32,
-                            col: c as i32,
+                            row: y as i32,
+                            col: x as i32,
                         },
                     );
                 }
             }
         } else {
             let buf_area = buf.area;
-            let row_len = cmp::min(buf_area.height - area.top(), self.maze.rows as u16);
-            let col_len = cmp::min(buf_area.width - area.left(), self.maze.cols as u16);
+            let row_len = cmp::min(buf_area.height, self.maze.rows as u16);
+            let col_len = cmp::min(buf_area.width, self.maze.cols as u16);
             let wall_row = &maze::wall_row(self.maze.wall_style_index);
             let cols = col_len as usize;
-            for (r, y) in (area.top()..area.top() + row_len).enumerate() {
-                for (c, x) in (area.left()..area.left() + col_len).enumerate() {
-                    *buf.get_mut(x, y) =
-                        build::decode_square(wall_row, self.maze.buf[r * cols + c]);
+            for y in 0..row_len {
+                for x in 0..col_len {
+                    *buf.get_mut(x, y) = build::decode_square(
+                        wall_row,
+                        self.maze.buf[y as usize * cols + x as usize],
+                    );
                 }
             }
         }
@@ -76,32 +78,34 @@ impl<'a> Widget for BuildFrame<'a> {
 }
 
 impl<'a> Widget for SolveFrame<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+    fn render(self, _area: Rect, buf: &mut Buffer) {
         if self.maze.is_mini() {
             let buf_area = buf.area;
-            let row_len = cmp::min(buf_area.height - area.top(), (self.maze.rows / 2) as u16);
-            let col_len = cmp::min(buf_area.width - area.left(), self.maze.cols as u16);
-            for (r, y) in (area.top()..(area.top() + row_len) * 2 + 1).enumerate() {
-                for (c, x) in (area.left()..area.left() + col_len).enumerate() {
+            let row_len = cmp::min(buf_area.height, (self.maze.rows / 2) as u16);
+            let col_len = cmp::min(buf_area.width, self.maze.cols as u16);
+            for y in 0..row_len * 2 + 1 {
+                for x in 0..col_len {
                     *buf.get_mut(x, y / 2) = solve::decode_mini_path(
                         self.maze,
                         maze::Point {
-                            row: r as i32,
-                            col: c as i32,
+                            row: y as i32,
+                            col: x as i32,
                         },
                     );
                 }
             }
         } else {
             let buf_area = buf.area;
-            let row_len = cmp::min(buf_area.height - area.top(), self.maze.rows as u16);
-            let col_len = cmp::min(buf_area.width - area.left(), self.maze.cols as u16);
+            let row_len = cmp::min(buf_area.height, self.maze.rows as u16);
+            let col_len = cmp::min(buf_area.width, self.maze.cols as u16);
             let wall_row = &maze::wall_row(self.maze.wall_style_index);
             let cols = col_len as usize;
-            for (r, y) in (area.top()..area.top() + row_len).enumerate() {
-                for (c, x) in (area.left()..area.left() + col_len).enumerate() {
-                    *buf.get_mut(x, y) =
-                        solve::decode_square(wall_row, self.maze.buf[r * cols + c]);
+            for y in 0..row_len {
+                for x in 0..col_len {
+                    *buf.get_mut(x, y) = solve::decode_square(
+                        wall_row,
+                        self.maze.buf[y as usize * cols + x as usize],
+                    );
                 }
             }
         }
@@ -206,8 +210,8 @@ impl<'a> Tui<'a> {
             .split(f.size());
         let upper_portion = overall_layout[0];
         Dimension {
-            rows: (upper_portion.height - 1) as i32,
-            cols: (upper_portion.width - 1) as i32,
+            rows: (upper_portion.height - 2) as i32,
+            cols: (upper_portion.width - 2) as i32,
             offset: maze::Offset {
                 add_rows: upper_portion.y as i32,
                 add_cols: upper_portion.x as i32,
@@ -224,7 +228,7 @@ impl<'a> Tui<'a> {
     }
 
     pub fn padded_frame(&mut self) -> Rect {
-        let frame_block = Block::default().padding(Padding::new(1, 1, 1, 1));
+        let frame_block = Block::default();
         frame_block.inner(self.terminal.get_frame().size())
     }
 
