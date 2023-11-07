@@ -22,7 +22,7 @@ impl MaxMap {
 pub struct Monitor {
     pub maze: maze::Maze,
     pub win: Option<usize>,
-    pub win_path: Vec<(maze::Point, u16)>,
+    pub win_path: Vec<(maze::Point, maze::Square)>,
     pub map: MaxMap,
     pub count: usize,
 }

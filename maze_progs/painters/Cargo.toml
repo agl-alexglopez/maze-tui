@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 maze = { path = "../maze" }
 monitor = { path = "../monitor" }
+tape = {path = "../tape" }
 builders = { path = "../builders" }
 solvers = { path = "../solvers" }
 print = { path = "../print" }

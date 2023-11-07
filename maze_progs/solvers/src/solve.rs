@@ -15,15 +15,99 @@ use ratatui::{
 use std::io::{self};
 
 // Types available to all solvers.
-pub type ThreadPaint = u16;
-pub type ThreadCache = u16;
+pub type ThreadPaint = u32;
+pub type ThreadCache = u32;
 pub type SolveSpeedUnit = u64;
-
 pub struct ThreadGuide {
     pub index: usize,
     pub paint: ThreadPaint,
+    pub cache: ThreadCache,
     pub start: maze::Point,
     pub speed: SolveSpeedUnit,
+}
+
+macro_rules! rgb {
+    ($r:expr, $g:expr, $b:expr) => {
+        ((($r as u32) & 0xFF) << 16) | ((($g as u32) & 0xFF) << 8) | (($b as u32) & 0xFF)
+    };
+}
+
+// Read Only Data Available to All Solvers
+pub const START_BIT: ThreadPaint = 0x40000000;
+pub const FINISH_BIT: ThreadPaint = 0x80000000;
+pub const NUM_THREADS: usize = 4;
+pub const NUM_DIRECTIONS: usize = 4;
+pub const THREAD_TAG_OFFSET: usize = 4;
+pub const NUM_GATHER_FINISHES: usize = 4;
+pub const INITIAL_PATH_LEN: usize = 1024;
+pub const THREAD_MASK: ThreadPaint = 0xFFFFFF;
+pub const RED_MASK: ThreadPaint = 0xFF0000;
+pub const RED_SHIFT: ThreadPaint = 16;
+pub const GREEN_MASK: ThreadPaint = 0xFF00;
+pub const GREEN_SHIFT: ThreadPaint = 8;
+pub const BLUE_MASK: ThreadPaint = 0xFF;
+pub const THREAD_MASKS: [ThreadPaint; 4] = [
+    rgb!(155, 237, 0),
+    rgb!(18, 62, 171),
+    rgb!(255, 171, 0),
+    rgb!(206, 0, 113),
+];
+pub const CACHE_MASK: ThreadCache = 0xF000000;
+pub const ZERO_SEEN: ThreadCache = 0x1000000;
+pub const ONE_SEEN: ThreadCache = 0x2000000;
+pub const TWO_SEEN: ThreadCache = 0x4000000;
+pub const THREE_SEEN: ThreadCache = 0x8000000;
+pub const THREAD_CACHES: [ThreadCache; 4] = [ZERO_SEEN, ONE_SEEN, TWO_SEEN, THREE_SEEN];
+pub const SOLVER_SPEEDS: [SolveSpeedUnit; 8] = [0, 20000, 10000, 5000, 2000, 1000, 500, 250];
+
+#[inline]
+pub fn is_start(square: maze::Square) -> bool {
+    (square & START_BIT) != 0
+}
+
+#[inline]
+pub fn is_finish(square: maze::Square) -> bool {
+    (square & FINISH_BIT) != 0
+}
+
+#[inline]
+pub fn is_color(square: maze::Square) -> bool {
+    (square & THREAD_MASK) != 0
+}
+
+#[inline]
+pub fn any_thread_visited(square: maze::Square) -> bool {
+    (square & CACHE_MASK) != 0
+}
+
+#[inline]
+fn thread_rgb(square: maze::Square) -> RatColor {
+    RatColor::Rgb(
+        ((square & RED_MASK) >> RED_SHIFT) as u8,
+        ((square & GREEN_MASK) >> GREEN_SHIFT) as u8,
+        (square & BLUE_MASK) as u8,
+    )
+}
+
+#[inline]
+fn is_start_or_finish(square: maze::Square) -> bool {
+    (square & (START_BIT | FINISH_BIT)) != 0
+}
+
+#[inline]
+fn is_valid_start_or_finish(maze: &maze::Maze, choice: maze::Point) -> bool {
+    choice.row > 0
+        && choice.row < maze.rows() - 1
+        && choice.col > 0
+        && choice.col < maze.cols() - 1
+        && maze.path_at(choice.row, choice.col)
+        && !is_finish(maze.get(choice.row, choice.col))
+        && !is_start(maze.get(choice.row, choice.col))
+}
+
+#[inline]
+fn color_index(square: maze::Square) -> usize {
+    ((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize
 }
 
 // Public Module Functions
@@ -38,28 +122,28 @@ pub fn reset_solve(maze: &mut maze::Maze) {
 
 pub fn set_corner_starts(maze: &maze::Maze) -> [maze::Point; 4] {
     let mut point1: maze::Point = maze::Point { row: 1, col: 1 };
-    if (maze.get(point1.row, point1.col) & maze::PATH_BIT) == 0 {
+    if maze.wall_at(point1.row, point1.col) {
         point1 = find_nearest_square(maze, point1);
     }
     let mut point2: maze::Point = maze::Point {
         row: 1,
         col: maze.cols() - 2,
     };
-    if (maze.get(point2.row, point2.col) & maze::PATH_BIT) == 0 {
+    if maze.wall_at(point2.row, point2.col) {
         point2 = find_nearest_square(maze, point2);
     }
     let mut point3: maze::Point = maze::Point {
         row: maze.rows() - 2,
         col: 1,
     };
-    if (maze.get(point3.row, point3.col) & maze::PATH_BIT) == 0 {
+    if maze.wall_at(point3.row, point3.col) {
         point3 = find_nearest_square(maze, point3);
     }
     let mut point4: maze::Point = maze::Point {
         row: maze.rows() - 2,
         col: maze.cols() - 2,
     };
-    if (maze.get(point4.row, point4.col) & maze::PATH_BIT) == 0 {
+    if maze.wall_at(point4.row, point4.col) {
         point4 = find_nearest_square(maze, point4);
     }
     [point1, point2, point3, point4]
@@ -128,11 +212,10 @@ pub fn print_paths(maze: &maze::Maze) {
 pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
     // We have some special printing for the finish square. Not here.
     if is_finish(square) {
-        let ansi = key::thread_color_code(color_index(square));
         Cell {
             symbol: 'F'.to_string(),
             fg: RatColor::Indexed(key::ANSI_CYN),
-            bg: RatColor::Indexed(ansi),
+            bg: thread_rgb(square),
             underline_color: RatColor::Reset,
             modifier: Modifier::BOLD | Modifier::SLOW_BLINK,
             skip: false,
@@ -147,18 +230,17 @@ pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
             skip: false,
         }
     } else if is_color(square) {
-        let thread_color: key::ThreadColor = key::thread_color(color_index(square));
         Cell {
-            symbol: thread_color.block.to_string(),
-            fg: RatColor::Indexed(thread_color.ansi),
+            symbol: "█".to_string(),
+            fg: thread_rgb(square),
             bg: RatColor::Reset,
             underline_color: RatColor::Reset,
-            modifier: Modifier::BOLD,
+            modifier: Modifier::empty(),
             skip: false,
         }
     } else if maze::is_wall(square) {
         Cell {
-            symbol: wall_row[(square & maze::WALL_MASK) as usize].to_string(),
+            symbol: wall_row[((square & maze::WALL_MASK) >> maze::WALL_SHIFT) as usize].to_string(),
             fg: RatColor::Reset,
             bg: RatColor::Reset,
             underline_color: RatColor::Reset,
@@ -311,12 +393,12 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
 // This is really bad, there must be a better way. Coloring halves correctly is a challenge.
 pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
     let square = maze.get(p.row, p.col);
-    let this_color = key::thread_color_code(color_index(square));
+    let this_color = thread_rgb(square);
     if is_start_or_finish(square) {
         return Cell {
             symbol: '▀'.to_string(),
             fg: RatColor::Indexed(key::ANSI_CYN),
-            bg: RatColor::Indexed(this_color),
+            bg: this_color,
             underline_color: RatColor::Reset,
             modifier: Modifier::SLOW_BLINK,
             skip: false,
@@ -332,7 +414,7 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
                     return Cell {
                         symbol: '▀'.to_string(),
                         fg: RatColor::Indexed(key::ANSI_CYN),
-                        bg: RatColor::Indexed(this_color),
+                        bg: this_color,
                         underline_color: RatColor::Reset,
                         modifier: Modifier::SLOW_BLINK,
                         skip: false,
@@ -341,8 +423,8 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
                 // Another thread may be above us so grab the color invariantly just in case.
                 return Cell {
                     symbol: '▀'.to_string(),
-                    fg: RatColor::Indexed(key::thread_color_code(color_index(neighbor_square))),
-                    bg: RatColor::Indexed(this_color),
+                    fg: thread_rgb(neighbor_square),
+                    bg: this_color,
                     underline_color: RatColor::Reset,
                     modifier: Modifier::empty(),
                     skip: false,
@@ -352,7 +434,7 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
             return Cell {
                 symbol: '▀'.to_string(),
                 fg: RatColor::Reset,
-                bg: RatColor::Indexed(this_color),
+                bg: this_color,
                 underline_color: RatColor::Reset,
                 modifier: Modifier::empty(),
                 skip: false,
@@ -377,7 +459,7 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
                 return Cell {
                     symbol: '▀'.to_string(),
                     fg: RatColor::Indexed(key::ANSI_CYN),
-                    bg: RatColor::Indexed(this_color),
+                    bg: this_color,
                     underline_color: RatColor::Reset,
                     modifier: Modifier::SLOW_BLINK,
                     skip: false,
@@ -386,8 +468,8 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
             // Another thread may be below us so grab the color invariantly just in case.
             return Cell {
                 symbol: '▀'.to_string(),
-                fg: RatColor::Indexed(key::thread_color_code(color_index(neighbor_square))),
-                bg: RatColor::Indexed(this_color),
+                fg: thread_rgb(neighbor_square),
+                bg: this_color,
                 underline_color: RatColor::Reset,
                 modifier: Modifier::empty(),
                 skip: false,
@@ -397,7 +479,7 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
         return Cell {
             symbol: '▄'.to_string(),
             fg: RatColor::Reset,
-            bg: RatColor::Indexed(this_color),
+            bg: this_color,
             underline_color: RatColor::Reset,
             modifier: Modifier::empty(),
             skip: false,
@@ -421,7 +503,7 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
         return Cell {
             symbol: '▀'.to_string(),
             fg: RatColor::Reset,
-            bg: RatColor::Indexed(key::thread_color_code(color_index(neighbor_square))),
+            bg: thread_rgb(neighbor_square),
             underline_color: RatColor::Reset,
             modifier: Modifier::empty(),
             skip: false,
@@ -463,7 +545,7 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     }
     // This is a path square. We should never be asked to print a wall from a solver animation?
     if point.row % 2 != 0 {
-        if (maze.get(point.row - 1, point.col) & maze::PATH_BIT) != 0 {
+        if maze.path_at(point.row - 1, point.col) {
             let neighbor_square = maze.get(point.row - 1, point.col);
             if is_start_or_finish(neighbor_square) {
                 execute!(
@@ -500,7 +582,7 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         return;
     }
     // Even rows but this still must be a path.
-    if (maze.get(point.row + 1, point.col) & maze::PATH_BIT) != 0 {
+    if maze.path_at(point.row + 1, point.col) {
         let neighbor_square = maze.get(point.row + 1, point.col);
         if is_start_or_finish(neighbor_square) {
             execute!(
@@ -563,7 +645,7 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
         return;
     }
     if point.row % 2 != 0 {
-        if (maze.get(point.row - 1, point.col) & maze::PATH_BIT) != 0 {
+        if maze.path_at(point.row - 1, point.col) {
             let neighbor_square = maze.get(point.row - 1, point.col);
             if is_start_or_finish(neighbor_square) {
                 queue!(
@@ -600,7 +682,7 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
         return;
     }
     // Even rows but this still must be a path.
-    if (maze.get(point.row + 1, point.col) & maze::PATH_BIT) != 0 {
+    if maze.path_at(point.row + 1, point.col) {
         let neighbor_square = maze.get(point.row + 1, point.col);
         if is_start_or_finish(neighbor_square) {
             queue!(
@@ -661,7 +743,7 @@ pub fn flush_dark_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     }
     // This is a path square. We should never be asked to print a wall from a solver animation?
     if point.row % 2 != 0 {
-        if (maze.get(point.row - 1, point.col) & maze::PATH_BIT) != 0 {
+        if maze.path_at(point.row - 1, point.col) {
             let neighbor_square = maze.get(point.row - 1, point.col);
             if is_start_or_finish(neighbor_square) {
                 execute!(
@@ -698,7 +780,7 @@ pub fn flush_dark_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         return;
     }
     // Even rows but this still must be a path.
-    if (maze.get(point.row + 1, point.col) & maze::PATH_BIT) != 0 {
+    if maze.path_at(point.row + 1, point.col) {
         let neighbor_square = maze.get(point.row + 1, point.col);
         if is_start_or_finish(neighbor_square) {
             execute!(
@@ -759,60 +841,3 @@ pub fn deluminate_maze(maze: &maze::Maze) {
         }
     }
 }
-
-// Private Module Function
-
-#[inline]
-fn is_valid_start_or_finish(maze: &maze::Maze, choice: maze::Point) -> bool {
-    choice.row > 0
-        && choice.row < maze.rows() - 1
-        && choice.col > 0
-        && choice.col < maze.cols() - 1
-        && (maze.get(choice.row, choice.col) & maze::PATH_BIT) != 0
-        && (maze.get(choice.row, choice.col) & FINISH_BIT) == 0
-        && (maze.get(choice.row, choice.col) & START_BIT) == 0
-}
-
-#[inline]
-fn color_index(square: maze::Square) -> usize {
-    ((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize
-}
-
-#[inline]
-fn is_start(square: maze::Square) -> bool {
-    (square & START_BIT) != 0
-}
-
-#[inline]
-fn is_finish(square: maze::Square) -> bool {
-    (square & FINISH_BIT) != 0
-}
-
-#[inline]
-fn is_start_or_finish(square: maze::Square) -> bool {
-    (square & (START_BIT | FINISH_BIT)) != 0
-}
-
-#[inline]
-fn is_color(square: maze::Square) -> bool {
-    (square & THREAD_MASK) != 0
-}
-
-// Read Only Data Available to All Solvers
-pub const START_BIT: ThreadPaint = 0b0100_0000_0000_0000;
-pub const FINISH_BIT: ThreadPaint = 0b1000_0000_0000_0000;
-pub const NUM_THREADS: usize = 4;
-pub const NUM_DIRECTIONS: usize = 4;
-pub const THREAD_TAG_OFFSET: usize = 4;
-pub const NUM_GATHER_FINISHES: usize = 4;
-pub const INITIAL_PATH_LEN: usize = 1024;
-pub const THREAD_MASK: ThreadPaint = 0b1111_0000;
-pub const ZERO_THREAD: ThreadPaint = 0b0001_0000;
-pub const ONE_THREAD: ThreadPaint = 0b0010_0000;
-pub const TWO_THREAD: ThreadPaint = 0b0100_0000;
-pub const THREE_THREAD: ThreadPaint = 0b1000_0000;
-pub const THREAD_MASKS: [ThreadPaint; 4] = [ZERO_THREAD, ONE_THREAD, TWO_THREAD, THREE_THREAD];
-
-pub const CACHE_MASK: ThreadCache = 0b1111_0000_0000;
-
-pub const SOLVER_SPEEDS: [SolveSpeedUnit; 8] = [0, 20000, 10000, 5000, 2000, 1000, 500, 250];

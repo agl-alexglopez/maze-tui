@@ -355,9 +355,10 @@ fn carve_forward_wall_history(
     let mut wall_changes = [tape::Delta::default(); 5];
     let mut burst = 1;
     let before = maze.get(p.row, p.col);
-    let mut after = (before & !build::MARKERS_MASK) | maze::PATH_BIT | build::BUILDER_BIT;
+    let mut after =
+        ((before & !build::MARKERS_MASK) & !maze::WALL_MASK) | maze::PATH_BIT | build::BUILDER_BIT;
     *maze.get_mut(p.row, p.col) =
-        (before & !build::MARKERS_MASK) | maze::PATH_BIT | build::BUILDER_BIT;
+        ((before & !build::MARKERS_MASK) & !maze::WALL_MASK) | maze::PATH_BIT | build::BUILDER_BIT;
     if p.row > min_row {
         after |= direction;
         *maze.get_mut(p.row, p.col) |= direction;
@@ -554,7 +555,7 @@ fn shoot_mini_laser(maze: &maze::Maze, current_row: i32) {
             },
             maze.offset(),
         );
-        if (maze.get(current_row + 1, c) & maze::PATH_BIT) == 0 {
+        if maze.wall_at(current_row + 1, c) {
             queue!(
                 stdout,
                 SetBackgroundColor(Color::AnsiValue(HUNTING)),
@@ -610,7 +611,7 @@ fn flush_mini_carver(maze: &maze::Maze, p: maze::Point, animation: build::SpeedU
         },
         maze.offset(),
     );
-    if (maze.get(p.row - 1, p.col) & maze::PATH_BIT) == 0 {
+    if maze.wall_at(p.row - 1, p.col) {
         execute!(
             io::stdout(),
             SetBackgroundColor(Color::AnsiValue(CARVING)),

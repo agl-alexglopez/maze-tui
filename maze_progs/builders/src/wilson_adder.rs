@@ -318,19 +318,21 @@ fn erase_loop_history(maze: &mut maze::Maze, mut walk: Loop) {
         maze.build_history.push(tape::Delta {
             id: walk.walk,
             before: walk_square,
-            after: ((walk_square & !WALK_BIT) & !build::MARKERS_MASK) | maze::PATH_BIT,
+            after: (((walk_square & !WALK_BIT) & !maze::WALL_MASK) & !build::MARKERS_MASK)
+                | maze::PATH_BIT,
             burst: 1,
         });
         maze.build_history.push(tape::Delta {
             id: half_step,
             before: half_square,
-            after: (half_square & !build::MARKERS_MASK) | maze::PATH_BIT,
+            after: ((half_square & !build::MARKERS_MASK) & !maze::WALL_MASK) | maze::PATH_BIT,
             burst: 1,
         });
         *maze.get_mut(half_step.row, half_step.col) =
-            (half_square & !build::MARKERS_MASK) | maze::PATH_BIT;
+            ((half_square & !build::MARKERS_MASK) & !maze::WALL_MASK) | maze::PATH_BIT;
         *maze.get_mut(walk.walk.row, walk.walk.col) =
-            ((walk_square & !WALK_BIT) & !build::MARKERS_MASK) | maze::PATH_BIT;
+            (((walk_square & !WALK_BIT) & !maze::WALL_MASK) & !build::MARKERS_MASK)
+                | maze::PATH_BIT;
         walk.walk = next;
     }
 }
@@ -813,13 +815,11 @@ fn is_valid_step(maze: &maze::Maze, next: maze::Point, prev: maze::Point) -> boo
 }
 
 fn backtrack_point(maze: &maze::Maze, walk: &maze::Point) -> &'static maze::Point {
-    &build::BACKTRACKING_POINTS
-        [((maze.get(walk.row, walk.col) & build::MARKERS_MASK) >> build::MARKER_SHIFT) as usize]
+    &build::BACKTRACKING_POINTS[(maze.get(walk.row, walk.col) & build::MARKERS_MASK) as usize]
 }
 
 fn backtrack_half_step(maze: &maze::Maze, walk: &maze::Point) -> &'static maze::Point {
-    &build::BACKTRACKING_HALF_POINTS
-        [((maze.get(walk.row, walk.col) & build::MARKERS_MASK) >> build::MARKER_SHIFT) as usize]
+    &build::BACKTRACKING_HALF_POINTS[(maze.get(walk.row, walk.col) & build::MARKERS_MASK) as usize]
 }
 
 fn found_loop(maze: &maze::Maze, p: maze::Point) -> bool {

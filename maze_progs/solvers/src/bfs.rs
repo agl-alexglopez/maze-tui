@@ -45,6 +45,7 @@ pub fn hunt_history(monitor: monitor::MazeMonitor) {
                 solve::ThreadGuide {
                     index: i_thread + 1,
                     paint: mask,
+                    cache: solve::THREAD_CACHES[i_thread + 1],
                     start: all_start,
                     speed: 0,
                 },
@@ -56,6 +57,7 @@ pub fn hunt_history(monitor: monitor::MazeMonitor) {
         solve::ThreadGuide {
             index: 0,
             paint: solve::THREAD_MASKS[0],
+            cache: solve::THREAD_CACHES[0],
             start: all_start,
             speed: 0,
         },
@@ -127,6 +129,7 @@ pub fn gather_history(monitor: monitor::MazeMonitor) {
                 solve::ThreadGuide {
                     index: i_thread + 1,
                     paint: mask,
+                    cache: solve::THREAD_CACHES[i_thread + 1],
                     start: all_start,
                     speed: 0,
                 },
@@ -138,6 +141,7 @@ pub fn gather_history(monitor: monitor::MazeMonitor) {
         solve::ThreadGuide {
             index: 0,
             paint: solve::THREAD_MASKS[0],
+            cache: solve::THREAD_CACHES[0],
             start: all_start,
             speed: 0,
         },
@@ -185,19 +189,21 @@ pub fn corner_history(monitor: monitor::MazeMonitor) {
             lk.maze.solve_history.push(tape::Delta {
                 id: next,
                 before: next_square,
-                after: next_square | maze::PATH_BIT,
+                after: (next_square & !maze::WALL_MASK) | maze::PATH_BIT,
                 burst: BURST,
             });
-            *lk.maze.get_mut(next.row, next.col) |= maze::PATH_BIT;
+            *lk.maze.get_mut(next.row, next.col) =
+                (next_square & !maze::WALL_MASK) | maze::PATH_BIT;
         }
         let finish_square = lk.maze.get(finish.row, finish.col);
         lk.maze.solve_history.push(tape::Delta {
             id: finish,
             before: finish_square,
-            after: finish_square | solve::FINISH_BIT | maze::PATH_BIT,
+            after: (finish_square & !maze::WALL_MASK) | solve::FINISH_BIT | maze::PATH_BIT,
             burst: BURST,
         });
-        *lk.maze.get_mut(finish.row, finish.col) |= solve::FINISH_BIT | maze::PATH_BIT;
+        *lk.maze.get_mut(finish.row, finish.col) =
+            (finish_square & !maze::WALL_MASK) | solve::FINISH_BIT | maze::PATH_BIT;
         all_starts
     } else {
         print::maze_panic!("Thread panick.");
@@ -213,6 +219,7 @@ pub fn corner_history(monitor: monitor::MazeMonitor) {
                 solve::ThreadGuide {
                     index: i_thread + 1,
                     paint: mask,
+                    cache: solve::THREAD_CACHES[i_thread + 1],
                     start: all_starts[i_thread + 1],
                     speed: 0,
                 },
@@ -225,6 +232,7 @@ pub fn corner_history(monitor: monitor::MazeMonitor) {
         solve::ThreadGuide {
             index: 0,
             paint: solve::THREAD_MASKS[0],
+            cache: solve::THREAD_CACHES[0],
             start: all_starts[0],
             speed: 0,
         },
@@ -279,6 +287,7 @@ pub fn hunt(monitor: monitor::MazeReceiver) {
                 solve::ThreadGuide {
                     index: i_thread + 1,
                     paint: mask,
+                    cache: solve::THREAD_CACHES[i_thread + 1],
                     start: all_start,
                     speed: 0,
                 },
@@ -290,6 +299,7 @@ pub fn hunt(monitor: monitor::MazeReceiver) {
         solve::ThreadGuide {
             index: 0,
             paint: solve::THREAD_MASKS[0],
+            cache: solve::THREAD_CACHES[0],
             start: all_start,
             speed: 0,
         },
@@ -347,6 +357,7 @@ pub fn animate_hunt(monitor: monitor::MazeReceiver, speed: speed::Speed) {
                 solve::ThreadGuide {
                     index: i_thread + 1,
                     paint: mask,
+                    cache: solve::THREAD_CACHES[i_thread + 1],
                     start: all_start,
                     speed: animation,
                 },
@@ -359,6 +370,7 @@ pub fn animate_hunt(monitor: monitor::MazeReceiver, speed: speed::Speed) {
         solve::ThreadGuide {
             index: 0,
             paint: solve::THREAD_MASKS[0],
+            cache: solve::THREAD_CACHES[0],
             start: all_start,
             speed: animation,
         },
@@ -407,6 +419,7 @@ fn animate_mini_hunt(monitor: monitor::MazeReceiver, speed: speed::Speed) {
                 solve::ThreadGuide {
                     index: i_thread + 1,
                     paint: mask,
+                    cache: solve::THREAD_CACHES[i_thread + 1],
                     start: all_start,
                     speed: animation,
                 },
@@ -419,6 +432,7 @@ fn animate_mini_hunt(monitor: monitor::MazeReceiver, speed: speed::Speed) {
         solve::ThreadGuide {
             index: 0,
             paint: solve::THREAD_MASKS[0],
+            cache: solve::THREAD_CACHES[0],
             start: all_start,
             speed: animation,
         },
@@ -463,6 +477,7 @@ pub fn gather(monitor: monitor::MazeReceiver) {
                 solve::ThreadGuide {
                     index: i_thread + 1,
                     paint: mask,
+                    cache: solve::THREAD_CACHES[i_thread + 1],
                     start: all_start,
                     speed: 0,
                 },
@@ -475,6 +490,7 @@ pub fn gather(monitor: monitor::MazeReceiver) {
         solve::ThreadGuide {
             index: 0,
             paint: solve::THREAD_MASKS[0],
+            cache: solve::THREAD_CACHES[0],
             start: all_start,
             speed: 0,
         },
@@ -529,6 +545,7 @@ pub fn animate_gather(monitor: monitor::MazeReceiver, speed: speed::Speed) {
                 solve::ThreadGuide {
                     index: i_thread + 1,
                     paint: mask,
+                    cache: solve::THREAD_CACHES[i_thread + 1],
                     start: all_start,
                     speed: animation,
                 },
@@ -540,6 +557,7 @@ pub fn animate_gather(monitor: monitor::MazeReceiver, speed: speed::Speed) {
         solve::ThreadGuide {
             index: 0,
             paint: solve::THREAD_MASKS[0],
+            cache: solve::THREAD_CACHES[0],
             start: all_start,
             speed: animation,
         },
@@ -577,6 +595,7 @@ fn animate_mini_gather(monitor: monitor::MazeReceiver, speed: speed::Speed) {
                 solve::ThreadGuide {
                     index: i_thread + 1,
                     paint: mask,
+                    cache: solve::THREAD_CACHES[i_thread + 1],
                     start: all_start,
                     speed: animation,
                 },
@@ -588,6 +607,7 @@ fn animate_mini_gather(monitor: monitor::MazeReceiver, speed: speed::Speed) {
         solve::ThreadGuide {
             index: 0,
             paint: solve::THREAD_MASKS[0],
+            cache: solve::THREAD_CACHES[0],
             start: all_start,
             speed: animation,
         },
@@ -612,10 +632,13 @@ pub fn corner(monitor: monitor::MazeReceiver) {
                 row: finish.row + p.row,
                 col: finish.col + p.col,
             };
-            *lk.maze.get_mut(next.row, next.col) |= maze::PATH_BIT;
+            *lk.maze.get_mut(next.row, next.col) =
+                (lk.maze.get(next.row, next.col) & !maze::WALL_MASK) | maze::PATH_BIT;
         }
-        *lk.maze.get_mut(finish.row, finish.col) |= solve::FINISH_BIT;
-        *lk.maze.get_mut(finish.row, finish.col) |= maze::PATH_BIT;
+        *lk.maze.get_mut(finish.row, finish.col) = (lk.maze.get(finish.row, finish.col)
+            & !maze::WALL_MASK)
+            | solve::FINISH_BIT
+            | maze::PATH_BIT;
         all_starts
     } else {
         print::maze_panic!("Thread panick.");
@@ -631,6 +654,7 @@ pub fn corner(monitor: monitor::MazeReceiver) {
                 solve::ThreadGuide {
                     index: i_thread + 1,
                     paint: mask,
+                    cache: solve::THREAD_CACHES[i_thread + 1],
                     start: all_starts[i_thread + 1],
                     speed: 0,
                 },
@@ -643,6 +667,7 @@ pub fn corner(monitor: monitor::MazeReceiver) {
         solve::ThreadGuide {
             index: 0,
             paint: solve::THREAD_MASKS[0],
+            cache: solve::THREAD_CACHES[0],
             start: all_starts[0],
             speed: 0,
         },
@@ -695,12 +720,15 @@ pub fn animate_corner(monitor: monitor::MazeReceiver, speed: speed::Speed) {
                 row: finish.row + p.row,
                 col: finish.col + p.col,
             };
-            *lk.maze.get_mut(next.row, next.col) |= maze::PATH_BIT;
+            *lk.maze.get_mut(next.row, next.col) =
+                (lk.maze.get(next.row, next.col) & !maze::WALL_MASK) | maze::PATH_BIT;
             solve::flush_cursor_path_coordinate(&lk.maze, next);
             thread::sleep(time::Duration::from_micros(animation));
         }
-        *lk.maze.get_mut(finish.row, finish.col) |= solve::FINISH_BIT;
-        *lk.maze.get_mut(finish.row, finish.col) |= maze::PATH_BIT;
+        *lk.maze.get_mut(finish.row, finish.col) = (lk.maze.get(finish.row, finish.col)
+            & !maze::WALL_MASK)
+            | solve::FINISH_BIT
+            | maze::PATH_BIT;
         solve::flush_cursor_path_coordinate(&lk.maze, finish);
         thread::sleep(time::Duration::from_micros(animation));
         all_starts
@@ -718,6 +746,7 @@ pub fn animate_corner(monitor: monitor::MazeReceiver, speed: speed::Speed) {
                 solve::ThreadGuide {
                     index: i_thread + 1,
                     paint: mask,
+                    cache: solve::THREAD_CACHES[i_thread + 1],
                     start: all_starts[i_thread + 1],
                     speed: animation,
                 },
@@ -730,6 +759,7 @@ pub fn animate_corner(monitor: monitor::MazeReceiver, speed: speed::Speed) {
         solve::ThreadGuide {
             index: 0,
             paint: solve::THREAD_MASKS[0],
+            cache: solve::THREAD_CACHES[0],
             start: all_starts[0],
             speed: animation,
         },
@@ -773,12 +803,15 @@ fn animate_mini_corner(monitor: monitor::MazeReceiver, speed: speed::Speed) {
                 row: finish.row + p.row,
                 col: finish.col + p.col,
             };
-            *lk.maze.get_mut(next.row, next.col) |= maze::PATH_BIT;
+            *lk.maze.get_mut(next.row, next.col) =
+                (lk.maze.get(next.row, next.col) & !maze::WALL_MASK) | maze::PATH_BIT;
             solve::flush_mini_path_coordinate(&lk.maze, next);
             thread::sleep(time::Duration::from_micros(animation));
         }
-        *lk.maze.get_mut(finish.row, finish.col) |= solve::FINISH_BIT;
-        *lk.maze.get_mut(finish.row, finish.col) |= maze::PATH_BIT;
+        *lk.maze.get_mut(finish.row, finish.col) = (lk.maze.get(finish.row, finish.col)
+            & !maze::WALL_MASK)
+            | solve::FINISH_BIT
+            | maze::PATH_BIT;
         solve::flush_mini_path_coordinate(&lk.maze, finish);
         thread::sleep(time::Duration::from_micros(animation));
         all_starts
@@ -796,6 +829,7 @@ fn animate_mini_corner(monitor: monitor::MazeReceiver, speed: speed::Speed) {
                 solve::ThreadGuide {
                     index: i_thread + 1,
                     paint: mask,
+                    cache: solve::THREAD_CACHES[i_thread + 1],
                     start: all_starts[i_thread + 1],
                     speed: animation,
                 },
@@ -808,6 +842,7 @@ fn animate_mini_corner(monitor: monitor::MazeReceiver, speed: speed::Speed) {
         solve::ThreadGuide {
             index: 0,
             paint: solve::THREAD_MASKS[0],
+            cache: solve::THREAD_CACHES[0],
             start: all_starts[0],
             speed: animation,
         },
@@ -841,7 +876,7 @@ fn hunter_history(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
                 return;
             }
             let square = lk.maze.get(cur.row, cur.col);
-            if (lk.maze.get(cur.row, cur.col) & solve::FINISH_BIT) != 0 {
+            if solve::is_finish(lk.maze.get(cur.row, cur.col)) {
                 lk.maze.solve_history.push(tape::Delta {
                     id: cur,
                     before: square,
@@ -883,7 +918,7 @@ fn hunter_history(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
             };
             if match monitor.lock() {
                 Err(p) => print::maze_panic!("Thread panicked: {}", p),
-                Ok(lk) => (lk.maze.get(next.row, next.col) & maze::PATH_BIT) != 0,
+                Ok(lk) => maze::is_path(lk.maze.get(next.row, next.col)),
             } && !parents.contains_key(&next)
             {
                 parents.insert(next, cur);
@@ -901,8 +936,8 @@ fn gatherer_history(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
     while let Some(cur) = bfs.pop_front() {
         if let Ok(mut lk) = monitor.lock() {
             let before = lk.maze.get(cur.row, cur.col);
-            let finish = (before & solve::FINISH_BIT) != 0;
-            let first = (before & solve::CACHE_MASK) == 0;
+            let finish = solve::is_finish(before);
+            let first = !solve::any_thread_visited(before);
             // We can only stop looking if we are the first to this finish. Keep looking otherwise.
             match (finish, first) {
                 (true, true) => {
@@ -947,7 +982,7 @@ fn gatherer_history(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
             };
             if match monitor.lock() {
                 Err(p) => print::maze_panic!("Thread panicked: {}", p),
-                Ok(lk) => (lk.maze.get(next.row, next.col) & maze::PATH_BIT) != 0,
+                Ok(lk) => maze::is_path(lk.maze.get(next.row, next.col)),
             } && !parents.contains_key(&next)
             {
                 parents.insert(next, cur);
@@ -996,7 +1031,7 @@ fn hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
             };
             if match monitor.solver.lock() {
                 Err(p) => print::maze_panic!("Thread panicked: {}", p),
-                Ok(lk) => (lk.maze.get(next.row, next.col) & maze::PATH_BIT) != 0,
+                Ok(lk) => lk.maze.path_at(next.row, next.col),
             } && !parents.contains_key(&next)
             {
                 parents.insert(next, cur);
@@ -1047,7 +1082,7 @@ fn animated_hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
             };
             if match monitor.solver.lock() {
                 Err(p) => print::maze_panic!("Thread panicked: {}", p),
-                Ok(lk) => (lk.maze.get(next.row, next.col) & maze::PATH_BIT) != 0,
+                Ok(lk) => lk.maze.path_at(next.row, next.col),
             } && !parents.contains_key(&next)
             {
                 parents.insert(next, cur);
@@ -1098,7 +1133,7 @@ fn animated_mini_hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuid
             };
             if match monitor.solver.lock() {
                 Err(p) => print::maze_panic!("Thread panicked: {}", p),
-                Ok(lk) => (lk.maze.get(next.row, next.col) & maze::PATH_BIT) != 0,
+                Ok(lk) => lk.maze.path_at(next.row, next.col),
             } && !parents.contains_key(&next)
             {
                 parents.insert(next, cur);
@@ -1143,7 +1178,7 @@ fn gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
             };
             if match monitor.solver.lock() {
                 Err(p) => print::maze_panic!("Thread panicked: {}", p),
-                Ok(lk) => (lk.maze.get(next.row, next.col) & maze::PATH_BIT) != 0,
+                Ok(lk) => lk.maze.path_at(next.row, next.col),
             } && !parents.contains_key(&next)
             {
                 parents.insert(next, cur);
@@ -1195,7 +1230,7 @@ fn animated_gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) 
             };
             if match monitor.solver.lock() {
                 Err(p) => print::maze_panic!("Thread panicked: {}", p),
-                Ok(lk) => (lk.maze.get(next.row, next.col) & maze::PATH_BIT) != 0,
+                Ok(lk) => lk.maze.path_at(next.row, next.col),
             } && !parents.contains_key(&next)
             {
                 parents.insert(next, cur);
@@ -1247,7 +1282,7 @@ fn animated_mini_gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGu
             };
             if match monitor.solver.lock() {
                 Err(p) => print::maze_panic!("Thread panicked: {}", p),
-                Ok(lk) => (lk.maze.get(next.row, next.col) & maze::PATH_BIT) != 0,
+                Ok(lk) => lk.maze.path_at(next.row, next.col),
             } && !parents.contains_key(&next)
             {
                 parents.insert(next, cur);

@@ -276,9 +276,7 @@ fn new_tape(run: &tables::HistoryRunner) -> Playback {
 }
 
 fn new_home_tape(rect: Rect) -> Playback {
-    let mut run_bg = set_random_args(&rect);
-    run_bg.build = builders::recursive_backtracker::generate_history;
-    run_bg.solve = solvers::bfs::hunt_history;
+    let run_bg = set_random_args(&rect);
     let bg_maze = monitor::Monitor::new(maze::Maze::new(run_bg.args));
     (run_bg.build)(bg_maze.clone());
     (run_bg.solve)(bg_maze.clone());

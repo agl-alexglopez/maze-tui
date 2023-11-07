@@ -17,7 +17,7 @@ use std::io::{self};
 use std::{thread, time};
 
 pub type SpeedUnit = u64;
-pub type BacktrackMarker = u16;
+pub type BacktrackMarker = u32;
 
 #[derive(PartialEq, Eq)]
 pub enum ParityPoint {
@@ -32,15 +32,14 @@ pub struct BacktrackSymbol {
 }
 
 // Any builders that choose to cache seen squares in place can use this bit.
-pub const BUILDER_BIT: maze::Square = 0b0001_0000_0000_0000;
+pub const BUILDER_BIT: maze::Square = 0b0001_0000_0000_0000_0000_0000_0000_0000;
 // Data that will help backtracker algorithms like recursive backtracker and Wilson's.
-pub const MARKER_SHIFT: u8 = 4;
 pub const NUM_DIRECTIONS: usize = 4;
-pub const MARKERS_MASK: BacktrackMarker = 0b1111_0000;
-pub const FROM_NORTH: BacktrackMarker = 0b0001_0000;
-pub const FROM_EAST: BacktrackMarker = 0b0010_0000;
-pub const FROM_SOUTH: BacktrackMarker = 0b0011_0000;
-pub const FROM_WEST: BacktrackMarker = 0b0100_0000;
+pub const MARKERS_MASK: BacktrackMarker = 0b1111;
+pub const FROM_NORTH: BacktrackMarker = 0b0001;
+pub const FROM_EAST: BacktrackMarker = 0b0010;
+pub const FROM_SOUTH: BacktrackMarker = 0b0011;
+pub const FROM_WEST: BacktrackMarker = 0b0100;
 pub const ANSI_WHITE: u8 = 15;
 pub static BACKTRACKING_SYMBOLS: [BacktrackSymbol; 5] = [
     BacktrackSymbol {
@@ -167,7 +166,7 @@ pub fn is_marked(square: maze::Square) -> bool {
 
 #[inline]
 fn get_mark(square: maze::Square) -> BacktrackSymbol {
-    BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize]
+    BACKTRACKING_SYMBOLS[(square & MARKERS_MASK) as usize]
 }
 
 /// WALL ADDER HELPERS-------------------------------------------------------------------
@@ -566,7 +565,8 @@ pub fn mark_mini_origin_animated(
 }
 
 pub fn carve_path_walls(maze: &mut maze::Maze, p: maze::Point) {
-    *maze.get_mut(p.row, p.col) |= maze::PATH_BIT | BUILDER_BIT;
+    let square = maze.get(p.row, p.col);
+    *maze.get_mut(p.row, p.col) = (square & !maze::WALL_MASK) | maze::PATH_BIT | BUILDER_BIT;
     if p.row > 0 {
         *maze.get_mut(p.row - 1, p.col) &= !maze::SOUTH_WALL;
     }
@@ -584,13 +584,15 @@ pub fn carve_path_walls(maze: &mut maze::Maze, p: maze::Point) {
 pub fn carve_wall_history(maze: &mut maze::Maze, p: maze::Point, backtracking: BacktrackMarker) {
     let mut wall_changes = [tape::Delta::default(); 5];
     let mut burst = 1;
+    let before = maze.get(p.row, p.col);
     wall_changes[0] = tape::Delta {
         id: p,
-        before: maze.get(p.row, p.col),
-        after: maze.get(p.row, p.col) | maze::PATH_BIT | BUILDER_BIT | backtracking,
+        before,
+        after: (before & !maze::WALL_MASK) | maze::PATH_BIT | BUILDER_BIT | backtracking,
         burst,
     };
-    *maze.get_mut(p.row, p.col) |= maze::PATH_BIT | BUILDER_BIT | backtracking;
+    *maze.get_mut(p.row, p.col) =
+        (before & !maze::WALL_MASK) | maze::PATH_BIT | BUILDER_BIT | backtracking;
     if p.row > 0 {
         let square = maze.get(p.row - 1, p.col);
         wall_changes[burst] = tape::Delta {
@@ -652,7 +654,8 @@ pub fn carve_wall_history(maze: &mut maze::Maze, p: maze::Point, backtracking: B
 }
 
 pub fn carve_path_walls_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUnit) {
-    *maze.get_mut(p.row, p.col) |= maze::PATH_BIT | BUILDER_BIT;
+    let square = maze.get(p.row, p.col);
+    *maze.get_mut(p.row, p.col) = (square & !maze::WALL_MASK) | maze::PATH_BIT | BUILDER_BIT;
     flush_cursor_maze_coordinate(maze, p);
     thread::sleep(time::Duration::from_micros(speed));
     if p.row > 0 && maze.wall_at(p.row - 1, p.col) {
@@ -702,7 +705,8 @@ pub fn carve_path_walls_animated(maze: &mut maze::Maze, p: maze::Point, speed: S
 }
 
 pub fn carve_mini_walls_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUnit) {
-    *maze.get_mut(p.row, p.col) |= maze::PATH_BIT | BUILDER_BIT;
+    let square = maze.get(p.row, p.col);
+    *maze.get_mut(p.row, p.col) = (square & !maze::WALL_MASK) | maze::PATH_BIT | BUILDER_BIT;
     print::set_cursor_position(
         maze::Point {
             row: (p.row) / 2,
@@ -1108,7 +1112,8 @@ pub fn build_path(maze: &mut maze::Maze, p: maze::Point) {
     if p.col + 1 < maze.cols() {
         *maze.get_mut(p.row, p.col + 1) &= !maze::WEST_WALL;
     }
-    *maze.get_mut(p.row, p.col) |= maze::PATH_BIT;
+    let square = maze.get(p.row, p.col);
+    *maze.get_mut(p.row, p.col) = (square & !maze::WALL_MASK) | maze::PATH_BIT;
 }
 
 pub fn build_path_history(maze: &mut maze::Maze, p: maze::Point) -> usize {
@@ -1118,10 +1123,10 @@ pub fn build_path_history(maze: &mut maze::Maze, p: maze::Point) -> usize {
     wall_changes[0] = tape::Delta {
         id: p,
         before: square,
-        after: square | maze::PATH_BIT,
+        after: (square & !maze::WALL_MASK) | maze::PATH_BIT,
         burst,
     };
-    *maze.get_mut(p.row, p.col) |= maze::PATH_BIT;
+    *maze.get_mut(p.row, p.col) = (square & !maze::WALL_MASK) | maze::PATH_BIT;
     if p.row > 0 {
         square = maze.get(p.row - 1, p.col);
         wall_changes[burst] = tape::Delta {
@@ -1184,7 +1189,8 @@ pub fn build_path_history(maze: &mut maze::Maze, p: maze::Point) -> usize {
 }
 
 pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUnit) {
-    *maze.get_mut(p.row, p.col) |= maze::PATH_BIT;
+    let square = maze.get(p.row, p.col);
+    *maze.get_mut(p.row, p.col) = (square & !maze::WALL_MASK) | maze::PATH_BIT;
     flush_cursor_maze_coordinate(maze, p);
     thread::sleep(time::Duration::from_micros(speed));
     if p.row > 0 && maze.wall_at(p.row - 1, p.col) {
@@ -1234,7 +1240,8 @@ pub fn build_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUn
 }
 
 pub fn build_mini_path_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUnit) {
-    *maze.get_mut(p.row, p.col) |= maze::PATH_BIT;
+    let square = maze.get(p.row, p.col);
+    *maze.get_mut(p.row, p.col) = (square & !maze::WALL_MASK) | maze::PATH_BIT;
     flush_mini_coordinate(maze, p);
     thread::sleep(time::Duration::from_micros(speed));
     if p.row > 0 && maze.wall_at(p.row - 1, p.col) {
@@ -1368,7 +1375,7 @@ pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
         }
     } else if maze::is_wall(square) {
         Cell {
-            symbol: wall_row[(square & maze::WALL_MASK) as usize].to_string(),
+            symbol: wall_row[((square & maze::WALL_MASK) >> maze::WALL_SHIFT) as usize].to_string(),
             fg: RatColor::Reset,
             bg: RatColor::Reset,
             underline_color: RatColor::Reset,
@@ -1512,7 +1519,7 @@ pub fn print_square(maze: &maze::Maze, p: maze::Point) {
     let square = maze.get(p.row, p.col);
     print::set_cursor_position(p, maze.offset());
     if square & MARKERS_MASK != 0 {
-        let mark = BACKTRACKING_SYMBOLS[((square & MARKERS_MASK) >> MARKER_SHIFT) as usize];
+        let mark = get_mark(square);
         queue!(
             io::stdout(),
             SetAttribute(Attribute::Bold),
@@ -1554,13 +1561,9 @@ pub fn flush_mini_backtracker_coordinate(maze: &maze::Maze, p: maze::Point) {
         }
         let mut color = 0;
         if p.row % 2 != 0 && p.row > 0 {
-            color = BACKTRACKING_SYMBOLS
-                [((maze.get(p.row - 1, p.col) & MARKERS_MASK) >> MARKER_SHIFT) as usize]
-                .ansi;
+            color = get_mark(maze.get(p.row - 1, p.col)).ansi;
         } else if p.row + 1 < maze.rows() {
-            color = BACKTRACKING_SYMBOLS
-                [((maze.get(p.row + 1, p.col) & MARKERS_MASK) >> MARKER_SHIFT) as usize]
-                .ansi;
+            color = get_mark(maze.get(p.row + 1, p.col)).ansi;
         }
         execute!(
             io::stdout(),
@@ -1727,7 +1730,7 @@ pub fn flush_bit_vals(maze: &maze::Maze) {
                     true => 1,
                     false => 0,
                 },
-                square & maze::WALL_MASK
+                (square & maze::WALL_MASK) >> maze::WALL_SHIFT
             );
         }
         eprintln!();

@@ -34,8 +34,7 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
                 continue 'branching;
             }
         }
-        let dir: build::BacktrackMarker =
-            (lk.maze.get(cur.row, cur.col) & build::MARKERS_MASK) >> build::MARKER_SHIFT;
+        let dir: build::BacktrackMarker = lk.maze.get(cur.row, cur.col) & build::MARKERS_MASK;
         // The solvers will need these bits later so we need to clear bits.
         let half: &maze::Point = &build::BACKTRACKING_HALF_POINTS[dir as usize];
         let backtracking: &maze::Point = &build::BACKTRACKING_POINTS[dir as usize];
@@ -95,8 +94,7 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
                 continue 'branching;
             }
         }
-        let dir: build::BacktrackMarker =
-            (lk.maze.get(cur.row, cur.col) & build::MARKERS_MASK) >> build::MARKER_SHIFT;
+        let dir: build::BacktrackMarker = lk.maze.get(cur.row, cur.col) & build::MARKERS_MASK;
         // The solvers will need these bits later so we need to clear bits.
         let half: &maze::Point = &build::BACKTRACKING_HALF_POINTS[dir as usize];
         let backtracking: &maze::Point = &build::BACKTRACKING_POINTS[dir as usize];
@@ -153,8 +151,7 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
                 continue 'branching;
             }
         }
-        let dir: build::BacktrackMarker =
-            (lk.maze.get(cur.row, cur.col) & build::MARKERS_MASK) >> build::MARKER_SHIFT;
+        let dir: build::BacktrackMarker = lk.maze.get(cur.row, cur.col) & build::MARKERS_MASK;
         // The solvers will need these bits later so we need to clear bits.
         let backtracking: &maze::Point = &build::BACKTRACKING_POINTS[dir as usize];
         let half: &maze::Point = &build::BACKTRACKING_HALF_POINTS[dir as usize];
@@ -210,8 +207,7 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
                 continue 'branching;
             }
         }
-        let dir: build::BacktrackMarker =
-            (lk.maze.get(cur.row, cur.col) & build::MARKERS_MASK) >> build::MARKER_SHIFT;
+        let dir: build::BacktrackMarker = lk.maze.get(cur.row, cur.col) & build::MARKERS_MASK;
         // The solvers will need these bits later so we need to clear bits.
         let backtracking: &maze::Point = &build::BACKTRACKING_POINTS[dir as usize];
         let half: &maze::Point = &build::BACKTRACKING_HALF_POINTS[dir as usize];

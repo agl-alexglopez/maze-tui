@@ -23,28 +23,20 @@
 // The maze builder is responsible for zeroing out the direction bits as part of the
 // building process. When solving the maze we adjust how we use the middle bits.
 //
-// wall structure----------------------||||
-// ------------------------------------||||
-// 0 thread paint--------------------| ||||
-// 1 thread paint-------------------|| ||||
-// 2 thread paint------------------||| ||||
-// 3 thread paint-----------------|||| ||||
-// -------------------------------|||| ||||
-// 0 thread cache---------------| |||| ||||
-// 1 thread cache--------------|| |||| ||||
-// 2 thread cache-------------||| |||| ||||
-// 3 thread cache------------|||| |||| ||||
-// --------------------------|||| |||| ||||
-// maze build bit----------| |||| |||| ||||
-// maze paths bit---------|| |||| |||| ||||
-// maze start bit--------||| |||| |||| ||||
-// maze goals bit-------|||| |||| |||| ||||
-//                    0b0000 0000 0000 0000
+// 24 bit thread color mixing-----|---------------------------|
+// ------------------------------ |||| |||| |||| |||| |||| ||||
+// walls / thread cache------|||| |||| |||| |||| |||| |||| ||||
+// --------------------------|||| |||| |||| |||| |||| |||| ||||
+// maze build bit----------| |||| |||| |||| |||| |||| |||| ||||
+// maze paths bit---------|| |||| |||| |||| |||| |||| |||| ||||
+// maze start bit--------||| |||| |||| |||| |||| |||| |||| ||||
+// maze goals bit-------|||| |||| |||| |||| |||| |||| |||| ||||
+//                    0b0000 0000 0000 0000 0000 0000 0000 0000
 
 // Public Types
 
-pub type Square = u16;
-pub type WallLine = u16;
+pub type Square = u32;
+pub type WallLine = u32;
 
 #[derive(Default, Debug, PartialEq, Eq, Hash, Copy, Clone)]
 pub struct Point {
@@ -135,7 +127,8 @@ impl Maze {
 
     #[inline]
     pub fn wall_char(&self, square: Square) -> char {
-        WALL_STYLES[(self.maze.wall_style_index * WALL_ROW) + (square & WALL_MASK) as usize]
+        WALL_STYLES[(self.maze.wall_style_index * WALL_ROW)
+            + ((square & WALL_MASK) >> WALL_SHIFT) as usize]
     }
 
     #[inline]
@@ -198,7 +191,8 @@ impl Blueprint {
 
     #[inline]
     pub fn wall_char(&self, square: Square) -> char {
-        WALL_STYLES[(self.wall_style_index * WALL_ROW) + (square & WALL_MASK) as usize]
+        WALL_STYLES
+            [(self.wall_style_index * WALL_ROW) + ((square & WALL_MASK) >> WALL_SHIFT) as usize]
     }
 
     #[inline]
@@ -242,7 +236,7 @@ pub fn wall_row(row_index: usize) -> &'static [char] {
 
 #[inline]
 pub fn wall_char(style_index: usize, square: Square) -> char {
-    WALL_STYLES[style_index * WALL_ROW + (square & WALL_MASK) as usize]
+    WALL_STYLES[style_index * WALL_ROW + ((square & WALL_MASK) >> WALL_SHIFT) as usize]
 }
 
 #[inline]
@@ -256,21 +250,18 @@ pub fn is_path(square: Square) -> bool {
 }
 
 // Any modification made to these bits by a builder MUST be cleared before build process completes.
-pub const CLEAR_AVAILABLE_BITS: Square = 0b0001_1111_1111_0000;
+pub const CLEAR_AVAILABLE_BITS: Square = 0x10FFFFFF;
 
 pub const DEFAULT_ROWS: i32 = 31;
 pub const DEFAULT_COLS: i32 = 111;
-pub const PATH_BIT: Square = 0b0010_0000_0000_0000;
-pub const WALL_MASK: WallLine = 0b1111;
-pub const FLOATING_WALL: WallLine = 0b0000;
-pub const NORTH_WALL: WallLine = 0b0001;
-pub const NORTH_WALL_SHIFT: WallLine = 0;
-pub const EAST_WALL: WallLine = 0b0010;
-pub const EAST_WALL_SHIFT: WallLine = 1;
-pub const SOUTH_WALL: WallLine = 0b0100;
-pub const SOUTH_WALL_SHIFT: WallLine = 2;
-pub const WEST_WALL: WallLine = 0b1000;
-pub const WEST_WALL_SHIFT: WallLine = 3;
+pub const PATH_BIT: Square = 0x20000000;
+pub const WALL_MASK: WallLine = 0xF000000;
+pub const WALL_SHIFT: usize = 24;
+pub const FLOATING_WALL: WallLine = 0b0;
+pub const NORTH_WALL: WallLine = 0x1000000;
+pub const EAST_WALL: WallLine = 0x2000000;
+pub const SOUTH_WALL: WallLine = 0x4000000;
+pub const WEST_WALL: WallLine = 0x8000000;
 // Walls are constructed in terms of other walls they need to connect to. For example, read
 // 0b0011 as, "this is a wall square that must connect to other walls to the East and North."
 const WALL_ROW: usize = 16;

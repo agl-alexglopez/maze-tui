@@ -519,11 +519,15 @@ fn build_walk_square(maze: &mut maze::Maze, p: maze::Point) {
     wall_changes[0] = tape::Delta {
         id: p,
         before,
-        after: (before & !WALK_BIT) & !build::MARKERS_MASK | maze::PATH_BIT | build::BUILDER_BIT,
+        after: (((before & !WALK_BIT) & !maze::WALL_MASK) & !build::MARKERS_MASK)
+            | maze::PATH_BIT
+            | build::BUILDER_BIT,
         burst,
     };
-    *maze.get_mut(p.row, p.col) =
-        (before & !WALK_BIT) & !build::MARKERS_MASK | maze::PATH_BIT | build::BUILDER_BIT;
+    *maze.get_mut(p.row, p.col) = (((before & !WALK_BIT) & !maze::WALL_MASK)
+        & !build::MARKERS_MASK)
+        | maze::PATH_BIT
+        | build::BUILDER_BIT;
     if p.row > 0 {
         let square = maze.get(p.row - 1, p.col);
         wall_changes[burst] = tape::Delta {
@@ -767,13 +771,11 @@ fn is_valid_step(maze: &maze::Maze, next: maze::Point, prev: maze::Point) -> boo
 }
 
 fn backtrack_point(maze: &maze::Maze, walk: &maze::Point) -> &'static maze::Point {
-    &build::BACKTRACKING_POINTS
-        [((maze.get(walk.row, walk.col) & build::MARKERS_MASK) >> build::MARKER_SHIFT) as usize]
+    &build::BACKTRACKING_POINTS[(maze.get(walk.row, walk.col) & build::MARKERS_MASK) as usize]
 }
 
 fn backtrack_half_step(maze: &maze::Maze, walk: &maze::Point) -> &'static maze::Point {
-    &build::BACKTRACKING_HALF_POINTS
-        [((maze.get(walk.row, walk.col) & build::MARKERS_MASK) >> build::MARKER_SHIFT) as usize]
+    &build::BACKTRACKING_HALF_POINTS[(maze.get(walk.row, walk.col) & build::MARKERS_MASK) as usize]
 }
 
 fn found_loop(maze: &maze::Maze, p: maze::Point) -> bool {
