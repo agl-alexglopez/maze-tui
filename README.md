@@ -23,7 +23,7 @@ $ cd maze_tui/maze_progs/
 $ cargo run --release --bin run_tui
 ```
 
-You will be greeted by the home page. Read the directions or if you just want to see some cool maze animations right away press `<Enter>`. If you choose to specify arguments and wish to see maze building or solving algorithms animated, be sure to enter the animation speed with the `-ba` or `-sa` flags. See the introduction below.
+You will be greeted by the home page. Read the directions or if you just want to see some cool maze animations right away press `<Enter>`. Check out the pausing, arrow commands, and stepping capabilities for how to control the animation you are watching. See the introduction below.
 
 ## Run TUI Program
 
@@ -109,7 +109,7 @@ Enjoy!
 
 The underlying principles for this program are as follows.
 
-1. Build a maze by representing paths and walls in a `u16` integer.
+1. Build a maze by representing paths and walls in a `u32` integer.
 2. Use logical and visually pleasing unicode characters to represent the walls and features of the maze.
 3. Solve the maze with various algorithms, both single and multi-threaded, so that we can observe important features of the mazes.
 
