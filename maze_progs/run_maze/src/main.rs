@@ -1,6 +1,5 @@
-use builders::build::{self, flush_grid};
+use builders::build::flush_grid;
 use crossbeam_channel::bounded;
-
 use std::env;
 
 fn main() {
@@ -67,7 +66,6 @@ fn main() {
     }
     print::clear_screen();
     let maze = maze::Maze::new(run.args);
-    build::print_overlap_key(&maze);
     let monitor = monitor::MazeReceiver::new(maze, worker);
     match run.build_view {
         tables::ViewingMode::StaticImage => {
@@ -226,7 +224,6 @@ fn print_usage() {
     │   │     │ bfs-hunt - Breadth First Search     │   │   │ │   │     │ │
     ├─┐ │ ┌─┐ └─bfs-gather - Breadth First Search─┐ ╵ ╷ ├─╴ │ └─┐ ├───╴ │ │
     │ │ │ │ │   bfs-corners - Breadth First Search│   │ │   │   │ │     │ │
-    │ │ │ │ │   dark[solver]-[game] - A mystery...│   │ │   │   │ │     │ │
     │ │ │ ╵ └─-d Draw flag. Set the line style for the maze.┴─┐ └─┘ ┌─┬─┘ │
     │ │ │       sharp - The default straight lines. │   │     │     │ │   │
     │ │ └─┬───╴ round - Rounded corners.──╴ │ ╷ ╵ ╵ │ ╶─┴─┐ ╶─┴─────┘ │ ╶─┤

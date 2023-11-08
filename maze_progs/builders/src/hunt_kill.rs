@@ -186,7 +186,7 @@ fn carve_forward_wall_history(
     direction: DirectionMarker,
     min_row: i32,
 ) {
-    let mut wall_changes = [tape::Delta::default(); 5];
+    let mut wall_changes = [maze::Delta::default(); 5];
     let mut burst = 1;
     let before = maze.get(p.row, p.col);
     let mut after =
@@ -197,7 +197,7 @@ fn carve_forward_wall_history(
         after |= direction;
         *maze.get_mut(p.row, p.col) |= direction;
     }
-    wall_changes[0] = tape::Delta {
+    wall_changes[0] = maze::Delta {
         id: p,
         before,
         after,
@@ -205,7 +205,7 @@ fn carve_forward_wall_history(
     };
     if p.row > 0 {
         let square = maze.get(p.row - 1, p.col);
-        wall_changes[burst] = tape::Delta {
+        wall_changes[burst] = maze::Delta {
             id: maze::Point {
                 row: p.row - 1,
                 col: p.col,
@@ -219,7 +219,7 @@ fn carve_forward_wall_history(
     }
     if p.row + 1 < maze.rows() {
         let square = maze.get(p.row + 1, p.col);
-        wall_changes[burst] = tape::Delta {
+        wall_changes[burst] = maze::Delta {
             id: maze::Point {
                 row: p.row + 1,
                 col: p.col,
@@ -233,7 +233,7 @@ fn carve_forward_wall_history(
     }
     if p.col > 0 {
         let square = maze.get(p.row, p.col - 1);
-        wall_changes[burst] = tape::Delta {
+        wall_changes[burst] = maze::Delta {
             id: maze::Point {
                 row: p.row,
                 col: p.col - 1,
@@ -247,7 +247,7 @@ fn carve_forward_wall_history(
     }
     if p.col + 1 < maze.cols() {
         let square = maze.get(p.row, p.col + 1);
-        wall_changes[burst] = tape::Delta {
+        wall_changes[burst] = maze::Delta {
             id: maze::Point {
                 row: p.row,
                 col: p.col + 1,
@@ -268,7 +268,7 @@ fn hunter_laser_history(maze: &mut maze::Maze, current_row: i32) {
     let mut delta_vec = Vec::new();
     for c in 0..maze.cols() {
         let square = maze.get(current_row, c);
-        delta_vec.push(tape::Delta {
+        delta_vec.push(maze::Delta {
             id: maze::Point {
                 row: current_row,
                 col: c,
@@ -289,7 +289,7 @@ fn reset_hunter_laser_history(maze: &mut maze::Maze, current_row: i32) {
         let mut delta_vec = Vec::with_capacity((maze.cols() * 2) as usize);
         for c in 0..maze.cols() {
             let square = maze.get(current_row, c);
-            delta_vec.push(tape::Delta {
+            delta_vec.push(maze::Delta {
                 id: maze::Point {
                     row: current_row,
                     col: c,
@@ -300,7 +300,7 @@ fn reset_hunter_laser_history(maze: &mut maze::Maze, current_row: i32) {
             });
             *maze.get_mut(current_row, c) &= !build::MARKERS_MASK;
             let next_square = maze.get(current_row + 1, c);
-            delta_vec.push(tape::Delta {
+            delta_vec.push(maze::Delta {
                 id: maze::Point {
                     row: current_row + 1,
                     col: c,
@@ -319,7 +319,7 @@ fn reset_hunter_laser_history(maze: &mut maze::Maze, current_row: i32) {
     let mut delta_vec = Vec::with_capacity(maze.cols() as usize);
     for c in 0..maze.cols() {
         let square = maze.get(current_row, c);
-        delta_vec.push(tape::Delta {
+        delta_vec.push(maze::Delta {
             id: maze::Point {
                 row: current_row,
                 col: c,
@@ -352,8 +352,7 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    let mut gen = thread_rng();
+        let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
         row: 2 * (gen.gen_range(1..lk.maze.rows() - 2) / 2) + 1,
         col: 2 * (gen.gen_range(1..lk.maze.cols() - 2) / 2) + 1,
@@ -441,8 +440,7 @@ pub fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    let mut gen = thread_rng();
+        let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
         row: 2 * (gen.gen_range(1..lk.maze.rows() - 2) / 2) + 1,
         col: 2 * (gen.gen_range(1..lk.maze.cols() - 2) / 2) + 1,

@@ -126,8 +126,7 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    let walls = load_shuffled_walls(&lk.maze);
+        let walls = load_shuffled_walls(&lk.maze);
     let ids = tag_cells(&lk.maze);
     let mut sets = disjoint::DisjointSet::new(ids.len());
 
@@ -178,8 +177,7 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    let walls = load_shuffled_walls(&lk.maze);
+        let walls = load_shuffled_walls(&lk.maze);
     let ids = tag_cells(&lk.maze);
     let mut sets = disjoint::DisjointSet::new(ids.len());
 

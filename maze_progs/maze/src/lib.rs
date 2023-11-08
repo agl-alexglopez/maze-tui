@@ -2,23 +2,17 @@
 //
 // When building the maze here is how we will use the available bits.
 //
-// wall structure----------------------||||
-// ------------------------------------||||
-// 0 backtrack marker bit------------| ||||
-// 1 backtrack marker bit ----------|| ||||
-// 2 backtrack marker bit----------||| ||||
-// 3 unused-----------------------|||| ||||
-// -------------------------------|||| ||||
-// 0 unused bit-----------------| |||| ||||
-// 1 unused bit----------------|| |||| ||||
-// 2 unused bit---------------||| |||| ||||
-// 3 unused bit--------------|||| |||| ||||
-// --------------------------|||| |||| ||||
-// maze build bit----------| |||| |||| ||||
-// maze paths bit---------|| |||| |||| ||||
-// maze start bit--------||| |||| |||| ||||
-// maze goals bit-------|||| |||| |||| ||||
-//                    0b0000 0000 0000 0000
+// We may use some color mixing bits for backtracking info.
+// However, they must be cleared if used before algorithm finishes.
+// 24 bit thread color mixing-----|---------------------------|
+// ------------------------------ |||| |||| |||| |||| |||| ||||
+// walls / thread cache------|||| |||| |||| |||| |||| |||| ||||
+// --------------------------|||| |||| |||| |||| |||| |||| ||||
+// maze build bit----------| |||| |||| |||| |||| |||| |||| ||||
+// maze paths bit---------|| |||| |||| |||| |||| |||| |||| ||||
+// maze start bit--------||| |||| |||| |||| |||| |||| |||| ||||
+// maze goals bit-------|||| |||| |||| |||| |||| |||| |||| ||||
+//                    0b0000 0000 0000 0000 0000 0000 0000 0000
 //
 // The maze builder is responsible for zeroing out the direction bits as part of the
 // building process. When solving the maze we adjust how we use the middle bits.
@@ -32,6 +26,7 @@
 // maze start bit--------||| |||| |||| |||| |||| |||| |||| ||||
 // maze goals bit-------|||| |||| |||| |||| |||| |||| |||| ||||
 //                    0b0000 0000 0000 0000 0000 0000 0000 0000
+use std::ops::{Index, IndexMut};
 
 // Public Types
 
@@ -70,6 +65,7 @@ pub struct MazeArgs {
     pub style: MazeStyle,
 }
 
+// This is at the core of our maze. The fundamental information and structure we need.
 #[derive(Debug, Clone, Default)]
 pub struct Blueprint {
     pub buf: Vec<Square>,
@@ -79,13 +75,87 @@ pub struct Blueprint {
     pub wall_style_index: usize,
 }
 
-// Model a ROWxCOLUMN maze in a flat Vec. Implement tricky indexing in Index impls.
+// We will also be tracking how our maze changes for the TUI animation playback.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Delta {
+    pub id: Point,
+    pub before: Square,
+    pub after: Square,
+    // We can enter deltas into our Tape but then specify how many squares to change in one frame.
+    pub burst: usize,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct Tape {
+    steps: Vec<Delta>,
+    i: usize,
+}
+
+// Our maze now comes with the ability to track the history of algorithms that made and solved it.
 #[derive(Debug, Clone, Default)]
 pub struct Maze {
     pub maze: Blueprint,
-    pub build_history: tape::Tape<Point, Square>,
-    pub solve_history: tape::Tape<Point, Square>,
+    pub build_history: Tape,
+    pub solve_history: Tape,
 }
+// Read Only Data Available to Any Maze Users
+
+// Any modification made to these bits by a builder MUST be cleared before build process completes.
+pub const CLEAR_AVAILABLE_BITS: Square = 0x10FFFFFF;
+
+pub const DEFAULT_ROWS: i32 = 31;
+pub const DEFAULT_COLS: i32 = 111;
+pub const PATH_BIT: Square = 0x20000000;
+pub const WALL_MASK: WallLine = 0xF000000;
+pub const WALL_SHIFT: usize = 24;
+pub const FLOATING_WALL: WallLine = 0b0;
+pub const NORTH_WALL: WallLine = 0x1000000;
+pub const EAST_WALL: WallLine = 0x2000000;
+pub const SOUTH_WALL: WallLine = 0x4000000;
+pub const WEST_WALL: WallLine = 0x8000000;
+// Walls are constructed in terms of other walls they need to connect to. For example, read
+// 0b0011 as, "this is a wall square that must connect to other walls to the East and North."
+const WALL_ROW: usize = 16;
+pub static WALL_STYLES: [char; 128] = [
+    // 0bWestSouthEastNorth. Note: 0b0000 is a floating wall with no walls around.
+    // Then, count from 0 (0b0000) to 15 (0b1111) in binary to form different wall shapes.
+    // mini
+    '▀', '▀', '▀', '▀', '█', '█', '█', '█', '▀', '▀', '▀', '▀', '█', '█', '█', '█',
+    // sharp
+    '■', '╵', '╶', '└', '╷', '│', '┌', '├', '╴', '┘', '─', '┴', '┐', '┤', '┬', '┼',
+    // rounded
+    '●', '╵', '╶', '╰', '╷', '│', '╭', '├', '╴', '╯', '─', '┴', '╮', '┤', '┬', '┼',
+    // doubles
+    '◫', '║', '═', '╚', '║', '║', '╔', '╠', '═', '╝', '═', '╩', '╗', '╣', '╦', '╬',
+    // bold
+    '■', '╹', '╺', '┗', '╻', '┃', '┏', '┣', '╸', '┛', '━', '┻', '┓', '┫', '┳', '╋',
+    // contrast
+    '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█',
+    // half
+    '▄', '█', '▄', '█', '▄', '█', '▄', '█', '▄', '█', '▄', '█', '▄', '█', '▄', '█',
+    // spikes
+    '✸', '╀', '┾', '╊', '╁', '╂', '╆', '╊', '┽', '╃', '┿', '╇', '╅', '╉', '╈', '╋',
+];
+
+// north, east, south, west provided to any users of a maze for convenience.
+pub const CARDINAL_DIRECTIONS: [Point; 4] = [
+    Point { row: -1, col: 0 },
+    Point { row: 0, col: 1 },
+    Point { row: 1, col: 0 },
+    Point { row: 0, col: -1 },
+];
+
+// south, south-east, east, north-east, north, north-west, west, south-west
+pub const ALL_DIRECTIONS: [Point; 8] = [
+    Point { row: 1, col: 0 },
+    Point { row: 1, col: 1 },
+    Point { row: 0, col: 1 },
+    Point { row: -1, col: 1 },
+    Point { row: -1, col: 0 },
+    Point { row: -1, col: -1 },
+    Point { row: 0, col: -1 },
+    Point { row: 1, col: -1 },
+];
 
 // Core Maze Object Implementation
 
@@ -105,8 +175,8 @@ impl Maze {
                 offset: args.offset,
                 wall_style_index: args.style as usize,
             },
-            build_history: tape::Tape::default(),
-            solve_history: tape::Tape::default(),
+            build_history: Tape::default(),
+            solve_history: Tape::default(),
         }
     }
 
@@ -227,7 +297,154 @@ impl Default for MazeArgs {
     }
 }
 
-// Read Only Data Available to Any Maze Users
+///
+/// The Tape data structure implementation is concerned with sensible ways to step through the
+/// history of deltas as a maze build and solve operation completes. We only need an index and
+/// we track deltas as simple before and after u32's and what square changed.
+///
+
+impl Index<usize> for Tape {
+    type Output = Delta;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.steps[index]
+    }
+}
+
+impl IndexMut<usize> for Tape {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.steps[index]
+    }
+}
+
+impl Tape {
+    pub fn slice(&self, start: usize, end: usize) -> &[Delta] {
+        &self.steps[start..end]
+    }
+
+    pub fn slice_mut(&mut self, start: usize, end: usize) -> &mut [Delta] {
+        &mut self.steps[start..end]
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.steps.is_empty()
+    }
+
+    pub fn end(&mut self) {
+        if self.steps.is_empty() {
+            panic!("no tape to end because no deltas provided");
+        }
+        self.i = self.steps.len() - 1;
+    }
+
+    pub fn start(&mut self) {
+        if self.steps.is_empty() {
+            panic!("no tape to start because no deltas provided");
+        }
+        self.i = 0;
+    }
+
+    pub fn len(&self) -> usize {
+        self.steps.len()
+    }
+
+    pub fn cur_step(&self) -> Option<&[Delta]> {
+        if self.steps.is_empty() {
+            return None;
+        }
+        Some(&self.steps[self.i..self.i + self.steps[self.i].burst])
+    }
+
+    fn peek_next_index(&self) -> usize {
+        if self.steps.is_empty() || self.i + self.steps[self.i].burst >= self.steps.len() {
+            return self.i;
+        }
+        self.i + self.steps[self.i].burst
+    }
+
+    fn peek_prev_index(&self) -> usize {
+        if self.steps.is_empty()
+            || self.i == 0
+            || self.i.overflowing_sub(self.steps[self.i - 1].burst).1
+        {
+            return self.i;
+        }
+        self.i - self.steps[self.i - 1].burst
+    }
+
+    pub fn peek_next_delta(&self) -> Option<&[Delta]> {
+        if self.i + self.steps[self.i].burst >= self.steps.len() {
+            return None;
+        }
+        Some(&self.steps[self.i..self.i + self.steps[self.i].burst])
+    }
+
+    pub fn peek_prev_delta(&self) -> Option<&[Delta]> {
+        if self.i == 0 || self.i.overflowing_sub(self.steps[self.i - 1].burst).1 {
+            return None;
+        }
+        Some(&self.steps[self.i - self.steps[self.i - 1].burst..self.i])
+    }
+
+    pub fn next_delta(&mut self) -> Option<&[Delta]> {
+        if self.steps.is_empty() || self.i + self.steps[self.i].burst >= self.steps.len() {
+            return None;
+        }
+        self.i += self.steps[self.i].burst;
+        Some(&self.steps[self.i..self.i + self.steps[self.i].burst])
+    }
+
+    pub fn prev_delta(&mut self) -> Option<&[Delta]> {
+        if self.i == 0 || self.i.overflowing_sub(self.steps[self.i - 1].burst).1 {
+            return None;
+        }
+        self.i -= self.steps[self.i - 1].burst;
+        Some(&self.steps[self.i..self.i + self.steps[self.i].burst])
+    }
+
+    pub fn push_burst(&mut self, steps: &[Delta]) {
+        if !steps.is_empty()
+            && (steps[0].burst != steps.len() || steps[steps.len() - 1].burst != steps.len())
+        {
+            panic!(
+                "ill formed burst input burst burst[0]={},burst[burst-1]={}, len {}",
+                steps[0].burst,
+                steps[steps.len() - 1].burst,
+                steps.len()
+            );
+        }
+        for s in steps.iter() {
+            self.steps.push(*s);
+        }
+    }
+
+    pub fn push(&mut self, s: Delta) {
+        self.steps.push(s);
+    }
+
+    pub fn at_end(&self) -> bool {
+        self.i == self.peek_next_index()
+    }
+
+    pub fn at_start(&self) -> bool {
+        self.i == self.peek_prev_index()
+    }
+
+    pub fn set_prev(&mut self) -> bool {
+        let prev = self.i;
+        self.i = self.peek_prev_index();
+        self.i != prev
+    }
+
+    pub fn set_next(&mut self) -> bool {
+        let prev = self.i;
+        self.i = self.peek_next_index();
+        self.i != prev
+    }
+}
+
+///
+/// Free functions for when the maze object is not present but we still want static info.
+///
 
 #[inline]
 pub fn wall_row(row_index: usize) -> &'static [char] {
@@ -248,60 +465,3 @@ pub fn is_wall(square: Square) -> bool {
 pub fn is_path(square: Square) -> bool {
     (square & PATH_BIT) != 0
 }
-
-// Any modification made to these bits by a builder MUST be cleared before build process completes.
-pub const CLEAR_AVAILABLE_BITS: Square = 0x10FFFFFF;
-
-pub const DEFAULT_ROWS: i32 = 31;
-pub const DEFAULT_COLS: i32 = 111;
-pub const PATH_BIT: Square = 0x20000000;
-pub const WALL_MASK: WallLine = 0xF000000;
-pub const WALL_SHIFT: usize = 24;
-pub const FLOATING_WALL: WallLine = 0b0;
-pub const NORTH_WALL: WallLine = 0x1000000;
-pub const EAST_WALL: WallLine = 0x2000000;
-pub const SOUTH_WALL: WallLine = 0x4000000;
-pub const WEST_WALL: WallLine = 0x8000000;
-// Walls are constructed in terms of other walls they need to connect to. For example, read
-// 0b0011 as, "this is a wall square that must connect to other walls to the East and North."
-const WALL_ROW: usize = 16;
-pub static WALL_STYLES: [char; 128] = [
-    // 0bWestSouthEastNorth. Note: 0b0000 is a floating wall with no walls around.
-    // Then, count from 0 (0b0000) to 15 (0b1111) in binary to form different wall shapes.
-    // mini
-    '▀', '▀', '▀', '▀', '█', '█', '█', '█', '▀', '▀', '▀', '▀', '█', '█', '█', '█',
-    // sharp
-    '■', '╵', '╶', '└', '╷', '│', '┌', '├', '╴', '┘', '─', '┴', '┐', '┤', '┬', '┼',
-    // rounded
-    '●', '╵', '╶', '╰', '╷', '│', '╭', '├', '╴', '╯', '─', '┴', '╮', '┤', '┬', '┼',
-    // doubles
-    '◫', '║', '═', '╚', '║', '║', '╔', '╠', '═', '╝', '═', '╩', '╗', '╣', '╦', '╬',
-    // bold
-    '■', '╹', '╺', '┗', '╻', '┃', '┏', '┣', '╸', '┛', '━', '┻', '┓', '┫', '┳', '╋',
-    // contrast
-    '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█', '█',
-    // half
-    '▄', '█', '▄', '█', '▄', '█', '▄', '█', '▄', '█', '▄', '█', '▄', '█', '▄', '█',
-    // spikes
-    '✸', '╀', '┾', '╊', '╁', '╂', '╆', '╊', '┽', '╃', '┿', '╇', '╅', '╉', '╈', '╋',
-];
-
-// north, east, south, west provided to any users of a maze for convenience.
-pub const CARDINAL_DIRECTIONS: [Point; 4] = [
-    Point { row: -1, col: 0 },
-    Point { row: 0, col: 1 },
-    Point { row: 1, col: 0 },
-    Point { row: 0, col: -1 },
-];
-
-// south, south-east, east, north-east, north, north-west, west, south-west
-pub const ALL_DIRECTIONS: [Point; 8] = [
-    Point { row: 1, col: 0 },
-    Point { row: 1, col: 1 },
-    Point { row: 0, col: 1 },
-    Point { row: -1, col: 1 },
-    Point { row: -1, col: 0 },
-    Point { row: -1, col: -1 },
-    Point { row: 0, col: -1 },
-    Point { row: 1, col: -1 },
-];

@@ -44,14 +44,12 @@ version = "0.1.0"
 dependencies = [
  "crossbeam-channel",
  "crossterm 0.26.1",
- "key",
  "maze",
  "monitor",
  "print",
  "rand",
  "ratatui",
  "speed",
- "tape",
 ]
 
 [[package]]
@@ -140,17 +138,13 @@ dependencies = [
 name = "demo"
 version = "0.1.0"
 dependencies = [
- "builders",
  "crossbeam-channel",
  "crossterm 0.26.1",
  "ctrlc",
  "maze",
  "monitor",
- "painters",
  "print",
  "rand",
- "solvers",
- "speed",
  "tables",
 ]
 
@@ -203,14 +197,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "key"
-version = "0.1.0"
-dependencies = [
- "maze",
- "print",
-]
-
-[[package]]
 name = "libc"
 version = "0.2.149"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -244,9 +230,6 @@ dependencies = [
 [[package]]
 name = "maze"
 version = "0.1.0"
-dependencies = [
- "tape",
-]
 
 [[package]]
 name = "mio"
@@ -297,7 +280,6 @@ dependencies = [
  "rand",
  "solvers",
  "speed",
- "tape",
 ]
 
 [[package]]
@@ -430,8 +412,6 @@ dependencies = [
  "monitor",
  "print",
  "rand",
- "solvers",
- "speed",
  "tables",
 ]
 
@@ -442,17 +422,13 @@ dependencies = [
  "builders",
  "crossbeam-channel",
  "crossterm 0.27.0",
- "ctrlc",
  "maze",
  "monitor",
- "painters",
  "print",
  "rand",
  "ratatui",
  "solvers",
- "speed",
  "tables",
- "tape",
  "tui-textarea",
 ]
 
@@ -511,14 +487,12 @@ dependencies = [
  "builders",
  "crossbeam-channel",
  "crossterm 0.26.1",
- "key",
  "maze",
  "monitor",
  "print",
  "rand",
  "ratatui",
  "speed",
- "tape",
 ]
 
 [[package]]
@@ -569,10 +543,6 @@ dependencies = [
  "solvers",
  "speed",
 ]
-
-[[package]]
-name = "tape"
-version = "0.1.0"
 
 [[package]]
 name = "tui-textarea"

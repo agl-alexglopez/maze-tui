@@ -135,8 +135,7 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    let mut rng = thread_rng();
+        let mut rng = thread_rng();
     let mut dfs: Vec<maze::Point> = Vec::from([maze::Point {
         row: 2 * (rng.gen_range(1..lk.maze.rows() - 1) / 2) + 1,
         col: 2 * (rng.gen_range(1..lk.maze.cols() - 1) / 2) + 1,
@@ -181,8 +180,7 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    let mut rng = thread_rng();
+        let mut rng = thread_rng();
     let mut dfs: Vec<maze::Point> = Vec::from([maze::Point {
         row: 2 * (rng.gen_range(1..lk.maze.rows() - 1) / 2) + 1,
         col: 2 * (rng.gen_range(1..lk.maze.cols() - 1) / 2) + 1,

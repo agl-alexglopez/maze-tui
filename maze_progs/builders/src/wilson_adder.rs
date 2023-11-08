@@ -248,14 +248,14 @@ fn erase_loop_history(maze: &mut maze::Maze, mut walk: Loop) {
             row: walk.walk.row + dir.row,
             col: walk.walk.col + dir.col,
         };
-        maze.build_history.push(tape::Delta {
+        maze.build_history.push(maze::Delta {
             id: walk.walk,
             before: walk_square,
             after: (((walk_square & !WALK_BIT) & !maze::WALL_MASK) & !build::MARKERS_MASK)
                 | maze::PATH_BIT,
             burst: 1,
         });
-        maze.build_history.push(tape::Delta {
+        maze.build_history.push(maze::Delta {
             id: half_step,
             before: half_square,
             after: ((half_square & !build::MARKERS_MASK) & !maze::WALL_MASK) | maze::PATH_BIT,
@@ -319,13 +319,13 @@ pub fn mark_line_history(maze: &mut maze::Maze, walk: maze::Point, next: maze::P
     } else {
         print::maze_panic!("next cannot be equal to walk");
     };
-    maze.build_history.push(tape::Delta {
+    maze.build_history.push(maze::Delta {
         id: wall,
         before: wall_before,
         after: maze.get(wall.row, wall.col),
         burst: 1,
     });
-    maze.build_history.push(tape::Delta {
+    maze.build_history.push(maze::Delta {
         id: next,
         before: next_before,
         after: maze.get(next.row, next.col),
@@ -334,13 +334,13 @@ pub fn mark_line_history(maze: &mut maze::Maze, walk: maze::Point, next: maze::P
 }
 
 fn build_walk_line_history(maze: &mut maze::Maze, p: maze::Point) {
-    let mut wall_changes = [tape::Delta::default(); 5];
+    let mut wall_changes = [maze::Delta::default(); 5];
     let mut burst = 1;
     let mut wall: maze::WallLine = 0b0;
     let square = maze.get(p.row, p.col);
     if p.row > 0 && maze.wall_at(p.row - 1, p.col) {
         let neighbor = maze.get(p.row - 1, p.col);
-        wall_changes[burst] = tape::Delta {
+        wall_changes[burst] = maze::Delta {
             id: maze::Point {
                 row: p.row - 1,
                 col: p.col,
@@ -355,7 +355,7 @@ fn build_walk_line_history(maze: &mut maze::Maze, p: maze::Point) {
     }
     if p.row + 1 < maze.rows() && maze.wall_at(p.row + 1, p.col) {
         let neighbor = maze.get(p.row + 1, p.col);
-        wall_changes[burst] = tape::Delta {
+        wall_changes[burst] = maze::Delta {
             id: maze::Point {
                 row: p.row + 1,
                 col: p.col,
@@ -370,7 +370,7 @@ fn build_walk_line_history(maze: &mut maze::Maze, p: maze::Point) {
     }
     if p.col > 0 && maze.wall_at(p.row, p.col - 1) {
         let neighbor = maze.get(p.row, p.col - 1);
-        wall_changes[burst] = tape::Delta {
+        wall_changes[burst] = maze::Delta {
             id: maze::Point {
                 row: p.row,
                 col: p.col - 1,
@@ -385,7 +385,7 @@ fn build_walk_line_history(maze: &mut maze::Maze, p: maze::Point) {
     }
     if p.col + 1 < maze.cols() && maze.wall_at(p.row, p.col + 1) {
         let neighbor = maze.get(p.row, p.col + 1);
-        wall_changes[burst] = tape::Delta {
+        wall_changes[burst] = maze::Delta {
             id: maze::Point {
                 row: p.row,
                 col: p.col + 1,
@@ -398,7 +398,7 @@ fn build_walk_line_history(maze: &mut maze::Maze, p: maze::Point) {
         *maze.get_mut(p.row, p.col + 1) |= maze::WEST_WALL;
         wall |= maze::EAST_WALL;
     }
-    wall_changes[0] = tape::Delta {
+    wall_changes[0] = maze::Delta {
         id: p,
         before: square,
         after: ((square | wall | build::BUILDER_BIT) & !maze::PATH_BIT)
@@ -448,8 +448,7 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::build_wall_outline(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    let mut rng = thread_rng();
+        let mut rng = thread_rng();
     let mut cur = RandomWalk {
         prev_row_start: 2,
         prev: maze::Point { row: 0, col: 0 },
@@ -497,8 +496,7 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::build_wall_outline(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    let mut rng = thread_rng();
+        let mut rng = thread_rng();
     let mut cur = RandomWalk {
         prev_row_start: 2,
         prev: maze::Point { row: 0, col: 0 },

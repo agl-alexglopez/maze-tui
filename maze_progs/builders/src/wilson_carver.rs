@@ -265,13 +265,13 @@ fn erase_loop_history(maze: &mut maze::Maze, mut walk: Loop) {
             row: walk.walk.row + dir.row,
             col: walk.walk.col + dir.col,
         };
-        maze.build_history.push(tape::Delta {
+        maze.build_history.push(maze::Delta {
             id: walk.walk,
             before: walk_square,
             after: (walk_square & !WALK_BIT) & !build::MARKERS_MASK,
             burst: 1,
         });
-        maze.build_history.push(tape::Delta {
+        maze.build_history.push(maze::Delta {
             id: half_step,
             before: half_square,
             after: half_square & !build::MARKERS_MASK,
@@ -304,10 +304,10 @@ fn connect_walk_history(maze: &mut maze::Maze, mut walk: maze::Point) {
 }
 
 fn build_walk_square(maze: &mut maze::Maze, p: maze::Point) {
-    let mut wall_changes = [tape::Delta::default(); 5];
+    let mut wall_changes = [maze::Delta::default(); 5];
     let mut burst = 1;
     let before = maze.get(p.row, p.col);
-    wall_changes[0] = tape::Delta {
+    wall_changes[0] = maze::Delta {
         id: p,
         before,
         after: (((before & !WALK_BIT) & !maze::WALL_MASK) & !build::MARKERS_MASK)
@@ -321,7 +321,7 @@ fn build_walk_square(maze: &mut maze::Maze, p: maze::Point) {
         | build::BUILDER_BIT;
     if p.row > 0 {
         let square = maze.get(p.row - 1, p.col);
-        wall_changes[burst] = tape::Delta {
+        wall_changes[burst] = maze::Delta {
             id: maze::Point {
                 row: p.row - 1,
                 col: p.col,
@@ -335,7 +335,7 @@ fn build_walk_square(maze: &mut maze::Maze, p: maze::Point) {
     }
     if p.row + 1 < maze.rows() {
         let square = maze.get(p.row + 1, p.col);
-        wall_changes[burst] = tape::Delta {
+        wall_changes[burst] = maze::Delta {
             id: maze::Point {
                 row: p.row + 1,
                 col: p.col,
@@ -349,7 +349,7 @@ fn build_walk_square(maze: &mut maze::Maze, p: maze::Point) {
     }
     if p.col > 0 {
         let square = maze.get(p.row, p.col - 1);
-        wall_changes[burst] = tape::Delta {
+        wall_changes[burst] = maze::Delta {
             id: maze::Point {
                 row: p.row,
                 col: p.col - 1,
@@ -363,7 +363,7 @@ fn build_walk_square(maze: &mut maze::Maze, p: maze::Point) {
     }
     if p.col + 1 < maze.cols() {
         let square = maze.get(p.row, p.col + 1);
-        wall_changes[burst] = tape::Delta {
+        wall_changes[burst] = maze::Delta {
             id: maze::Point {
                 row: p.row,
                 col: p.col + 1,
@@ -416,8 +416,7 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    let mut rng = thread_rng();
+        let mut rng = thread_rng();
     let start = maze::Point {
         row: 2 * (rng.gen_range(2..lk.maze.rows() - 1) / 2) + 1,
         col: 2 * (rng.gen_range(2..lk.maze.cols() - 1) / 2) + 1,
@@ -470,8 +469,7 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    let mut rng = thread_rng();
+        let mut rng = thread_rng();
     let start = maze::Point {
         row: 2 * (rng.gen_range(2..lk.maze.rows() - 1) / 2) + 1,
         col: 2 * (rng.gen_range(2..lk.maze.cols() - 1) / 2) + 1,

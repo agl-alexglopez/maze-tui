@@ -36,8 +36,8 @@ impl error::Error for Quit {}
 #[derive(Debug, Clone)]
 struct Playback {
     maze: maze::Blueprint,
-    build_tape: tape::Tape<maze::Point, maze::Square>,
-    solve_tape: tape::Tape<maze::Point, maze::Square>,
+    build_tape: maze::Tape,
+    solve_tape: maze::Tape,
     forward: bool,
     pause: bool,
     speed: Duration,

@@ -278,7 +278,7 @@ pub fn hunt_history(monitor: monitor::MazeMonitor) {
     let all_start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         let all_start = solve::pick_random_point(&lk.maze);
         let start_square = lk.maze.get(all_start.row, all_start.col);
-        lk.maze.solve_history.push(tape::Delta {
+        lk.maze.solve_history.push(maze::Delta {
             id: all_start,
             before: start_square,
             after: start_square | solve::START_BIT,
@@ -287,7 +287,7 @@ pub fn hunt_history(monitor: monitor::MazeMonitor) {
         *lk.maze.get_mut(all_start.row, all_start.col) |= solve::START_BIT;
         let finish: maze::Point = solve::pick_random_point(&lk.maze);
         let finish_square = lk.maze.get(finish.row, finish.col);
-        lk.maze.solve_history.push(tape::Delta {
+        lk.maze.solve_history.push(maze::Delta {
             id: finish,
             before: finish_square,
             after: finish_square | solve::FINISH_BIT,
@@ -335,7 +335,7 @@ pub fn corner_history(monitor: monitor::MazeMonitor) {
         let corner_starts = solve::set_corner_starts(&lk.maze);
         for p in corner_starts {
             let start_square = lk.maze.get(p.row, p.col);
-            lk.maze.solve_history.push(tape::Delta {
+            lk.maze.solve_history.push(maze::Delta {
                 id: p,
                 before: start_square,
                 after: start_square | solve::START_BIT,
@@ -354,7 +354,7 @@ pub fn corner_history(monitor: monitor::MazeMonitor) {
                 col: finish.col + d.col,
             };
             let next_square = lk.maze.get(next.row, next.col);
-            lk.maze.solve_history.push(tape::Delta {
+            lk.maze.solve_history.push(maze::Delta {
                 id: next,
                 before: next_square,
                 after: (next_square & !maze::WALL_MASK) | maze::PATH_BIT,
@@ -364,7 +364,7 @@ pub fn corner_history(monitor: monitor::MazeMonitor) {
                 (next_square & !maze::WALL_MASK) | maze::PATH_BIT;
         }
         let finish_square = lk.maze.get(finish.row, finish.col);
-        lk.maze.solve_history.push(tape::Delta {
+        lk.maze.solve_history.push(maze::Delta {
             id: finish,
             before: finish_square,
             after: (finish_square & !maze::WALL_MASK) | solve::FINISH_BIT | maze::PATH_BIT,
@@ -421,7 +421,7 @@ fn hunter_history(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
             }
             let square = lk.maze.get(cur.row, cur.col);
             if solve::is_finish(lk.maze.get(cur.row, cur.col)) {
-                lk.maze.solve_history.push(tape::Delta {
+                lk.maze.solve_history.push(maze::Delta {
                     id: cur,
                     before: square,
                     after: square | guide.cache | guide.paint,
@@ -431,7 +431,7 @@ fn hunter_history(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
                 lk.win.get_or_insert(guide.index);
                 return;
             }
-            lk.maze.solve_history.push(tape::Delta {
+            lk.maze.solve_history.push(maze::Delta {
                 id: cur,
                 before: square,
                 after: square | guide.cache | guide.paint,
@@ -466,7 +466,7 @@ fn hunter_history(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
         match monitor.lock() {
             Ok(mut lk) => {
                 let square = lk.maze.get(cur.row, cur.col);
-                lk.maze.solve_history.push(tape::Delta {
+                lk.maze.solve_history.push(maze::Delta {
                     id: cur,
                     before: square,
                     after: square & !guide.paint,
@@ -484,7 +484,7 @@ pub fn gather_history(monitor: monitor::MazeMonitor) {
     let all_start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         let all_start = solve::pick_random_point(&lk.maze);
         let start_square = lk.maze.get(all_start.row, all_start.col);
-        lk.maze.solve_history.push(tape::Delta {
+        lk.maze.solve_history.push(maze::Delta {
             id: all_start,
             before: start_square,
             after: start_square | solve::START_BIT,
@@ -494,7 +494,7 @@ pub fn gather_history(monitor: monitor::MazeMonitor) {
         for _ in 0..solve::NUM_GATHER_FINISHES {
             let finish: maze::Point = solve::pick_random_point(&lk.maze);
             let finish_square = lk.maze.get(finish.row, finish.col);
-            lk.maze.solve_history.push(tape::Delta {
+            lk.maze.solve_history.push(maze::Delta {
                 id: finish,
                 before: finish_square,
                 after: finish_square | solve::FINISH_BIT,
@@ -547,7 +547,7 @@ fn gatherer_history(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
         if let Ok(mut lk) = monitor.lock() {
             let square = lk.maze.get(cur.row, cur.col);
             if solve::is_finish(square) && solve::is_first(square) {
-                lk.maze.solve_history.push(tape::Delta {
+                lk.maze.solve_history.push(maze::Delta {
                     id: cur,
                     before: square,
                     after: square | guide.cache | guide.paint,
@@ -556,7 +556,7 @@ fn gatherer_history(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
                 *lk.maze.get_mut(cur.row, cur.col) |= guide.cache | guide.paint;
                 return;
             }
-            lk.maze.solve_history.push(tape::Delta {
+            lk.maze.solve_history.push(maze::Delta {
                 id: cur,
                 before: square,
                 after: square | guide.cache | guide.paint,
@@ -591,7 +591,7 @@ fn gatherer_history(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
         match monitor.lock() {
             Ok(mut lk) => {
                 let square = lk.maze.get(cur.row, cur.col);
-                lk.maze.solve_history.push(tape::Delta {
+                lk.maze.solve_history.push(maze::Delta {
                     id: cur,
                     before: square,
                     after: square & !guide.paint,

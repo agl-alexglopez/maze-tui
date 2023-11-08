@@ -165,8 +165,7 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    let mut rng = thread_rng();
+        let mut rng = thread_rng();
     let weight_range = Uniform::from(1..=100);
     let start = PriorityPoint {
         priority: weight_range.sample(&mut rng),
@@ -222,8 +221,7 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    let mut rng = thread_rng();
+        let mut rng = thread_rng();
     let weight_range = Uniform::from(1..=100);
     let start = PriorityPoint {
         priority: weight_range.sample(&mut rng),

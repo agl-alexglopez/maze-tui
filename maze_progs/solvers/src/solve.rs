@@ -4,7 +4,6 @@ use crossterm::{
         Attribute, Color, Print, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor,
     },
 };
-use key;
 use maze;
 use print::maze_panic;
 use rand::prelude::*;
@@ -40,6 +39,7 @@ pub const RED_SHIFT: ThreadPaint = 16;
 pub const GREEN_MASK: ThreadPaint = 0xFF00;
 pub const GREEN_SHIFT: ThreadPaint = 8;
 pub const BLUE_MASK: ThreadPaint = 0xFF;
+pub const ANSI_CYN: u8 = 14;
 // Credit to Caesar on StackOverflow for writing the program to find this tetrad of colors.
 pub const THREAD_MASKS: [ThreadPaint; 4] = [0x880044, 0x766002, 0x009531, 0x010a88];
 pub const CACHE_MASK: ThreadCache = 0xF000000;
@@ -84,6 +84,15 @@ fn thread_rgb(square: maze::Square) -> RatColor {
 }
 
 #[inline]
+fn thread_rgb_crossterm(square: maze::Square) -> Color {
+    Color::Rgb {
+        r: ((square & RED_MASK) >> RED_SHIFT) as u8,
+        g: ((square & GREEN_MASK) >> GREEN_SHIFT) as u8,
+        b: (square & BLUE_MASK) as u8,
+    }
+}
+
+#[inline]
 fn is_start_or_finish(square: maze::Square) -> bool {
     (square & (START_BIT | FINISH_BIT)) != 0
 }
@@ -97,11 +106,6 @@ fn is_valid_start_or_finish(maze: &maze::Maze, choice: maze::Point) -> bool {
         && maze.path_at(choice.row, choice.col)
         && !is_finish(maze.get(choice.row, choice.col))
         && !is_start(maze.get(choice.row, choice.col))
-}
-
-#[inline]
-fn color_index(square: maze::Square) -> usize {
-    ((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize
 }
 
 ///
@@ -188,7 +192,7 @@ pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
     if is_finish(square) {
         Cell {
             symbol: 'F'.to_string(),
-            fg: RatColor::Indexed(key::ANSI_CYN),
+            fg: RatColor::Indexed(ANSI_CYN),
             bg: thread_rgb(square),
             underline_color: RatColor::Reset,
             modifier: Modifier::BOLD | Modifier::SLOW_BLINK,
@@ -197,7 +201,7 @@ pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
     } else if is_start(square) {
         Cell {
             symbol: 'S'.to_string(),
-            fg: RatColor::Indexed(key::ANSI_CYN),
+            fg: RatColor::Indexed(ANSI_CYN),
             bg: RatColor::Reset,
             underline_color: RatColor::Reset,
             modifier: Modifier::BOLD,
@@ -242,7 +246,7 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
     if is_start_or_finish(square) {
         return Cell {
             symbol: '▀'.to_string(),
-            fg: RatColor::Indexed(key::ANSI_CYN),
+            fg: RatColor::Indexed(ANSI_CYN),
             bg: this_color,
             underline_color: RatColor::Reset,
             modifier: Modifier::SLOW_BLINK,
@@ -258,7 +262,7 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
                     // A special square is our neighbor.
                     return Cell {
                         symbol: '▀'.to_string(),
-                        fg: RatColor::Indexed(key::ANSI_CYN),
+                        fg: RatColor::Indexed(ANSI_CYN),
                         bg: this_color,
                         underline_color: RatColor::Reset,
                         modifier: Modifier::SLOW_BLINK,
@@ -303,7 +307,7 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
                 // A special neighbor is below us so we must split the square colors.
                 return Cell {
                     symbol: '▀'.to_string(),
-                    fg: RatColor::Indexed(key::ANSI_CYN),
+                    fg: RatColor::Indexed(ANSI_CYN),
                     bg: this_color,
                     underline_color: RatColor::Reset,
                     modifier: Modifier::SLOW_BLINK,
@@ -338,7 +342,7 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
             return Cell {
                 symbol: '▀'.to_string(),
                 fg: RatColor::Reset,
-                bg: RatColor::Indexed(key::ANSI_CYN),
+                bg: RatColor::Indexed(ANSI_CYN),
                 underline_color: RatColor::Reset,
                 modifier: Modifier::SLOW_BLINK,
                 skip: false,
@@ -407,13 +411,12 @@ pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     let square = maze.get(point.row, point.col);
     // We have some special printing for the finish square. Not here.
     if is_finish(square) {
-        let ansi = key::thread_color_code(color_index(square));
         match execute!(
             io::stdout(),
             SetAttribute(Attribute::SlowBlink),
             SetAttribute(Attribute::Bold),
-            SetBackgroundColor(Color::AnsiValue(ansi)),
-            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            SetBackgroundColor(thread_rgb_crossterm(square)),
+            SetForegroundColor(Color::AnsiValue(ANSI_CYN)),
             Print('F'),
             ResetColor
         ) {
@@ -425,7 +428,7 @@ pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         match execute!(
             io::stdout(),
             SetAttribute(Attribute::Bold),
-            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            SetForegroundColor(Color::AnsiValue(ANSI_CYN)),
             Print('S'),
             ResetColor
         ) {
@@ -434,11 +437,10 @@ pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         }
     }
     if is_color(square) {
-        let thread_color: key::ThreadColor = key::thread_color(color_index(square));
         match execute!(
             io::stdout(),
-            SetForegroundColor(Color::AnsiValue(thread_color.ansi)),
-            Print(thread_color.block),
+            SetForegroundColor(thread_rgb_crossterm(square)),
+            Print('█'),
             ResetColor,
         ) {
             Ok(_) => return,
@@ -470,13 +472,12 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
     );
     let square = maze.get(point.row, point.col);
     if is_finish(square) {
-        let ansi = key::thread_color_code(color_index(square));
         match queue!(
             io::stdout(),
             SetAttribute(Attribute::SlowBlink),
             SetAttribute(Attribute::Bold),
-            SetBackgroundColor(Color::AnsiValue(ansi)),
-            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            SetBackgroundColor(thread_rgb_crossterm(square)),
+            SetForegroundColor(Color::AnsiValue(ANSI_CYN)),
             Print('F'),
             ResetColor
         ) {
@@ -488,7 +489,7 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
         match queue!(
             io::stdout(),
             SetAttribute(Attribute::Bold),
-            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            SetForegroundColor(Color::AnsiValue(ANSI_CYN)),
             Print('S'),
             ResetColor
         ) {
@@ -497,11 +498,10 @@ pub fn print_point(maze: &maze::Maze, point: maze::Point) {
         }
     }
     if is_color(square) {
-        let thread_color: key::ThreadColor = key::thread_color(color_index(square));
         match queue!(
             io::stdout(),
-            SetForegroundColor(Color::AnsiValue(thread_color.ansi)),
-            Print(thread_color.block),
+            SetForegroundColor(thread_rgb_crossterm(square)),
+            Print('█'),
             ResetColor,
         ) {
             Ok(_) => return,
@@ -534,13 +534,12 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         maze.offset(),
     );
     let square = maze.get(point.row, point.col);
-    let this_color = key::thread_color_code(color_index(square));
     if is_start_or_finish(square) {
         execute!(
             io::stdout(),
             SetAttribute(Attribute::SlowBlink),
-            SetBackgroundColor(Color::AnsiValue(this_color)),
-            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            SetBackgroundColor(thread_rgb_crossterm(square)),
+            SetForegroundColor(Color::AnsiValue(ANSI_CYN)),
             Print('▀'),
             ResetColor
         )
@@ -555,8 +554,8 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
                 execute!(
                     io::stdout(),
                     SetAttribute(Attribute::SlowBlink),
-                    SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
-                    SetBackgroundColor(Color::AnsiValue(this_color)),
+                    SetForegroundColor(Color::AnsiValue(ANSI_CYN)),
+                    SetBackgroundColor(thread_rgb_crossterm(square)),
                     Print('▀'),
                     ResetColor
                 )
@@ -565,10 +564,8 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
             }
             execute!(
                 io::stdout(),
-                SetForegroundColor(Color::AnsiValue(key::thread_color_code(color_index(
-                    neighbor_square
-                )))),
-                SetBackgroundColor(Color::AnsiValue(this_color)),
+                SetForegroundColor(thread_rgb_crossterm(neighbor_square)),
+                SetBackgroundColor(thread_rgb_crossterm(square)),
                 Print('▀'),
                 ResetColor
             )
@@ -578,7 +575,7 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         // A wall is above us.
         execute!(
             io::stdout(),
-            SetBackgroundColor(Color::AnsiValue(this_color)),
+            SetBackgroundColor(thread_rgb_crossterm(square)),
             Print('▀'),
             ResetColor
         )
@@ -592,8 +589,8 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
             execute!(
                 io::stdout(),
                 SetAttribute(Attribute::SlowBlink),
-                SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
-                SetBackgroundColor(Color::AnsiValue(this_color)),
+                SetForegroundColor(Color::AnsiValue(ANSI_CYN)),
+                SetBackgroundColor(thread_rgb_crossterm(square)),
                 Print('▀'),
                 ResetColor
             )
@@ -602,10 +599,8 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
         }
         execute!(
             io::stdout(),
-            SetForegroundColor(Color::AnsiValue(key::thread_color_code(color_index(
-                neighbor_square
-            )))),
-            SetBackgroundColor(Color::AnsiValue(this_color)),
+            SetForegroundColor(thread_rgb_crossterm(neighbor_square)),
+            SetBackgroundColor(thread_rgb_crossterm(square)),
             Print('▀'),
             ResetColor
         )
@@ -615,7 +610,7 @@ pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     // A wall is below us
     execute!(
         io::stdout(),
-        SetBackgroundColor(Color::AnsiValue(this_color)),
+        SetBackgroundColor(thread_rgb_crossterm(square)),
         Print('▄'),
         ResetColor
     )
@@ -631,13 +626,12 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
         maze.offset(),
     );
     let square = maze.get(point.row, point.col);
-    let this_color = key::thread_color_code(color_index(square));
     if is_start_or_finish(square) {
         queue!(
             io::stdout(),
             SetAttribute(Attribute::SlowBlink),
-            SetBackgroundColor(Color::AnsiValue(this_color)),
-            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            SetBackgroundColor(thread_rgb_crossterm(square)),
+            SetForegroundColor(Color::AnsiValue(ANSI_CYN)),
             Print('▀'),
             ResetColor
         )
@@ -655,8 +649,8 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
                 queue!(
                     io::stdout(),
                     SetAttribute(Attribute::SlowBlink),
-                    SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
-                    SetBackgroundColor(Color::AnsiValue(this_color)),
+                    SetForegroundColor(Color::AnsiValue(ANSI_CYN)),
+                    SetBackgroundColor(thread_rgb_crossterm(square)),
                     Print('▀'),
                     ResetColor
                 )
@@ -665,10 +659,8 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
             }
             queue!(
                 io::stdout(),
-                SetForegroundColor(Color::AnsiValue(key::thread_color_code(color_index(
-                    neighbor_square
-                )))),
-                SetBackgroundColor(Color::AnsiValue(this_color)),
+                SetForegroundColor(thread_rgb_crossterm(neighbor_square)),
+                SetBackgroundColor(thread_rgb_crossterm(square)),
                 Print('▀'),
                 ResetColor
             )
@@ -678,7 +670,7 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
         // A wall is above us.
         queue!(
             io::stdout(),
-            SetBackgroundColor(Color::AnsiValue(this_color)),
+            SetBackgroundColor(thread_rgb_crossterm(square)),
             Print('▀'),
             ResetColor
         )
@@ -692,8 +684,8 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
             queue!(
                 io::stdout(),
                 SetAttribute(Attribute::SlowBlink),
-                SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
-                SetBackgroundColor(Color::AnsiValue(this_color)),
+                SetForegroundColor(Color::AnsiValue(ANSI_CYN)),
+                SetBackgroundColor(thread_rgb_crossterm(square)),
                 Print('▀'),
                 ResetColor
             )
@@ -702,10 +694,8 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
         }
         queue!(
             io::stdout(),
-            SetForegroundColor(Color::AnsiValue(key::thread_color_code(color_index(
-                neighbor_square
-            )))),
-            SetBackgroundColor(Color::AnsiValue(this_color)),
+            SetForegroundColor(thread_rgb_crossterm(neighbor_square)),
+            SetBackgroundColor(thread_rgb_crossterm(square)),
             Print('▀'),
             ResetColor
         )
@@ -715,7 +705,7 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
     // A wall is below
     queue!(
         io::stdout(),
-        SetBackgroundColor(Color::AnsiValue(this_color)),
+        SetBackgroundColor(thread_rgb_crossterm(square)),
         Print('▄'),
         ResetColor
     )

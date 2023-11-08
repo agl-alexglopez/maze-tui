@@ -1,14 +1,11 @@
-use builders::build;
-
 use crossbeam_channel::bounded;
-use std::env;
-use std::{thread, time};
-
 use rand::{
     distributions::{Bernoulli, Distribution},
     seq::SliceRandom,
     thread_rng,
 };
+use std::env;
+use std::{thread, time};
 
 fn main() {
     let mut prev_flag: &str = "";
@@ -73,7 +70,6 @@ fn main() {
             Some(&(_key, val)) => val.1,
             None => print::maze_panic!("Build algo array empty."),
         };
-        build::print_overlap_key(&maze);
         let monitor = monitor::MazeReceiver::new(maze, worker.clone());
         build_algo(monitor.clone(), build_speed);
 

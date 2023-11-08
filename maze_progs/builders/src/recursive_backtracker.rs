@@ -98,13 +98,13 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
         };
         let square = lk.maze.get(cur.row, cur.col);
         let half_step_square = lk.maze.get(half_step.row, half_step.col);
-        lk.maze.build_history.push(tape::Delta {
+        lk.maze.build_history.push(maze::Delta {
             id: cur,
             before: square,
             after: square & !build::MARKERS_MASK,
             burst: 1,
         });
-        lk.maze.build_history.push(tape::Delta {
+        lk.maze.build_history.push(maze::Delta {
             id: half_step,
             before: half_step_square,
             after: half_step_square & !build::MARKERS_MASK,
@@ -138,8 +138,7 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    let mut gen = thread_rng();
+        let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
         row: 2 * (gen.gen_range(1..lk.maze.rows() - 2) / 2) + 1,
         col: 2 * (gen.gen_range(1..lk.maze.cols() - 2) / 2) + 1,
@@ -194,8 +193,7 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    let mut gen = thread_rng();
+        let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
         row: 2 * (gen.gen_range(1..lk.maze.rows() - 2) / 2) + 1,
         col: 2 * (gen.gen_range(1..lk.maze.cols() - 2) / 2) + 1,

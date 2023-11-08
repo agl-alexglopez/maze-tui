@@ -357,7 +357,7 @@ fn painter_history(monitor: monitor::MazeMonitor, guide: rgb::ThreadGuide) {
                     let bright = 128 + (127f64 * intensity) as u8;
                     let mut c: rgb::Rgb = [dark, dark, dark];
                     c[guide.color_i] = bright;
-                    lk.maze.solve_history.push(tape::Delta {
+                    lk.maze.solve_history.push(maze::Delta {
                         id: cur,
                         before,
                         after: before

@@ -8,12 +8,8 @@ edition = "2021"
 [dependencies]
 maze = { path = "../maze" }
 monitor = { path = "../monitor" }
-builders = { path = "../builders" }
-solvers = { path = "../solvers" }
-painters = { path = "../painters" }
 tables = { path = "../tables" }
 print = { path = "../print" }
-speed = { path = "../speed" }
 crossterm = "0.26.1"
 rand = "0.8.5"
 ctrlc = "3.4.0"

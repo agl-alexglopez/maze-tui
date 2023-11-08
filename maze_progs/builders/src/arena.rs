@@ -49,8 +49,7 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    for r in 1..lk.maze.rows() - 1 {
+        for r in 1..lk.maze.rows() - 1 {
         if monitor.exit() {
             return;
         }
@@ -72,8 +71,7 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-    build::print_overlap_key_animated(&lk.maze);
-    for r in 1..lk.maze.rows() - 1 {
+        for r in 1..lk.maze.rows() - 1 {
         if monitor.exit() {
             return;
         }
