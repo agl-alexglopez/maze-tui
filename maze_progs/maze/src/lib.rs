@@ -23,30 +23,20 @@
 // The maze builder is responsible for zeroing out the direction bits as part of the
 // building process. When solving the maze we adjust how we use the middle bits.
 //
-// wall structure----------------------||||
-// ------------------------------------||||
-// 0 thread paint--------------------| ||||
-// 1 thread paint-------------------|| ||||
-// 2 thread paint------------------||| ||||
-// 3 thread paint-----------------|||| ||||
-// -------------------------------|||| ||||
-// 0 thread cache---------------| |||| ||||
-// 1 thread cache--------------|| |||| ||||
-// 2 thread cache-------------||| |||| ||||
-// 3 thread cache------------|||| |||| ||||
-// --------------------------|||| |||| ||||
-// maze build bit----------| |||| |||| ||||
-// maze paths bit---------|| |||| |||| ||||
-// maze start bit--------||| |||| |||| ||||
-// maze goals bit-------|||| |||| |||| ||||
-//                    0b0000 0000 0000 0000
-use crossbeam_channel::Receiver;
-use std::ops::{Index, IndexMut};
+// 24 bit thread color mixing-----|---------------------------|
+// ------------------------------ |||| |||| |||| |||| |||| ||||
+// walls / thread cache------|||| |||| |||| |||| |||| |||| ||||
+// --------------------------|||| |||| |||| |||| |||| |||| ||||
+// maze build bit----------| |||| |||| |||| |||| |||| |||| ||||
+// maze paths bit---------|| |||| |||| |||| |||| |||| |||| ||||
+// maze start bit--------||| |||| |||| |||| |||| |||| |||| ||||
+// maze goals bit-------|||| |||| |||| |||| |||| |||| |||| ||||
+//                    0b0000 0000 0000 0000 0000 0000 0000 0000
 
 // Public Types
 
-pub type Square = u16;
-pub type WallLine = u16;
+pub type Square = u32;
+pub type WallLine = u32;
 
 #[derive(Default, Debug, PartialEq, Eq, Hash, Copy, Clone)]
 pub struct Point {
@@ -60,7 +50,7 @@ pub struct Offset {
     pub add_cols: i32,
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum MazeStyle {
     Mini = 0,
     Sharp,
@@ -80,15 +70,21 @@ pub struct MazeArgs {
     pub style: MazeStyle,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct Blueprint {
+    pub buf: Vec<Square>,
+    pub rows: i32,
+    pub cols: i32,
+    pub offset: Offset,
+    pub wall_style_index: usize,
+}
+
 // Model a ROWxCOLUMN maze in a flat Vec. Implement tricky indexing in Index impls.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Maze {
-    maze: Vec<Square>,
-    maze_row_size: i32,
-    maze_col_size: i32,
-    offset: Offset,
-    wall_style_index: usize,
-    receiver: Option<Receiver<bool>>,
+    pub maze: Blueprint,
+    pub build_history: tape::Tape<Point, Square>,
+    pub solve_history: tape::Tape<Point, Square>,
 }
 
 // Core Maze Object Implementation
@@ -102,72 +98,121 @@ impl Maze {
         let rows = args.odd_rows + 1 - (args.odd_rows % 2);
         let cols = args.odd_cols + 1 - (args.odd_cols % 2);
         Self {
-            maze: (vec![0; rows as usize * cols as usize]),
-            maze_row_size: (rows),
-            maze_col_size: (cols),
-            offset: args.offset,
-            wall_style_index: args.style as usize,
-            receiver: None,
+            maze: Blueprint {
+                buf: (vec![0; rows as usize * cols as usize]),
+                rows,
+                cols,
+                offset: args.offset,
+                wall_style_index: args.style as usize,
+            },
+            build_history: tape::Tape::default(),
+            solve_history: tape::Tape::default(),
         }
     }
 
-    pub fn new_channel(args: &MazeArgs, rec: Receiver<bool>) -> Self {
-        let rows = args.odd_rows + 1 - (args.odd_rows % 2);
-        let cols = args.odd_cols + 1 - (args.odd_cols % 2);
-        Self {
-            maze: (vec![0; rows as usize * cols as usize]),
-            maze_row_size: (rows),
-            maze_col_size: (cols),
-            offset: args.offset,
-            wall_style_index: args.style as usize,
-            receiver: Some(rec),
-        }
+    #[inline]
+    pub fn rows(&self) -> i32 {
+        self.maze.rows
     }
 
-    pub fn exit(&self) -> bool {
-        match &self.receiver {
-            Some(rec) => rec.is_full(),
-            None => false,
-        }
-    }
-
-    pub fn row_size(&self) -> i32 {
-        self.maze_row_size
-    }
-
+    #[inline]
     pub fn offset(&self) -> Offset {
-        self.offset
+        self.maze.offset
     }
 
-    pub fn col_size(&self) -> i32 {
-        self.maze_col_size
+    #[inline]
+    pub fn cols(&self) -> i32 {
+        self.maze.cols
     }
 
-    pub fn wall_char(&self, wall_mask_index: usize) -> char {
-        WALL_STYLES[(self.wall_style_index * WALL_ROW) + wall_mask_index]
+    #[inline]
+    pub fn wall_char(&self, square: Square) -> char {
+        WALL_STYLES[(self.maze.wall_style_index * WALL_ROW)
+            + ((square & WALL_MASK) >> WALL_SHIFT) as usize]
     }
 
+    #[inline]
+    pub fn wall_row(&self) -> &[char] {
+        &WALL_STYLES[self.maze.wall_style_index * WALL_ROW
+            ..self.maze.wall_style_index * WALL_ROW + WALL_ROW]
+    }
+
+    #[inline]
     pub fn style_index(&self) -> usize {
-        self.wall_style_index
+        self.maze.wall_style_index
     }
 
+    #[inline]
+    pub fn is_mini(&self) -> bool {
+        self.maze.is_mini()
+    }
+
+    #[inline]
+    pub fn as_slice(&self) -> &[Square] {
+        self.maze.buf.as_slice()
+    }
+
+    #[inline]
+    pub fn as_slice_mut(&mut self) -> &mut [Square] {
+        self.maze.buf.as_mut_slice()
+    }
+
+    #[inline]
+    pub fn get_mut(&mut self, row: i32, col: i32) -> &mut Square {
+        self.maze.get_mut(row, col)
+    }
+
+    #[inline]
+    pub fn get(&self, row: i32, col: i32) -> Square {
+        self.maze.get(row, col)
+    }
+
+    #[inline]
+    pub fn wall_at(&self, row: i32, col: i32) -> bool {
+        self.maze.wall_at(row, col)
+    }
+
+    #[inline]
+    pub fn path_at(&self, row: i32, col: i32) -> bool {
+        self.maze.path_at(row, col)
+    }
+}
+
+impl Blueprint {
+    #[inline]
+    pub fn get(&self, row: i32, col: i32) -> Square {
+        self.buf[(row * self.cols + col) as usize]
+    }
+
+    #[inline]
+    pub fn get_mut(&mut self, row: i32, col: i32) -> &mut Square {
+        &mut self.buf[(row * self.cols + col) as usize]
+    }
+
+    #[inline]
+    pub fn wall_char(&self, square: Square) -> char {
+        WALL_STYLES
+            [(self.wall_style_index * WALL_ROW) + ((square & WALL_MASK) >> WALL_SHIFT) as usize]
+    }
+
+    #[inline]
+    pub fn wall_row(&self) -> &[char] {
+        &WALL_STYLES[self.wall_style_index * WALL_ROW..self.wall_style_index * WALL_ROW + WALL_ROW]
+    }
+
+    #[inline]
+    pub fn wall_at(&self, row: i32, col: i32) -> bool {
+        (self.buf[(row * self.cols + col) as usize] & PATH_BIT) == 0
+    }
+
+    #[inline]
+    pub fn path_at(&self, row: i32, col: i32) -> bool {
+        (self.buf[(row * self.cols + col) as usize] & PATH_BIT) != 0
+    }
+
+    #[inline]
     pub fn is_mini(&self) -> bool {
         self.wall_style_index == (MazeStyle::Mini as usize)
-    }
-}
-
-impl Index<usize> for Maze {
-    type Output = [Square];
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.maze[(index * self.maze_col_size as usize)
-            ..(index * self.maze_col_size as usize + self.maze_col_size as usize)]
-    }
-}
-
-impl IndexMut<usize> for Maze {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.maze[(index * self.maze_col_size as usize)
-            ..(index * self.maze_col_size as usize + self.maze_col_size as usize)]
     }
 }
 
@@ -184,18 +229,39 @@ impl Default for MazeArgs {
 
 // Read Only Data Available to Any Maze Users
 
+#[inline]
+pub fn wall_row(row_index: usize) -> &'static [char] {
+    &WALL_STYLES[row_index * WALL_ROW..row_index * WALL_ROW + WALL_ROW]
+}
+
+#[inline]
+pub fn wall_char(style_index: usize, square: Square) -> char {
+    WALL_STYLES[style_index * WALL_ROW + ((square & WALL_MASK) >> WALL_SHIFT) as usize]
+}
+
+#[inline]
+pub fn is_wall(square: Square) -> bool {
+    (square & PATH_BIT) == 0
+}
+
+#[inline]
+pub fn is_path(square: Square) -> bool {
+    (square & PATH_BIT) != 0
+}
+
 // Any modification made to these bits by a builder MUST be cleared before build process completes.
-pub const CLEAR_AVAILABLE_BITS: Square = 0b0001_1111_1111_0000;
+pub const CLEAR_AVAILABLE_BITS: Square = 0x10FFFFFF;
 
 pub const DEFAULT_ROWS: i32 = 31;
 pub const DEFAULT_COLS: i32 = 111;
-pub const PATH_BIT: Square = 0b0010_0000_0000_0000;
-pub const WALL_MASK: WallLine = 0b1111;
-pub const FLOATING_WALL: WallLine = 0b0000;
-pub const NORTH_WALL: WallLine = 0b0001;
-pub const EAST_WALL: WallLine = 0b0010;
-pub const SOUTH_WALL: WallLine = 0b0100;
-pub const WEST_WALL: WallLine = 0b1000;
+pub const PATH_BIT: Square = 0x20000000;
+pub const WALL_MASK: WallLine = 0xF000000;
+pub const WALL_SHIFT: usize = 24;
+pub const FLOATING_WALL: WallLine = 0b0;
+pub const NORTH_WALL: WallLine = 0x1000000;
+pub const EAST_WALL: WallLine = 0x2000000;
+pub const SOUTH_WALL: WallLine = 0x4000000;
+pub const WEST_WALL: WallLine = 0x8000000;
 // Walls are constructed in terms of other walls they need to connect to. For example, read
 // 0b0011 as, "this is a wall square that must connect to other walls to the East and North."
 const WALL_ROW: usize = 16;

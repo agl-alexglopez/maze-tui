@@ -1,28 +1,93 @@
 use crate::rgb;
 use builders::build;
 use maze;
-use solvers::solve;
 use std::collections::{HashSet, VecDeque};
 
 use std::{thread, time};
 
 use rand::{thread_rng, Rng};
 
-pub fn paint_distance_from_center(monitor: solve::SolverMonitor) {
-    let mut lk = match monitor.lock() {
+pub fn paint_distance_from_center_history(monitor: monitor::MazeMonitor) {
+    let start = if let Ok(mut lk) = monitor.lock() {
+        let row_mid = lk.maze.rows() / 2;
+        let col_mid = lk.maze.cols() / 2;
+        let start = maze::Point {
+            row: row_mid + 1 - (row_mid % 2),
+            col: col_mid + 1 - (col_mid % 2),
+        };
+        lk.map.distances.insert(start, 0);
+        let mut bfs = VecDeque::from([(start, 0u64)]);
+        *lk.maze.get_mut(start.row, start.col) |= rgb::MEASURED;
+        while let Some(cur) = bfs.pop_front() {
+            if cur.1 > lk.map.max {
+                lk.map.max = cur.1;
+            }
+            for &p in maze::CARDINAL_DIRECTIONS.iter() {
+                let next = maze::Point {
+                    row: cur.0.row + p.row,
+                    col: cur.0.col + p.col,
+                };
+                if (lk.maze.get(next.row, next.col) & maze::PATH_BIT) == 0
+                    || (lk.maze.get(next.row, next.col) & rgb::MEASURED) != 0
+                {
+                    continue;
+                }
+                *lk.maze.get_mut(next.row, next.col) |= rgb::MEASURED;
+                lk.map.distances.insert(next, cur.1 + 1);
+                bfs.push_back((next, cur.1 + 1));
+            }
+        }
+        start
+    } else {
+        print::maze_panic!("Thread panic.");
+    };
+
+    let mut rng = thread_rng();
+    let rand_color_choice: usize = rng.gen_range(0..3);
+    let mut handles = Vec::with_capacity(rgb::NUM_PAINTERS - 1);
+    for painter in 1..rgb::NUM_PAINTERS {
+        let monitor_clone = monitor.clone();
+        handles.push(thread::spawn(move || {
+            painter_history(
+                monitor_clone,
+                rgb::ThreadGuide {
+                    bias: painter,
+                    color_i: rand_color_choice,
+                    cache: rgb::MEASURED_MASKS[painter],
+                    p: start,
+                },
+            );
+        }));
+    }
+    painter_history(
+        monitor.clone(),
+        rgb::ThreadGuide {
+            bias: 0,
+            color_i: rand_color_choice,
+            cache: rgb::MEASURED_MASKS[0],
+            p: start,
+        },
+    );
+    for h in handles {
+        h.join().expect("Error joining a thread.");
+    }
+}
+
+pub fn paint_distance_from_center(monitor: monitor::MazeReceiver) {
+    let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("Lock panic."),
     };
 
-    let row_mid = lk.maze.row_size() / 2;
-    let col_mid = lk.maze.col_size() / 2;
+    let row_mid = lk.maze.rows() / 2;
+    let col_mid = lk.maze.cols() / 2;
     let start = maze::Point {
         row: row_mid + 1 - (row_mid % 2),
         col: col_mid + 1 - (col_mid % 2),
     };
-    let mut map = solve::MaxMap::new(start, 0);
+    let mut map = monitor::MaxMap::new(start, 0);
     let mut bfs = VecDeque::from([(start, 0u64)]);
-    lk.maze[start.row as usize][start.col as usize] |= rgb::MEASURE;
+    *lk.maze.get_mut(start.row, start.col) |= rgb::MEASURED;
     while let Some(cur) = bfs.pop_front() {
         if cur.1 > map.max {
             map.max = cur.1;
@@ -32,12 +97,12 @@ pub fn paint_distance_from_center(monitor: solve::SolverMonitor) {
                 row: cur.0.row + p.row,
                 col: cur.0.col + p.col,
             };
-            if (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0
-                || (lk.maze[next.row as usize][next.col as usize] & rgb::MEASURE) != 0
+            if (lk.maze.get(next.row, next.col) & maze::PATH_BIT) == 0
+                || (lk.maze.get(next.row, next.col) & rgb::MEASURED) != 0
             {
                 continue;
             }
-            lk.maze[next.row as usize][next.col as usize] |= rgb::MEASURE;
+            *lk.maze.get_mut(next.row, next.col) |= rgb::MEASURED;
             map.distances.insert(next, cur.1 + 1);
             bfs.push_back((next, cur.1 + 1));
         }
@@ -45,8 +110,12 @@ pub fn paint_distance_from_center(monitor: solve::SolverMonitor) {
     painter(&lk.maze, &map);
 }
 
-pub fn animate_distance_from_center(monitor: solve::SolverMonitor, speed: speed::Speed) {
+pub fn animate_distance_from_center(monitor: monitor::MazeReceiver, speed: speed::Speed) {
+    if monitor.exit() {
+        return;
+    }
     if monitor
+        .solver
         .lock()
         .unwrap_or_else(|_| print::maze_panic!("Thread panicked"))
         .maze
@@ -55,20 +124,17 @@ pub fn animate_distance_from_center(monitor: solve::SolverMonitor, speed: speed:
         animate_mini_distance_from_center(monitor, speed);
         return;
     }
-    let start = if let Ok(mut lk) = monitor.lock() {
-        let row_mid = lk.maze.row_size() / 2;
-        let col_mid = lk.maze.col_size() / 2;
+    let start = if let Ok(mut lk) = monitor.solver.lock() {
+        let row_mid = lk.maze.rows() / 2;
+        let col_mid = lk.maze.cols() / 2;
         let start = maze::Point {
             row: row_mid + 1 - (row_mid % 2),
             col: col_mid + 1 - (col_mid % 2),
         };
         lk.map.distances.insert(start, 0);
         let mut bfs = VecDeque::from([(start, 0u64)]);
-        lk.maze[start.row as usize][start.col as usize] |= rgb::MEASURE;
+        *lk.maze.get_mut(start.row, start.col) |= rgb::MEASURED;
         while let Some(cur) = bfs.pop_front() {
-            if lk.maze.exit() {
-                return;
-            }
             if cur.1 > lk.map.max {
                 lk.map.max = cur.1;
             }
@@ -77,12 +143,12 @@ pub fn animate_distance_from_center(monitor: solve::SolverMonitor, speed: speed:
                     row: cur.0.row + p.row,
                     col: cur.0.col + p.col,
                 };
-                if (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0
-                    || (lk.maze[next.row as usize][next.col as usize] & rgb::MEASURE) != 0
+                if (lk.maze.get(next.row, next.col) & maze::PATH_BIT) == 0
+                    || (lk.maze.get(next.row, next.col) & rgb::MEASURED) != 0
                 {
                     continue;
                 }
-                lk.maze[next.row as usize][next.col as usize] |= rgb::MEASURE;
+                *lk.maze.get_mut(next.row, next.col) |= rgb::MEASURED;
                 lk.map.distances.insert(next, cur.1 + 1);
                 bfs.push_back((next, cur.1 + 1));
             }
@@ -104,6 +170,7 @@ pub fn animate_distance_from_center(monitor: solve::SolverMonitor, speed: speed:
                 rgb::ThreadGuide {
                     bias: painter,
                     color_i: rand_color_choice,
+                    cache: rgb::MEASURED_MASKS[painter],
                     p: start,
                 },
                 animation,
@@ -115,19 +182,19 @@ pub fn animate_distance_from_center(monitor: solve::SolverMonitor, speed: speed:
     }
 }
 
-fn animate_mini_distance_from_center(monitor: solve::SolverMonitor, speed: speed::Speed) {
-    let start = if let Ok(mut lk) = monitor.lock() {
-        let row_mid = lk.maze.row_size() / 2;
-        let col_mid = lk.maze.col_size() / 2;
+fn animate_mini_distance_from_center(monitor: monitor::MazeReceiver, speed: speed::Speed) {
+    let start = if let Ok(mut lk) = monitor.solver.lock() {
+        let row_mid = lk.maze.rows() / 2;
+        let col_mid = lk.maze.cols() / 2;
         let start = maze::Point {
             row: row_mid + 1 - (row_mid % 2),
             col: col_mid + 1 - (col_mid % 2),
         };
         lk.map.distances.insert(start, 0);
         let mut bfs = VecDeque::from([(start, 0u64)]);
-        lk.maze[start.row as usize][start.col as usize] |= rgb::MEASURE;
+        *lk.maze.get_mut(start.row, start.col) |= rgb::MEASURED;
         while let Some(cur) = bfs.pop_front() {
-            if lk.maze.exit() {
+            if monitor.exit() {
                 return;
             }
             if cur.1 > lk.map.max {
@@ -138,12 +205,12 @@ fn animate_mini_distance_from_center(monitor: solve::SolverMonitor, speed: speed
                     row: cur.0.row + p.row,
                     col: cur.0.col + p.col,
                 };
-                if (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) == 0
-                    || (lk.maze[next.row as usize][next.col as usize] & rgb::MEASURE) != 0
+                if (lk.maze.get(next.row, next.col) & maze::PATH_BIT) == 0
+                    || (lk.maze.get(next.row, next.col) & rgb::MEASURED) != 0
                 {
                     continue;
                 }
-                lk.maze[next.row as usize][next.col as usize] |= rgb::MEASURE;
+                *lk.maze.get_mut(next.row, next.col) |= rgb::MEASURED;
                 lk.map.distances.insert(next, cur.1 + 1);
                 bfs.push_back((next, cur.1 + 1));
             }
@@ -165,10 +232,11 @@ fn animate_mini_distance_from_center(monitor: solve::SolverMonitor, speed: speed
                 rgb::ThreadGuide {
                     bias: painter,
                     color_i: rand_color_choice,
+                    cache: rgb::MEASURED_MASKS[painter],
                     p: start,
                 },
                 animation,
-            );
+            )
         }));
     }
     painter_mini_animated(
@@ -176,6 +244,7 @@ fn animate_mini_distance_from_center(monitor: solve::SolverMonitor, speed: speed
         rgb::ThreadGuide {
             bias: rgb::NUM_PAINTERS - 1,
             color_i: rand_color_choice,
+            cache: rgb::MEASURED_MASKS[0],
             p: start,
         },
         animation,
@@ -187,12 +256,12 @@ fn animate_mini_distance_from_center(monitor: solve::SolverMonitor, speed: speed
 
 // Private Helper Functions-----------------------------------------------------------------------
 
-fn painter(maze: &maze::Maze, map: &solve::MaxMap) {
+fn painter(maze: &maze::Maze, map: &monitor::MaxMap) {
     let mut rng = thread_rng();
     let rand_color_choice: usize = rng.gen_range(0..3);
     if maze.style_index() == (maze::MazeStyle::Mini as usize) {
-        for r in 0..maze.row_size() {
-            for c in 0..maze.col_size() {
+        for r in 0..maze.rows() {
+            for c in 0..maze.cols() {
                 let cur = maze::Point { row: r, col: c };
                 if let Some(dist) = map.distances.get(&cur) {
                     let intensity = (map.max - dist) as f64 / map.max as f64;
@@ -201,7 +270,7 @@ fn painter(maze: &maze::Maze, map: &solve::MaxMap) {
                     let mut channels: rgb::Rgb = [dark, dark, dark];
                     channels[rand_color_choice] = bright;
                     if cur.row % 2 == 0 {
-                        if (maze[(cur.row + 1) as usize][cur.col as usize] & maze::PATH_BIT) != 0 {
+                        if (maze.get(cur.row + 1, cur.col) & maze::PATH_BIT) != 0 {
                             let neighbor = maze::Point {
                                 row: cur.row + 1,
                                 col: cur.col,
@@ -222,8 +291,7 @@ fn painter(maze: &maze::Maze, map: &solve::MaxMap) {
                             rgb::print_mini_rgb(Some(channels), None, cur, maze.offset());
                         }
                     // This is an odd row.
-                    } else if (maze[(cur.row - 1) as usize][cur.col as usize] & maze::PATH_BIT) != 0
-                    {
+                    } else if (maze.get(cur.row - 1, cur.col) & maze::PATH_BIT) != 0 {
                         let neighbor = maze::Point {
                             row: cur.row - 1,
                             col: cur.col,
@@ -249,8 +317,8 @@ fn painter(maze: &maze::Maze, map: &solve::MaxMap) {
             }
         }
     } else {
-        for r in 0..maze.row_size() {
-            for c in 0..maze.col_size() {
+        for r in 0..maze.rows() {
+            for c in 0..maze.cols() {
                 let cur = maze::Point { row: r, col: c };
                 match map.distances.get(&cur) {
                     Some(dist) => {
@@ -269,17 +337,12 @@ fn painter(maze: &maze::Maze, map: &solve::MaxMap) {
     print::flush();
 }
 
-fn painter_animated(
-    monitor: solve::SolverMonitor,
-    guide: rgb::ThreadGuide,
-    animation: rgb::SpeedUnit,
-) {
-    let mut seen = HashSet::from([guide.p]);
+fn painter_history(monitor: monitor::MazeMonitor, guide: rgb::ThreadGuide) {
     let mut bfs = VecDeque::from([guide.p]);
     while let Some(cur) = bfs.pop_front() {
         match monitor.lock() {
             Ok(mut lk) => {
-                if lk.maze.exit() || lk.count == lk.map.distances.len() {
+                if lk.count == lk.map.distances.len() {
                     return;
                 }
                 let dist = lk
@@ -287,14 +350,86 @@ fn painter_animated(
                     .distances
                     .get(&cur)
                     .expect("Could not find map entry?");
-                if (lk.maze[cur.row as usize][cur.col as usize] & rgb::PAINT) == 0 {
+                let before = lk.maze.get(cur.row, cur.col);
+                if !rgb::has_paint_vals(before) {
+                    let intensity = (lk.map.max - dist) as f64 / lk.map.max as f64;
+                    let dark = (255f64 * intensity) as u8;
+                    let bright = 128 + (127f64 * intensity) as u8;
+                    let mut c: rgb::Rgb = [dark, dark, dark];
+                    c[guide.color_i] = bright;
+                    lk.maze.solve_history.push(tape::Delta {
+                        id: cur,
+                        before,
+                        after: before
+                            | ((c[0] as u32) << rgb::RED_SHIFT)
+                            | ((c[1] as u32) << rgb::GREEN_SHIFT)
+                            | (c[2] as u32),
+                        burst: 1,
+                    });
+                    *lk.maze.get_mut(cur.row, cur.col) |= ((c[0] as u32) << rgb::RED_SHIFT)
+                        | ((c[1] as u32) << rgb::GREEN_SHIFT)
+                        | (c[2] as u32);
+                    lk.count += 1;
+                }
+            }
+            Err(p) => print::maze_panic!("Thread panicked with lock: {}", p),
+        };
+        let mut i = guide.bias;
+        while {
+            let p = &maze::CARDINAL_DIRECTIONS[i];
+            let next = maze::Point {
+                row: cur.row + p.row,
+                col: cur.col + p.col,
+            };
+            if match monitor.lock() {
+                Err(p) => print::maze_panic!("Panic with lock: {}", p),
+                Ok(mut lk) => {
+                    let nxt = lk.maze.get(next.row, next.col);
+                    let seen = (nxt & guide.cache) == 0;
+                    let is_path = maze::is_path(nxt);
+                    if seen && is_path {
+                        *lk.maze.get_mut(next.row, next.col) |= guide.cache;
+                    }
+                    seen && is_path
+                }
+            } {
+                bfs.push_back(next);
+            }
+            i = (i + 1) % rgb::NUM_PAINTERS;
+            i != guide.bias
+        } {}
+    }
+}
+
+fn painter_animated(
+    monitor: monitor::MazeReceiver,
+    guide: rgb::ThreadGuide,
+    animation: rgb::SpeedUnit,
+) {
+    let mut seen = HashSet::from([guide.p]);
+    let mut bfs = VecDeque::from([guide.p]);
+    while let Some(cur) = bfs.pop_front() {
+        if monitor.exit() {
+            return;
+        }
+        match monitor.solver.lock() {
+            Ok(mut lk) => {
+                if lk.count == lk.map.distances.len() {
+                    return;
+                }
+                let dist = lk
+                    .map
+                    .distances
+                    .get(&cur)
+                    .expect("Could not find map entry?");
+                if (lk.maze.get(cur.row, cur.col) & rgb::PAINT) == 0 {
                     let intensity = (lk.map.max - dist) as f64 / lk.map.max as f64;
                     let dark = (255f64 * intensity) as u8;
                     let bright = 128 + (127f64 * intensity) as u8;
                     let mut channels: rgb::Rgb = [dark, dark, dark];
                     channels[guide.color_i] = bright;
                     rgb::animate_rgb(channels, cur, lk.maze.offset());
-                    lk.maze[cur.row as usize][cur.col as usize] |= rgb::PAINT;
+                    *lk.maze.get_mut(cur.row, cur.col) |= rgb::PAINT;
                     lk.count += 1;
                 }
             }
@@ -308,9 +443,9 @@ fn painter_animated(
                 row: cur.row + p.row,
                 col: cur.col + p.col,
             };
-            if match monitor.lock() {
+            if match monitor.solver.lock() {
                 Err(p) => print::maze_panic!("Panic with lock: {}", p),
-                Ok(lk) => (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0,
+                Ok(lk) => (lk.maze.get(next.row, next.col) & maze::PATH_BIT) != 0,
             } && !seen.contains(&next)
             {
                 seen.insert(next);
@@ -323,19 +458,22 @@ fn painter_animated(
 }
 
 fn painter_mini_animated(
-    monitor: solve::SolverMonitor,
+    monitor: monitor::MazeReceiver,
     guide: rgb::ThreadGuide,
     animation: rgb::SpeedUnit,
 ) {
     let mut seen = HashSet::from([guide.p]);
     let mut bfs = VecDeque::from([guide.p]);
     while let Some(cur) = bfs.pop_front() {
-        match monitor.lock() {
+        if monitor.exit() {
+            return;
+        }
+        match monitor.solver.lock() {
             Ok(mut lk) => {
-                if lk.maze.exit() || lk.count == lk.map.distances.len() {
+                if lk.count == lk.map.distances.len() {
                     return;
                 }
-                if (lk.maze[cur.row as usize][cur.col as usize] & rgb::PAINT) == 0 {
+                if (lk.maze.get(cur.row, cur.col) & rgb::PAINT) == 0 {
                     let dist = lk
                         .map
                         .distances
@@ -346,16 +484,15 @@ fn painter_mini_animated(
                     let bright = 128 + (127f64 * intensity) as u8;
                     let mut channels: rgb::Rgb = [dark, dark, dark];
                     channels[guide.color_i] = bright;
-                    lk.maze[cur.row as usize][cur.col as usize] |= rgb::PAINT;
+                    *lk.maze.get_mut(cur.row, cur.col) |= rgb::PAINT;
                     lk.count += 1;
                     if cur.row % 2 == 0 {
-                        if (lk.maze[(cur.row + 1) as usize][cur.col as usize] & maze::PATH_BIT) != 0
-                        {
+                        if (lk.maze.get(cur.row + 1, cur.col) & maze::PATH_BIT) != 0 {
                             let neighbor = maze::Point {
                                 row: cur.row + 1,
                                 col: cur.col,
                             };
-                            lk.maze[neighbor.row as usize][neighbor.col as usize] |= rgb::PAINT;
+                            *lk.maze.get_mut(neighbor.row, neighbor.col) |= rgb::PAINT;
                             let neighbor_dist = lk.map.distances.get(&neighbor).expect("Empty map");
                             let intensity = (lk.map.max - neighbor_dist) as f64 / lk.map.max as f64;
                             let dark = (255f64 * intensity) as u8;
@@ -372,14 +509,12 @@ fn painter_mini_animated(
                             rgb::animate_mini_rgb(Some(channels), None, cur, lk.maze.offset());
                         }
                     // This is an odd row.
-                    } else if (lk.maze[(cur.row - 1) as usize][cur.col as usize] & maze::PATH_BIT)
-                        != 0
-                    {
+                    } else if (lk.maze.get(cur.row - 1, cur.col) & maze::PATH_BIT) != 0 {
                         let neighbor = maze::Point {
                             row: cur.row - 1,
                             col: cur.col,
                         };
-                        lk.maze[neighbor.row as usize][neighbor.col as usize] |= rgb::PAINT;
+                        *lk.maze.get_mut(neighbor.row, neighbor.col) |= rgb::PAINT;
                         let neighbor_dist = lk.map.distances.get(&neighbor).expect("Empty map");
                         let intensity = (lk.map.max - neighbor_dist) as f64 / lk.map.max as f64;
                         let dark = (255f64 * intensity) as u8;
@@ -408,9 +543,9 @@ fn painter_mini_animated(
                 row: cur.row + p.row,
                 col: cur.col + p.col,
             };
-            if match monitor.lock() {
+            if match monitor.solver.lock() {
                 Err(p) => print::maze_panic!("Panic with lock: {}", p),
-                Ok(lk) => (lk.maze[next.row as usize][next.col as usize] & maze::PATH_BIT) != 0,
+                Ok(lk) => (lk.maze.get(next.row, next.col) & maze::PATH_BIT) != 0,
             } && !seen.contains(&next)
             {
                 seen.insert(next);

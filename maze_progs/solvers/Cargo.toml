@@ -8,8 +8,12 @@ edition = "2021"
 [dependencies]
 speed = { path = "../speed" }
 key = { path = "../key" }
+tape = { path = "../tape" }
 maze = { path = "../maze" }
+monitor = { path = "../monitor" }
 builders = { path = "../builders" }
 print = { path = "../print" }
 crossterm = "0.26.1"
+crossbeam-channel = "0.5"
 rand = "0.8.5"
+ratatui = "0.24"

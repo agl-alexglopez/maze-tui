@@ -9,6 +9,7 @@ pub use builders::recursive_backtracker;
 pub use builders::recursive_subdivision;
 pub use builders::wilson_adder;
 pub use builders::wilson_carver;
+pub use monitor;
 pub use painters::distance;
 pub use painters::rgb;
 pub use painters::runs;
@@ -22,11 +23,16 @@ pub use solvers::floodfs;
 pub use solvers::rdfs;
 pub use solvers::solve;
 
-pub type BuildFunction = (fn(&mut maze::Maze), fn(&mut maze::Maze, speed::Speed));
-pub type SolveFunction = (
-    fn(solve::SolverMonitor),
-    fn(solve::SolverMonitor, speed::Speed),
+pub type BuildCursorFunction = (
+    fn(monitor::MazeReceiver),
+    fn(monitor::MazeReceiver, speed::Speed),
 );
+pub type SolveCursorFunction = (
+    fn(monitor::MazeReceiver),
+    fn(monitor::MazeReceiver, speed::Speed),
+);
+pub type BuildHistoryFunction = fn(monitor::MazeMonitor);
+pub type SolveHistoryFunction = fn(monitor::MazeMonitor);
 
 pub struct FlagArg<'a, 'b> {
     pub flag: &'a str,
@@ -40,18 +46,48 @@ pub enum ViewingMode {
 }
 
 #[derive(Clone, Copy)]
-pub struct MazeRunner {
+pub struct CursorRunner {
     pub args: maze::MazeArgs,
     pub build_view: ViewingMode,
     pub build_speed: speed::Speed,
-    pub build: BuildFunction,
-    pub modify: Option<BuildFunction>,
+    pub build: BuildCursorFunction,
+    pub modify: Option<BuildCursorFunction>,
     pub solve_view: ViewingMode,
     pub solve_speed: speed::Speed,
-    pub solve: SolveFunction,
+    pub solve: SolveCursorFunction,
 }
 
-impl MazeRunner {
+#[derive(Clone, Copy)]
+pub struct HistoryRunner {
+    pub args: maze::MazeArgs,
+    pub build: BuildHistoryFunction,
+    pub modify: Option<BuildHistoryFunction>,
+    pub solve: SolveHistoryFunction,
+}
+
+impl HistoryRunner {
+    pub fn new() -> Self {
+        Self {
+            args: maze::MazeArgs {
+                odd_rows: 33,
+                odd_cols: 111,
+                offset: maze::Offset::default(),
+                style: maze::MazeStyle::Sharp,
+            },
+            build: recursive_backtracker::generate_history,
+            modify: None,
+            solve: dfs::hunt_history,
+        }
+    }
+}
+
+impl Default for HistoryRunner {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl CursorRunner {
     pub fn new() -> Self {
         Self {
             args: maze::MazeArgs {
@@ -74,7 +110,7 @@ impl MazeRunner {
     }
 }
 
-impl Default for MazeRunner {
+impl Default for CursorRunner {
     fn default() -> Self {
         Self::new()
     }
@@ -90,9 +126,16 @@ where
         .map(|(_, t)| t.clone())
 }
 
-pub fn load_desc(cur_builder: &BuildFunction) -> &'static str {
-    match DESCRIPTIONS.iter().find(|(func, _)| func == cur_builder) {
-        Some(&(_, desc)) => desc,
+pub fn load_desc(cur_builder: &BuildCursorFunction) -> &'static str {
+    match DESCRIPTIONS.iter().find(|(func, _, _)| func == cur_builder) {
+        Some(&(_, _, desc)) => desc,
+        None => "Coming Soon!",
+    }
+}
+
+pub fn load_info(cur_builder: &BuildHistoryFunction) -> &'static str {
+    match DESCRIPTIONS.iter().find(|(_, func, _)| func == cur_builder) {
+        Some(&(_, _, desc)) => desc,
         None => "Coming Soon!",
     }
 }
@@ -117,7 +160,7 @@ pub const WALL_STYLES: [(&str, maze::MazeStyle); 8] = [
     ("spikes", maze::MazeStyle::Spikes),
 ];
 
-pub const BUILDERS: [(&str, BuildFunction); 10] = [
+pub const CURSOR_BUILDERS: [(&str, BuildCursorFunction); 10] = [
     ("arena", (arena::generate_maze, arena::animate_maze)),
     (
         "rdfs",
@@ -151,12 +194,30 @@ pub const BUILDERS: [(&str, BuildFunction); 10] = [
     ("grid", (grid::generate_maze, grid::animate_maze)),
 ];
 
-pub const MODIFICATIONS: [(&str, BuildFunction); 2] = [
+pub const HISTORY_BUILDERS: [(&str, BuildHistoryFunction); 10] = [
+    ("arena", arena::generate_history),
+    ("rdfs", recursive_backtracker::generate_history),
+    ("hunt-kill", hunt_kill::generate_history),
+    ("fractal", recursive_subdivision::generate_history),
+    ("prim", prim::generate_history),
+    ("kruskal", kruskal::generate_history),
+    ("eller", eller::generate_history),
+    ("wilson", wilson_carver::generate_history),
+    ("wilson-walls", wilson_adder::generate_history),
+    ("grid", grid::generate_history),
+];
+
+pub const CURSOR_MODIFICATIONS: [(&str, BuildCursorFunction); 2] = [
     ("cross", (modify::add_cross, modify::add_cross_animated)),
     ("x", (modify::add_x, modify::add_x_animated)),
 ];
 
-pub const SOLVERS: [(&str, SolveFunction); 26] = [
+pub const HISTORY_MODIFICATIONS: [(&str, BuildHistoryFunction); 2] = [
+    ("cross", modify::add_cross_history),
+    ("x", modify::add_x_history),
+];
+
+pub const CURSOR_SOLVERS: [(&str, SolveCursorFunction); 26] = [
     ("dfs-hunt", (dfs::hunt, dfs::animate_hunt)),
     ("dfs-gather", (dfs::gather, dfs::animate_gather)),
     ("dfs-corner", (dfs::corner, dfs::animate_corner)),
@@ -200,6 +261,23 @@ pub const SOLVERS: [(&str, SolveFunction); 26] = [
     ("runs", (runs::paint_run_lengths, runs::animate_run_lengths)),
 ];
 
+pub const HISTORY_SOLVERS: [(&str, SolveHistoryFunction); 14] = [
+    ("dfs-hunt", dfs::hunt_history),
+    ("dfs-gather", dfs::gather_history),
+    ("dfs-corner", dfs::corner_history),
+    ("rdfs-hunt", rdfs::hunt_history),
+    ("rdfs-gather", rdfs::gather_history),
+    ("rdfs-corner", rdfs::corner_history),
+    ("bfs-hunt", bfs::hunt_history),
+    ("bfs-gather", bfs::gather_history),
+    ("bfs-corner", bfs::corner_history),
+    ("floodfs-hunt", floodfs::hunt_history),
+    ("floodfs-gather", floodfs::gather_history),
+    ("floodfs-corner", floodfs::corner_history),
+    ("distance", distance::paint_distance_from_center_history),
+    ("runs", runs::paint_run_lengths_history),
+];
+
 pub const SPEEDS: [(&str, speed::Speed); 7] = [
     ("1", speed::Speed::Speed1),
     ("2", speed::Speed::Speed2),
@@ -210,12 +288,13 @@ pub const SPEEDS: [(&str, speed::Speed); 7] = [
     ("7", speed::Speed::Speed7),
 ];
 
-pub static DESCRIPTIONS: [(BuildFunction, &str); 10] = [
+pub static DESCRIPTIONS: [(BuildCursorFunction, BuildHistoryFunction, &str); 10] = [
     (
         (
             builders::arena::generate_maze,
             builders::arena::animate_maze,
         ),
+        builders::arena::generate_history,
         include_str!("../../res/arena.txt"),
     ),
     (
@@ -223,10 +302,12 @@ pub static DESCRIPTIONS: [(BuildFunction, &str); 10] = [
             builders::eller::generate_maze,
             builders::eller::animate_maze,
         ),
+        builders::eller::generate_history,
         include_str!("../../res/eller.txt"),
     ),
     (
         (builders::grid::generate_maze, builders::grid::animate_maze),
+        builders::grid::generate_history,
         include_str!("../../res/grid.txt"),
     ),
     (
@@ -234,6 +315,7 @@ pub static DESCRIPTIONS: [(BuildFunction, &str); 10] = [
             builders::hunt_kill::generate_maze,
             builders::hunt_kill::animate_maze,
         ),
+        builders::hunt_kill::generate_history,
         include_str!("../../res/hunt_kill.txt"),
     ),
     (
@@ -241,10 +323,12 @@ pub static DESCRIPTIONS: [(BuildFunction, &str); 10] = [
             builders::kruskal::generate_maze,
             builders::kruskal::animate_maze,
         ),
+        builders::kruskal::generate_history,
         include_str!("../../res/kruskal.txt"),
     ),
     (
         (builders::prim::generate_maze, builders::prim::animate_maze),
+        builders::prim::generate_history,
         include_str!("../../res/prim.txt"),
     ),
     (
@@ -252,6 +336,7 @@ pub static DESCRIPTIONS: [(BuildFunction, &str); 10] = [
             builders::recursive_backtracker::generate_maze,
             builders::recursive_backtracker::animate_maze,
         ),
+        builders::recursive_backtracker::generate_history,
         include_str!("../../res/recursive_backtracker.txt"),
     ),
     (
@@ -259,6 +344,7 @@ pub static DESCRIPTIONS: [(BuildFunction, &str); 10] = [
             builders::recursive_subdivision::generate_maze,
             builders::recursive_subdivision::animate_maze,
         ),
+        builders::recursive_subdivision::generate_history,
         include_str!("../../res/recursive_subdivision.txt"),
     ),
     (
@@ -266,6 +352,7 @@ pub static DESCRIPTIONS: [(BuildFunction, &str); 10] = [
             builders::wilson_adder::generate_maze,
             builders::wilson_adder::animate_maze,
         ),
+        builders::wilson_adder::generate_history,
         include_str!("../../res/wilson_adder.txt"),
     ),
     (
@@ -273,6 +360,7 @@ pub static DESCRIPTIONS: [(BuildFunction, &str); 10] = [
             builders::wilson_carver::generate_maze,
             builders::wilson_carver::animate_maze,
         ),
+        builders::wilson_carver::generate_history,
         include_str!("../../res/wilson_carver.txt"),
     ),
 ];

@@ -18,13 +18,90 @@ const MIN_CHAMBER: i32 = 3;
 
 // Public Functions-------------------------------------------------------------------------------
 
-pub fn generate_maze(maze: &mut maze::Maze) {
-    build::build_wall_outline(maze);
+pub fn generate_history(monitor: monitor::MazeMonitor) {
+    let mut lk = match monitor.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    build::build_wall_outline_history(&mut lk.maze);
     let mut rng = thread_rng();
     let mut chamber_stack: Vec<Chamber> = Vec::from([Chamber {
         offset: maze::Point { row: 0, col: 0 },
-        h: maze.row_size(),
-        w: maze.col_size(),
+        h: lk.maze.rows(),
+        w: lk.maze.cols(),
+    }]);
+    while let Some(chamber) = chamber_stack.pop() {
+        if chamber.h >= chamber.w && chamber.w > MIN_CHAMBER {
+            let divide = random_even_div(&mut rng, chamber.h);
+            let passage = rand_odd_pass(&mut rng, chamber.w);
+            for c in 0..chamber.w {
+                if c == passage {
+                    continue;
+                }
+                build::build_wall_line_history(
+                    &mut lk.maze,
+                    maze::Point {
+                        row: chamber.offset.row + divide,
+                        col: chamber.offset.col + c,
+                    },
+                );
+            }
+            chamber_stack.push(Chamber {
+                offset: chamber.offset,
+                h: divide + 1,
+                w: chamber.w,
+            });
+            chamber_stack.push(Chamber {
+                offset: maze::Point {
+                    row: chamber.offset.row + divide,
+                    col: chamber.offset.col,
+                },
+                h: chamber.h - divide,
+                w: chamber.w,
+            });
+        } else if chamber.w > chamber.h && chamber.h > MIN_CHAMBER {
+            let divide = random_even_div(&mut rng, chamber.w);
+            let passage = rand_odd_pass(&mut rng, chamber.h);
+            for r in 0..chamber.h {
+                if r == passage {
+                    continue;
+                }
+                build::build_wall_line_history(
+                    &mut lk.maze,
+                    maze::Point {
+                        row: chamber.offset.row + r,
+                        col: chamber.offset.col + divide,
+                    },
+                );
+            }
+            chamber_stack.push(Chamber {
+                offset: chamber.offset,
+                h: chamber.h,
+                w: divide + 1,
+            });
+            chamber_stack.push(Chamber {
+                offset: maze::Point {
+                    row: chamber.offset.row,
+                    col: chamber.offset.col + divide,
+                },
+                h: chamber.h,
+                w: chamber.w - divide,
+            });
+        }
+    }
+}
+
+pub fn generate_maze(monitor: monitor::MazeReceiver) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    build::build_wall_outline(&mut lk.maze);
+    let mut rng = thread_rng();
+    let mut chamber_stack: Vec<Chamber> = Vec::from([Chamber {
+        offset: maze::Point { row: 0, col: 0 },
+        h: lk.maze.rows(),
+        w: lk.maze.cols(),
     }]);
     while let Some(chamber) = chamber_stack.pop() {
         if chamber.h >= chamber.w && chamber.w > MIN_CHAMBER {
@@ -35,7 +112,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                     continue;
                 }
                 build::build_wall_line(
-                    maze,
+                    &mut lk.maze,
                     maze::Point {
                         row: chamber.offset.row + divide,
                         col: chamber.offset.col + c,
@@ -63,7 +140,7 @@ pub fn generate_maze(maze: &mut maze::Maze) {
                     continue;
                 }
                 build::build_wall_line(
-                    maze,
+                    &mut lk.maze,
                     maze::Point {
                         row: chamber.offset.row + r,
                         col: chamber.offset.col + divide,
@@ -87,23 +164,28 @@ pub fn generate_maze(maze: &mut maze::Maze) {
     }
 }
 
-pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
-    if maze.is_mini() {
-        animate_mini_maze(maze, speed);
+pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    if lk.maze.is_mini() {
+        drop(lk);
+        animate_mini_maze(monitor, speed);
         return;
     }
     let animation = build::BUILDER_SPEEDS[speed as usize];
-    build::build_wall_outline(maze);
-    build::flush_grid(maze);
-    build::print_overlap_key_animated(maze);
+    build::build_wall_outline(&mut lk.maze);
+    build::flush_grid(&lk.maze);
+    build::print_overlap_key_animated(&lk.maze);
     let mut rng = thread_rng();
     let mut chamber_stack: Vec<Chamber> = Vec::from([Chamber {
         offset: maze::Point { row: 0, col: 0 },
-        h: maze.row_size(),
-        w: maze.col_size(),
+        h: lk.maze.rows(),
+        w: lk.maze.cols(),
     }]);
     while let Some(chamber) = chamber_stack.pop() {
-        if maze.exit() {
+        if monitor.exit() {
             return;
         }
         if chamber.h >= chamber.w && chamber.w > MIN_CHAMBER {
@@ -114,7 +196,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                     continue;
                 }
                 build::build_wall_line_animated(
-                    maze,
+                    &mut lk.maze,
                     maze::Point {
                         row: chamber.offset.row + divide,
                         col: chamber.offset.col + c,
@@ -143,7 +225,7 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                     continue;
                 }
                 build::build_wall_line_animated(
-                    maze,
+                    &mut lk.maze,
                     maze::Point {
                         row: chamber.offset.row + r,
                         col: chamber.offset.col + divide,
@@ -168,19 +250,23 @@ pub fn animate_maze(maze: &mut maze::Maze, speed: speed::Speed) {
     }
 }
 
-fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
+fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
     let animation = build::BUILDER_SPEEDS[speed as usize];
-    build::build_wall_outline(maze);
-    build::flush_grid(maze);
-    build::print_overlap_key_animated(maze);
+    build::build_wall_outline(&mut lk.maze);
+    build::flush_grid(&lk.maze);
+    build::print_overlap_key_animated(&lk.maze);
     let mut rng = thread_rng();
     let mut chamber_stack: Vec<Chamber> = Vec::from([Chamber {
         offset: maze::Point { row: 0, col: 0 },
-        h: maze.row_size(),
-        w: maze.col_size(),
+        h: lk.maze.rows(),
+        w: lk.maze.cols(),
     }]);
     while let Some(chamber) = chamber_stack.pop() {
-        if maze.exit() {
+        if monitor.exit() {
             return;
         }
         if chamber.h >= chamber.w && chamber.w > MIN_CHAMBER {
@@ -191,7 +277,7 @@ fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                     continue;
                 }
                 build::build_mini_wall_line_animated(
-                    maze,
+                    &mut lk.maze,
                     maze::Point {
                         row: chamber.offset.row + divide,
                         col: chamber.offset.col + c,
@@ -220,7 +306,7 @@ fn animate_mini_maze(maze: &mut maze::Maze, speed: speed::Speed) {
                     continue;
                 }
                 build::build_mini_wall_line_animated(
-                    maze,
+                    &mut lk.maze,
                     maze::Point {
                         row: chamber.offset.row + r,
                         col: chamber.offset.col + divide,
