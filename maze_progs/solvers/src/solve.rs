@@ -26,12 +26,6 @@ pub struct ThreadGuide {
     pub speed: SolveSpeedUnit,
 }
 
-macro_rules! rgb {
-    ($r:expr, $g:expr, $b:expr) => {
-        ((($r as u32) & 0xFF) << 16) | ((($g as u32) & 0xFF) << 8) | (($b as u32) & 0xFF)
-    };
-}
-
 // Read Only Data Available to All Solvers
 pub const START_BIT: ThreadPaint = 0x40000000;
 pub const FINISH_BIT: ThreadPaint = 0x80000000;
@@ -46,12 +40,8 @@ pub const RED_SHIFT: ThreadPaint = 16;
 pub const GREEN_MASK: ThreadPaint = 0xFF00;
 pub const GREEN_SHIFT: ThreadPaint = 8;
 pub const BLUE_MASK: ThreadPaint = 0xFF;
-pub const THREAD_MASKS: [ThreadPaint; 4] = [
-    rgb!(155, 237, 0),
-    rgb!(18, 62, 171),
-    rgb!(255, 171, 0),
-    rgb!(206, 0, 113),
-];
+// Credit to Caesar on StackOverflow for writing the program to find this tetrad of colors.
+pub const THREAD_MASKS: [ThreadPaint; 4] = [0x880044, 0x766002, 0x009531, 0x010a88];
 pub const CACHE_MASK: ThreadCache = 0xF000000;
 pub const ZERO_SEEN: ThreadCache = 0x1000000;
 pub const ONE_SEEN: ThreadCache = 0x2000000;
