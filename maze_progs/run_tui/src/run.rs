@@ -189,7 +189,7 @@ fn render_maze(this_run: tables::HistoryRunner, tui: &mut tui::Tui) -> tui::Resu
             let now = Instant::now();
             if !play.pause && now - play.last_render >= play.speed {
                 if play.forward {
-                    play.forward = play.solve_step();
+                    play.solve_step();
                 } else if !play.solve_step() {
                     break 'solving;
                 }
@@ -337,8 +337,11 @@ fn handle_reader(
 }
 
 pub fn set_command_args(cmd: String, tui: &mut tui::Tui) -> Result<tables::HistoryRunner, String> {
-    let mut run = tables::HistoryRunner::new();
+    if cmd.is_empty() {
+        return Ok(set_random_args(&tui.inner_maze_rect()[0]));
+    }
     let dimensions = tui.inner_dimensions();
+    let mut run = tables::HistoryRunner::new();
     run.args.odd_rows = dimensions.rows;
     run.args.odd_cols = dimensions.cols;
     run.args.offset = dimensions.offset;

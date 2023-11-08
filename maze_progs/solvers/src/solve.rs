@@ -50,6 +50,10 @@ pub const THREE_SEEN: ThreadCache = 0x8000000;
 pub const THREAD_CACHES: [ThreadCache; 4] = [ZERO_SEEN, ONE_SEEN, TWO_SEEN, THREE_SEEN];
 pub const SOLVER_SPEEDS: [SolveSpeedUnit; 8] = [0, 20000, 10000, 5000, 2000, 1000, 500, 250];
 
+///
+/// Logical helpers for bitwise operations.
+///
+
 #[inline]
 pub fn is_start(square: maze::Square) -> bool {
     (square & START_BIT) != 0
@@ -66,8 +70,8 @@ pub fn is_color(square: maze::Square) -> bool {
 }
 
 #[inline]
-pub fn any_thread_visited(square: maze::Square) -> bool {
-    (square & CACHE_MASK) != 0
+pub fn is_first(square: maze::Square) -> bool {
+    (square & CACHE_MASK) == 0
 }
 
 #[inline]
@@ -100,7 +104,9 @@ fn color_index(square: maze::Square) -> usize {
     ((square & THREAD_MASK) >> THREAD_TAG_OFFSET) as usize
 }
 
-// Public Module Functions
+///
+/// Setup functions for starting and finishing a solver section.
+///
 
 pub fn reset_solve(maze: &mut maze::Maze) {
     for square in maze.as_slice_mut().iter_mut() {
@@ -173,31 +179,9 @@ pub fn find_nearest_square(maze: &maze::Maze, choice: maze::Point) -> maze::Poin
     print::maze_panic!("Could not place a point in this maze. Was it built correctly?");
 }
 
-pub fn print_paths(maze: &maze::Maze) {
-    if maze.style_index() == (maze::MazeStyle::Mini as usize) {
-        for r in 0..maze.rows() {
-            for c in 0..maze.cols() {
-                print_mini_point(maze, maze::Point { row: r, col: c });
-            }
-            match queue!(io::stdout(), Print('\n'),) {
-                Ok(_) => {}
-                Err(_) => maze_panic!("Could not print newline."),
-            }
-        }
-        print::flush();
-        return;
-    }
-    for r in 0..maze.rows() {
-        for c in 0..maze.cols() {
-            print_point(maze, maze::Point { row: r, col: c });
-        }
-        match queue!(io::stdout(), Print('\n'),) {
-            Ok(_) => {}
-            Err(_) => maze_panic!("Could not print newline."),
-        }
-    }
-    print::flush();
-}
+///
+/// Playback and animation based logic for interacting with TUI buffer.
+///
 
 pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
     // We have some special printing for the finish square. Not here.
@@ -250,135 +234,6 @@ pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
         maze_panic!("Uncategorized maze square! Check the bits.");
     }
 }
-
-pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
-    print::set_cursor_position(
-        maze::Point {
-            row: point.row,
-            col: point.col,
-        },
-        maze.offset(),
-    );
-    let square = maze.get(point.row, point.col);
-    // We have some special printing for the finish square. Not here.
-    if is_finish(square) {
-        let ansi = key::thread_color_code(color_index(square));
-        match execute!(
-            io::stdout(),
-            SetAttribute(Attribute::SlowBlink),
-            SetAttribute(Attribute::Bold),
-            SetBackgroundColor(Color::AnsiValue(ansi)),
-            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
-            Print('F'),
-            ResetColor
-        ) {
-            Ok(_) => return,
-            Err(_) => maze_panic!("Could not mark Finish square"),
-        }
-    }
-    if is_start(square) {
-        match execute!(
-            io::stdout(),
-            SetAttribute(Attribute::Bold),
-            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
-            Print('S'),
-            ResetColor
-        ) {
-            Ok(_) => return,
-            Err(_) => maze_panic!("Could not mark Start square."),
-        }
-    }
-    if is_color(square) {
-        let thread_color: key::ThreadColor = key::thread_color(color_index(square));
-        match execute!(
-            io::stdout(),
-            SetForegroundColor(Color::AnsiValue(thread_color.ansi)),
-            Print(thread_color.block),
-            ResetColor,
-        ) {
-            Ok(_) => return,
-            Err(_) => maze_panic!("Could not mark thread color."),
-        }
-    }
-    if maze::is_wall(square) {
-        match execute!(io::stdout(), Print(maze.wall_char(square)),) {
-            Ok(_) => return,
-            Err(_) => maze_panic!("Could not print wall."),
-        }
-    }
-    if maze::is_path(square) {
-        match execute!(io::stdout(), Print(' '),) {
-            Ok(_) => return,
-            Err(_) => maze_panic!("Could not print path."),
-        }
-    }
-    maze_panic!("Uncategorized maze square! Check the bits.");
-}
-
-pub fn print_point(maze: &maze::Maze, point: maze::Point) {
-    print::set_cursor_position(
-        maze::Point {
-            row: point.row,
-            col: point.col,
-        },
-        maze.offset(),
-    );
-    let square = maze.get(point.row, point.col);
-    if is_finish(square) {
-        let ansi = key::thread_color_code(color_index(square));
-        match queue!(
-            io::stdout(),
-            SetAttribute(Attribute::SlowBlink),
-            SetAttribute(Attribute::Bold),
-            SetBackgroundColor(Color::AnsiValue(ansi)),
-            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
-            Print('F'),
-            ResetColor
-        ) {
-            Ok(_) => return,
-            Err(_) => maze_panic!("Could not mark Finish square"),
-        }
-    }
-    if is_start(square) {
-        match queue!(
-            io::stdout(),
-            SetAttribute(Attribute::Bold),
-            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
-            Print('S'),
-            ResetColor
-        ) {
-            Ok(_) => return,
-            Err(_) => maze_panic!("Could not mark Start square."),
-        }
-    }
-    if is_color(square) {
-        let thread_color: key::ThreadColor = key::thread_color(color_index(square));
-        match queue!(
-            io::stdout(),
-            SetForegroundColor(Color::AnsiValue(thread_color.ansi)),
-            Print(thread_color.block),
-            ResetColor,
-        ) {
-            Ok(_) => return,
-            Err(_) => maze_panic!("Could not mark thread color."),
-        }
-    }
-    if maze::is_wall(square) {
-        match queue!(io::stdout(), Print(maze.wall_char(square)),) {
-            Ok(_) => return,
-            Err(_) => maze_panic!("Could not print wall."),
-        }
-    }
-    if maze::is_path(square) {
-        match queue!(io::stdout(), Print(' '),) {
-            Ok(_) => return,
-            Err(_) => maze_panic!("Could not print path."),
-        }
-    }
-    maze_panic!("Uncategorized maze square! Check the bits.");
-}
-
-// These printers for the Mini wall style are brutal. If you ever think of something better, fix.
 
 // This is really bad, there must be a better way. Coloring halves correctly is a challenge.
 pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
@@ -510,6 +365,165 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
         skip: false,
     }
 }
+
+///
+/// Cursor based display logic for printing and coloring.
+///
+
+pub fn print_paths(maze: &maze::Maze) {
+    if maze.style_index() == (maze::MazeStyle::Mini as usize) {
+        for r in 0..maze.rows() {
+            for c in 0..maze.cols() {
+                print_mini_point(maze, maze::Point { row: r, col: c });
+            }
+            match queue!(io::stdout(), Print('\n'),) {
+                Ok(_) => {}
+                Err(_) => maze_panic!("Could not print newline."),
+            }
+        }
+        print::flush();
+        return;
+    }
+    for r in 0..maze.rows() {
+        for c in 0..maze.cols() {
+            print_point(maze, maze::Point { row: r, col: c });
+        }
+        match queue!(io::stdout(), Print('\n'),) {
+            Ok(_) => {}
+            Err(_) => maze_panic!("Could not print newline."),
+        }
+    }
+    print::flush();
+}
+
+pub fn flush_cursor_path_coordinate(maze: &maze::Maze, point: maze::Point) {
+    print::set_cursor_position(
+        maze::Point {
+            row: point.row,
+            col: point.col,
+        },
+        maze.offset(),
+    );
+    let square = maze.get(point.row, point.col);
+    // We have some special printing for the finish square. Not here.
+    if is_finish(square) {
+        let ansi = key::thread_color_code(color_index(square));
+        match execute!(
+            io::stdout(),
+            SetAttribute(Attribute::SlowBlink),
+            SetAttribute(Attribute::Bold),
+            SetBackgroundColor(Color::AnsiValue(ansi)),
+            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            Print('F'),
+            ResetColor
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark Finish square"),
+        }
+    }
+    if is_start(square) {
+        match execute!(
+            io::stdout(),
+            SetAttribute(Attribute::Bold),
+            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            Print('S'),
+            ResetColor
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark Start square."),
+        }
+    }
+    if is_color(square) {
+        let thread_color: key::ThreadColor = key::thread_color(color_index(square));
+        match execute!(
+            io::stdout(),
+            SetForegroundColor(Color::AnsiValue(thread_color.ansi)),
+            Print(thread_color.block),
+            ResetColor,
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark thread color."),
+        }
+    }
+    if maze::is_wall(square) {
+        match execute!(io::stdout(), Print(maze.wall_char(square)),) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not print wall."),
+        }
+    }
+    if maze::is_path(square) {
+        match execute!(io::stdout(), Print(' '),) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not print path."),
+        }
+    }
+    maze_panic!("Uncategorized maze square! Check the bits.");
+}
+
+pub fn print_point(maze: &maze::Maze, point: maze::Point) {
+    print::set_cursor_position(
+        maze::Point {
+            row: point.row,
+            col: point.col,
+        },
+        maze.offset(),
+    );
+    let square = maze.get(point.row, point.col);
+    if is_finish(square) {
+        let ansi = key::thread_color_code(color_index(square));
+        match queue!(
+            io::stdout(),
+            SetAttribute(Attribute::SlowBlink),
+            SetAttribute(Attribute::Bold),
+            SetBackgroundColor(Color::AnsiValue(ansi)),
+            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            Print('F'),
+            ResetColor
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark Finish square"),
+        }
+    }
+    if is_start(square) {
+        match queue!(
+            io::stdout(),
+            SetAttribute(Attribute::Bold),
+            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
+            Print('S'),
+            ResetColor
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark Start square."),
+        }
+    }
+    if is_color(square) {
+        let thread_color: key::ThreadColor = key::thread_color(color_index(square));
+        match queue!(
+            io::stdout(),
+            SetForegroundColor(Color::AnsiValue(thread_color.ansi)),
+            Print(thread_color.block),
+            ResetColor,
+        ) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not mark thread color."),
+        }
+    }
+    if maze::is_wall(square) {
+        match queue!(io::stdout(), Print(maze.wall_char(square)),) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not print wall."),
+        }
+    }
+    if maze::is_path(square) {
+        match queue!(io::stdout(), Print(' '),) {
+            Ok(_) => return,
+            Err(_) => maze_panic!("Could not print path."),
+        }
+    }
+    maze_panic!("Uncategorized maze square! Check the bits.");
+}
+
+// These printers for the Mini wall style are brutal. If you ever think of something better, fix.
 
 pub fn flush_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
     print::set_cursor_position(
@@ -706,128 +720,4 @@ pub fn print_mini_point(maze: &maze::Maze, point: maze::Point) {
         ResetColor
     )
     .expect("printer broke.");
-}
-
-// Because we are using half blocks we need a different function to invert colors for dark mode.
-pub fn flush_dark_mini_path_coordinate(maze: &maze::Maze, point: maze::Point) {
-    print::set_cursor_position(
-        maze::Point {
-            row: point.row / 2,
-            col: point.col,
-        },
-        maze.offset(),
-    );
-    let square = maze.get(point.row, point.col);
-    let this_color = key::thread_color_code(color_index(square));
-    if is_start_or_finish(square) {
-        execute!(
-            io::stdout(),
-            SetAttribute(Attribute::SlowBlink),
-            SetBackgroundColor(Color::AnsiValue(this_color)),
-            SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
-            Print('▀'),
-            ResetColor
-        )
-        .expect("printer broke.");
-        return;
-    }
-    // This is a path square. We should never be asked to print a wall from a solver animation?
-    if point.row % 2 != 0 {
-        if maze.path_at(point.row - 1, point.col) {
-            let neighbor_square = maze.get(point.row - 1, point.col);
-            if is_start_or_finish(neighbor_square) {
-                execute!(
-                    io::stdout(),
-                    SetAttribute(Attribute::SlowBlink),
-                    SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
-                    SetBackgroundColor(Color::AnsiValue(this_color)),
-                    Print('▀'),
-                    ResetColor
-                )
-                .expect("printer broke.");
-                return;
-            }
-            execute!(
-                io::stdout(),
-                SetForegroundColor(Color::AnsiValue(key::thread_color_code(color_index(
-                    neighbor_square
-                )))),
-                SetBackgroundColor(Color::AnsiValue(this_color)),
-                Print('▀'),
-                ResetColor
-            )
-            .expect("printer broke.");
-            return;
-        }
-        // A wall above but we are in dark mode so make it black. Path is now square.
-        execute!(
-            io::stdout(),
-            SetForegroundColor(Color::AnsiValue(this_color)),
-            Print('▄'),
-            ResetColor
-        )
-        .expect("printer broke.");
-        return;
-    }
-    // Even rows but this still must be a path.
-    if maze.path_at(point.row + 1, point.col) {
-        let neighbor_square = maze.get(point.row + 1, point.col);
-        if is_start_or_finish(neighbor_square) {
-            execute!(
-                io::stdout(),
-                SetAttribute(Attribute::SlowBlink),
-                SetForegroundColor(Color::AnsiValue(key::ANSI_CYN)),
-                SetBackgroundColor(Color::AnsiValue(this_color)),
-                Print('▀'),
-                ResetColor
-            )
-            .expect("printer broke.");
-            return;
-        }
-        execute!(
-            io::stdout(),
-            SetForegroundColor(Color::AnsiValue(key::thread_color_code(color_index(
-                neighbor_square
-            )))),
-            SetBackgroundColor(Color::AnsiValue(this_color)),
-            Print('▀'),
-            ResetColor
-        )
-        .expect("printer broke.");
-        return;
-    }
-    // A wall above but we are in dark mode so make it black. Path is now square.
-    execute!(
-        io::stdout(),
-        SetForegroundColor(Color::AnsiValue(this_color)),
-        Print('▀'),
-        ResetColor
-    )
-    .expect("printer broke.");
-}
-
-pub fn deluminate_maze(maze: &maze::Maze) {
-    if maze.style_index() == (maze::MazeStyle::Mini as usize) {
-        for r in 0..(maze.rows() + 1) / 2 {
-            for c in 0..maze.cols() {
-                let p = maze::Point { row: r, col: c };
-                print::set_cursor_position(p, maze.offset());
-                match queue!(io::stdout(), Print(' '),) {
-                    Ok(_) => {}
-                    Err(_) => maze_panic!("Could not print path."),
-                }
-            }
-        }
-    } else {
-        for r in 0..maze.rows() {
-            for c in 0..maze.cols() {
-                let p = maze::Point { row: r, col: c };
-                print::set_cursor_position(p, maze.offset());
-                match queue!(io::stdout(), Print(' '),) {
-                    Ok(_) => {}
-                    Err(_) => maze_panic!("Could not print path."),
-                }
-            }
-        }
-    }
 }
