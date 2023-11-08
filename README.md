@@ -82,7 +82,8 @@ WALL FLAG[-w] Set the wall style for the maze.
     [half] - Half wall height and full size paths.
     [spikes] - Connected lines with spikes.
 
-Cancel any animation by pressing escape.
+Animations loop forwards and backwards by default.
+Cancel any animation by pressing <escape>.
 Pause an animation with <space>
 Speed up or slow down the animation with <⮝/⮟>
 Step next and previous or change their direction with <⮜/⮞>
