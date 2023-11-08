@@ -140,6 +140,8 @@ fn render_maze(this_run: tables::HistoryRunner, tui: &mut tui::Tui) -> tui::Resu
                     maze: &mut play.maze,
                 },
                 &render_space,
+                play.forward,
+                play.pause,
             )?;
             if let Some(ev) = tui.events.try_next() {
                 if !handle_press(
@@ -166,7 +168,12 @@ fn render_maze(this_run: tables::HistoryRunner, tui: &mut tui::Tui) -> tui::Resu
             }
         }
         'solving: loop {
-            tui.render_maze_frame(tui::SolveFrame { maze: &play.maze }, &render_space)?;
+            tui.render_maze_frame(
+                tui::SolveFrame { maze: &play.maze },
+                &render_space,
+                play.forward,
+                play.pause,
+            )?;
             if let Some(ev) = tui.events.try_next() {
                 if !handle_press(
                     tui,
@@ -254,6 +261,9 @@ fn handle_press(
 fn new_tape(run: &tables::HistoryRunner) -> Playback {
     let monitor = monitor::Monitor::new(maze::Maze::new(run.args));
     (run.build)(monitor.clone());
+    if let Some(m) = run.modify {
+        (m)(monitor.clone());
+    }
     (run.solve)(monitor.clone());
     match Arc::into_inner(monitor) {
         Some(a) => match Mutex::into_inner(a) {
@@ -279,6 +289,9 @@ fn new_home_tape(rect: Rect) -> Playback {
     let run_bg = set_random_args(&rect);
     let bg_maze = monitor::Monitor::new(maze::Maze::new(run_bg.args));
     (run_bg.build)(bg_maze.clone());
+    if let Some(m) = run_bg.modify {
+        (m)(bg_maze.clone());
+    }
     (run_bg.solve)(bg_maze.clone());
     match Arc::into_inner(bg_maze) {
         Some(a) => match Mutex::into_inner(a) {

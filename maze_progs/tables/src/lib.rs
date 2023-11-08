@@ -61,7 +61,7 @@ pub struct CursorRunner {
 pub struct HistoryRunner {
     pub args: maze::MazeArgs,
     pub build: BuildHistoryFunction,
-    pub modify: Option<BuildCursorFunction>,
+    pub modify: Option<BuildHistoryFunction>,
     pub solve: SolveHistoryFunction,
 }
 
@@ -76,7 +76,7 @@ impl HistoryRunner {
             },
             build: recursive_backtracker::generate_history,
             modify: None,
-            solve: bfs::hunt_history,
+            solve: dfs::hunt_history,
         }
     }
 }
@@ -212,9 +212,9 @@ pub const CURSOR_MODIFICATIONS: [(&str, BuildCursorFunction); 2] = [
     ("x", (modify::add_x, modify::add_x_animated)),
 ];
 
-pub const HISTORY_MODIFICATIONS: [(&str, BuildCursorFunction); 2] = [
-    ("cross", (modify::add_cross, modify::add_cross_animated)),
-    ("x", (modify::add_x, modify::add_x_animated)),
+pub const HISTORY_MODIFICATIONS: [(&str, BuildHistoryFunction); 2] = [
+    ("cross", modify::add_cross_history),
+    ("x", modify::add_x_history),
 ];
 
 pub const CURSOR_SOLVERS: [(&str, SolveCursorFunction); 26] = [

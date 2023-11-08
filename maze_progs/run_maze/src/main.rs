@@ -90,13 +90,15 @@ fn main() {
     }
 
     // Ensure a smooth transition from build to solve with no flashing.
-    print::set_cursor_position(maze::Point::default(), maze::Offset::default());
+    if !monitor.exit() {
+        print::set_cursor_position(maze::Point::default(), maze::Offset::default());
 
-    match run.solve_view {
-        tables::ViewingMode::StaticImage => {
-            run.solve.0(monitor.clone());
+        match run.solve_view {
+            tables::ViewingMode::StaticImage => {
+                run.solve.0(monitor.clone());
+            }
+            tables::ViewingMode::AnimatedPlayback => run.solve.1(monitor.clone(), run.solve_speed),
         }
-        tables::ViewingMode::AnimatedPlayback => run.solve.1(monitor.clone(), run.solve_speed),
     }
 
     if let Ok(lk) = monitor.clone().solver.lock() {

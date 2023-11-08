@@ -371,7 +371,6 @@ fn painter_history(monitor: monitor::MazeMonitor, guide: rgb::ThreadGuide) {
                         | (c[2] as u32);
                     lk.count += 1;
                 }
-                *lk.maze.get_mut(cur.row, cur.col) |= guide.cache;
             }
             Err(p) => print::maze_panic!("Thread panicked with lock: {}", p),
         };
@@ -384,9 +383,14 @@ fn painter_history(monitor: monitor::MazeMonitor, guide: rgb::ThreadGuide) {
             };
             if match monitor.lock() {
                 Err(p) => print::maze_panic!("Panic with lock: {}", p),
-                Ok(lk) => {
+                Ok(mut lk) => {
                     let nxt = lk.maze.get(next.row, next.col);
-                    (nxt & guide.cache) == 0 && maze::is_path(nxt)
+                    let seen = (nxt & guide.cache) == 0;
+                    let is_path = maze::is_path(nxt);
+                    if seen && is_path {
+                        *lk.maze.get_mut(next.row, next.col) |= guide.cache;
+                    }
+                    seen && is_path
                 }
             } {
                 bfs.push_back(next);

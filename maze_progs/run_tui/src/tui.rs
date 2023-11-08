@@ -492,7 +492,13 @@ impl<'a> Tui<'a> {
         self.cmd.input(input)
     }
 
-    pub fn render_maze_frame(&mut self, frame: impl Widget, rect: &Rc<[Rect]>) -> Result<()> {
+    pub fn render_maze_frame(
+        &mut self,
+        frame: impl Widget,
+        rect: &Rc<[Rect]>,
+        forward: bool,
+        pause: bool,
+    ) -> Result<()> {
         let popup_layout_v = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -514,7 +520,11 @@ impl<'a> Tui<'a> {
                 Block::default()
                     .borders(Borders::ALL)
                     .border_type(BorderType::Double)
-                    .border_style(Style::new().fg(Color::Yellow))
+                    .border_style(Style::new().fg(match (pause, forward) {
+                        (true, _) => RED_PAUSE,
+                        (false, true) => GREEN_FORWARD,
+                        (false, false) => BLUE_REVERSE,
+                    }))
                     .style(Style::default().bg(Color::Black)),
             )
             .alignment(Alignment::Center);
@@ -588,3 +598,6 @@ static INSTRUCTIONS_LINE_COUNT: usize = 70;
 static DESCRIPTION_LINE_COUNT: usize = 50;
 static POPUP_INSTRUCTIONS: &str =
     "<i>info <esc>exit <space>play/pause\n<⮜/⮞>backstep/nextstep <⮝/⮟>faster/slower";
+const RED_PAUSE: Color = Color::Rgb(201, 77, 83);
+const GREEN_FORWARD: Color = Color::Rgb(77, 201, 81);
+const BLUE_REVERSE: Color = Color::Rgb(42, 111, 222);
