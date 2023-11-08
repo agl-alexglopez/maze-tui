@@ -7,7 +7,60 @@ use speed;
 use rand::prelude::*;
 use std::collections::HashMap;
 
-// Public Builder Functions-----------------------------------------------------------------------
+///
+/// Data only maze generator
+///
+
+pub fn generate_maze(monitor: monitor::MazeReceiver) {
+    let mut lk = match monitor.solver.lock() {
+        Ok(l) => l,
+        Err(_) => print::maze_panic!("uncontested lock failure"),
+    };
+    build::fill_maze_with_walls(&mut lk.maze);
+    let walls = load_shuffled_walls(&lk.maze);
+    let ids = tag_cells(&lk.maze);
+    let mut sets = disjoint::DisjointSet::new(ids.len());
+
+    for w in &walls {
+        if w.row % 2 == 0 {
+            let above = maze::Point {
+                row: w.row - 1,
+                col: w.col,
+            };
+            let below = maze::Point {
+                row: w.row + 1,
+                col: w.col,
+            };
+            if let (Some(a_id), Some(b_id)) = (ids.get(&above), ids.get(&below)) {
+                if sets.made_union(*a_id, *b_id) {
+                    build::join_squares(&mut lk.maze, above, below);
+                }
+            } else {
+                print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
+            }
+            continue;
+        }
+        let left = maze::Point {
+            row: w.row,
+            col: w.col - 1,
+        };
+        let right = maze::Point {
+            row: w.row,
+            col: w.col + 1,
+        };
+        if let (Some(l_id), Some(r_id)) = (ids.get(&left), ids.get(&right)) {
+            if sets.made_union(*l_id, *r_id) {
+                build::join_squares(&mut lk.maze, right, left);
+            }
+        } else {
+            print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
+        }
+    }
+}
+
+///
+/// History based generator for animation and playback.
+///
 
 pub fn generate_history(monitor: monitor::MazeMonitor) {
     let mut lk = match monitor.lock() {
@@ -56,52 +109,9 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
     }
 }
 
-pub fn generate_maze(monitor: monitor::MazeReceiver) {
-    let mut lk = match monitor.solver.lock() {
-        Ok(l) => l,
-        Err(_) => print::maze_panic!("uncontested lock failure"),
-    };
-    build::fill_maze_with_walls(&mut lk.maze);
-    let walls = load_shuffled_walls(&lk.maze);
-    let ids = tag_cells(&lk.maze);
-    let mut sets = disjoint::DisjointSet::new(ids.len());
-
-    for w in &walls {
-        if w.row % 2 == 0 {
-            let above = maze::Point {
-                row: w.row - 1,
-                col: w.col,
-            };
-            let below = maze::Point {
-                row: w.row + 1,
-                col: w.col,
-            };
-            if let (Some(a_id), Some(b_id)) = (ids.get(&above), ids.get(&below)) {
-                if sets.made_union(*a_id, *b_id) {
-                    build::join_squares(&mut lk.maze, above, below);
-                }
-            } else {
-                print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
-            }
-            continue;
-        }
-        let left = maze::Point {
-            row: w.row,
-            col: w.col - 1,
-        };
-        let right = maze::Point {
-            row: w.row,
-            col: w.col + 1,
-        };
-        if let (Some(l_id), Some(r_id)) = (ids.get(&left), ids.get(&right)) {
-            if sets.made_union(*l_id, *r_id) {
-                build::join_squares(&mut lk.maze, right, left);
-            }
-        } else {
-            print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
-        }
-    }
-}
+///
+/// Cursor based generator.
+///
 
 pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let mut lk = match monitor.solver.lock() {
@@ -212,7 +222,9 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     }
 }
 
-// Private Helper Functions-----------------------------------------------------------------------
+///
+/// Data only helpers available to all.
+///
 
 fn load_shuffled_walls(maze: &maze::Maze) -> Vec<maze::Point> {
     let mut walls = Vec::new();

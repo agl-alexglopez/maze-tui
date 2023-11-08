@@ -71,7 +71,6 @@ SOLVER FLAG[-s] Set maze solving algorithm.
     [bfs-hunt] - Breadth First Search
     [bfs-gather] - Breadth First Search
     [bfs-corner] - Breadth First Search
-    [dark[algorithm]-[game]] - A mystery...
 
 WALL FLAG[-w] Set the wall style for the maze.
     [mini] - Half size walls and paths.
@@ -83,13 +82,10 @@ WALL FLAG[-w] Set the wall style for the maze.
     [half] - Half wall height and full size paths.
     [spikes] - Connected lines with spikes.
 
-SOLVER ANIMATION FLAG[-sa] Watch the maze solution.
-    [1-7] - Speed increases with number.
-
-BUILDER ANIMATION FLAG[-ba] Watch the maze build.
-    [1-7] - Speed increases with number.
-
-Cancel any animation by pressing any key.
+Cancel any animation by pressing escape.
+Pause an animation with <space>
+Speed up or slow down the animation with <⮝/⮟>
+Step next and previous or change their direction with <⮜/⮞>
 Zoom out/in with <Ctrl-[-]>/<Ctrl-[+]>
 If any flags are omitted, defaults are used.
 An empty command line will create a random maze.
@@ -98,8 +94,7 @@ EXAMPLES:
 
 -b rdfs -s bfs-hunt
 -s bfs-gather -b prim
--s bfs-corner -d round -b fractal
--s dfs-hunt -ba 4 -sa 5 -b wilson-walls -m x
+-s bfs-corner -w mini -b fractal
 
 ASCII lettering for this title and algorithm
 descriptions are templates I used from
