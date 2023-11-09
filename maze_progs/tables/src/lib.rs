@@ -122,16 +122,9 @@ where
         .map(|(_, t)| t.clone())
 }
 
-pub fn load_desc(cur_builder: &BuildCursorFunction) -> &'static str {
-    match DESCRIPTIONS.iter().find(|(func, _, _)| func == cur_builder) {
-        Some(&(_, _, desc)) => desc,
-        None => "Coming Soon!",
-    }
-}
-
 pub fn load_info(cur_builder: &BuildHistoryFunction) -> &'static str {
-    match DESCRIPTIONS.iter().find(|(_, func, _)| func == cur_builder) {
-        Some(&(_, _, desc)) => desc,
+    match DESCRIPTIONS.iter().find(|(func, _)| func == cur_builder) {
+        Some(&(_, desc)) => desc,
         None => "Coming Soon!",
     }
 }
@@ -154,6 +147,102 @@ pub const WALL_STYLES: [(&str, maze::MazeStyle); 8] = [
     ("contrast", maze::MazeStyle::Contrast),
     ("half", maze::MazeStyle::Half),
     ("spikes", maze::MazeStyle::Spikes),
+];
+
+///
+/// History and playback specific tables
+///
+
+pub const HISTORY_BUILDERS: [(&str, BuildHistoryFunction); 10] = [
+    ("arena", arena::generate_history),
+    ("rdfs", recursive_backtracker::generate_history),
+    ("hunt-kill", hunt_kill::generate_history),
+    ("fractal", recursive_subdivision::generate_history),
+    ("prim", prim::generate_history),
+    ("kruskal", kruskal::generate_history),
+    ("eller", eller::generate_history),
+    ("wilson", wilson_carver::generate_history),
+    ("wilson-walls", wilson_adder::generate_history),
+    ("grid", grid::generate_history),
+];
+
+pub const HISTORY_MODIFICATIONS: [(&str, BuildHistoryFunction); 2] = [
+    ("cross", modify::add_cross_history),
+    ("x", modify::add_x_history),
+];
+
+pub const HISTORY_SOLVERS: [(&str, SolveHistoryFunction); 14] = [
+    ("dfs-hunt", dfs::hunt_history),
+    ("dfs-gather", dfs::gather_history),
+    ("dfs-corner", dfs::corner_history),
+    ("rdfs-hunt", rdfs::hunt_history),
+    ("rdfs-gather", rdfs::gather_history),
+    ("rdfs-corner", rdfs::corner_history),
+    ("bfs-hunt", bfs::hunt_history),
+    ("bfs-gather", bfs::gather_history),
+    ("bfs-corner", bfs::corner_history),
+    ("floodfs-hunt", floodfs::hunt_history),
+    ("floodfs-gather", floodfs::gather_history),
+    ("floodfs-corner", floodfs::corner_history),
+    ("distance", distance::paint_distance_from_center_history),
+    ("runs", runs::paint_run_lengths_history),
+];
+
+pub static DESCRIPTIONS: [(BuildHistoryFunction, &str); 10] = [
+    (
+        builders::arena::generate_history,
+        include_str!("../../res/arena.txt"),
+    ),
+    (
+        builders::eller::generate_history,
+        include_str!("../../res/eller.txt"),
+    ),
+    (
+        builders::grid::generate_history,
+        include_str!("../../res/grid.txt"),
+    ),
+    (
+        builders::hunt_kill::generate_history,
+        include_str!("../../res/hunt_kill.txt"),
+    ),
+    (
+        builders::kruskal::generate_history,
+        include_str!("../../res/kruskal.txt"),
+    ),
+    (
+        builders::prim::generate_history,
+        include_str!("../../res/prim.txt"),
+    ),
+    (
+        builders::recursive_backtracker::generate_history,
+        include_str!("../../res/recursive_backtracker.txt"),
+    ),
+    (
+        builders::recursive_subdivision::generate_history,
+        include_str!("../../res/recursive_subdivision.txt"),
+    ),
+    (
+        builders::wilson_adder::generate_history,
+        include_str!("../../res/wilson_adder.txt"),
+    ),
+    (
+        builders::wilson_carver::generate_history,
+        include_str!("../../res/wilson_carver.txt"),
+    ),
+];
+
+///
+/// Cursor animation specific lookups
+///
+
+pub const SPEEDS: [(&str, speed::Speed); 7] = [
+    ("1", speed::Speed::Speed1),
+    ("2", speed::Speed::Speed2),
+    ("3", speed::Speed::Speed3),
+    ("4", speed::Speed::Speed4),
+    ("5", speed::Speed::Speed5),
+    ("6", speed::Speed::Speed6),
+    ("7", speed::Speed::Speed7),
 ];
 
 pub const CURSOR_BUILDERS: [(&str, BuildCursorFunction); 10] = [
@@ -190,27 +279,9 @@ pub const CURSOR_BUILDERS: [(&str, BuildCursorFunction); 10] = [
     ("grid", (grid::generate_maze, grid::animate_maze)),
 ];
 
-pub const HISTORY_BUILDERS: [(&str, BuildHistoryFunction); 10] = [
-    ("arena", arena::generate_history),
-    ("rdfs", recursive_backtracker::generate_history),
-    ("hunt-kill", hunt_kill::generate_history),
-    ("fractal", recursive_subdivision::generate_history),
-    ("prim", prim::generate_history),
-    ("kruskal", kruskal::generate_history),
-    ("eller", eller::generate_history),
-    ("wilson", wilson_carver::generate_history),
-    ("wilson-walls", wilson_adder::generate_history),
-    ("grid", grid::generate_history),
-];
-
 pub const CURSOR_MODIFICATIONS: [(&str, BuildCursorFunction); 2] = [
     ("cross", (modify::add_cross, modify::add_cross_animated)),
     ("x", (modify::add_x, modify::add_x_animated)),
-];
-
-pub const HISTORY_MODIFICATIONS: [(&str, BuildHistoryFunction); 2] = [
-    ("cross", modify::add_cross_history),
-    ("x", modify::add_x_history),
 ];
 
 pub const CURSOR_SOLVERS: [(&str, SolveCursorFunction); 14] = [
@@ -234,108 +305,4 @@ pub const CURSOR_SOLVERS: [(&str, SolveCursorFunction); 14] = [
         ),
     ),
     ("runs", (runs::paint_run_lengths, runs::animate_run_lengths)),
-];
-
-pub const HISTORY_SOLVERS: [(&str, SolveHistoryFunction); 14] = [
-    ("dfs-hunt", dfs::hunt_history),
-    ("dfs-gather", dfs::gather_history),
-    ("dfs-corner", dfs::corner_history),
-    ("rdfs-hunt", rdfs::hunt_history),
-    ("rdfs-gather", rdfs::gather_history),
-    ("rdfs-corner", rdfs::corner_history),
-    ("bfs-hunt", bfs::hunt_history),
-    ("bfs-gather", bfs::gather_history),
-    ("bfs-corner", bfs::corner_history),
-    ("floodfs-hunt", floodfs::hunt_history),
-    ("floodfs-gather", floodfs::gather_history),
-    ("floodfs-corner", floodfs::corner_history),
-    ("distance", distance::paint_distance_from_center_history),
-    ("runs", runs::paint_run_lengths_history),
-];
-
-pub const SPEEDS: [(&str, speed::Speed); 7] = [
-    ("1", speed::Speed::Speed1),
-    ("2", speed::Speed::Speed2),
-    ("3", speed::Speed::Speed3),
-    ("4", speed::Speed::Speed4),
-    ("5", speed::Speed::Speed5),
-    ("6", speed::Speed::Speed6),
-    ("7", speed::Speed::Speed7),
-];
-
-pub static DESCRIPTIONS: [(BuildCursorFunction, BuildHistoryFunction, &str); 10] = [
-    (
-        (
-            builders::arena::generate_maze,
-            builders::arena::animate_maze,
-        ),
-        builders::arena::generate_history,
-        include_str!("../../res/arena.txt"),
-    ),
-    (
-        (
-            builders::eller::generate_maze,
-            builders::eller::animate_maze,
-        ),
-        builders::eller::generate_history,
-        include_str!("../../res/eller.txt"),
-    ),
-    (
-        (builders::grid::generate_maze, builders::grid::animate_maze),
-        builders::grid::generate_history,
-        include_str!("../../res/grid.txt"),
-    ),
-    (
-        (
-            builders::hunt_kill::generate_maze,
-            builders::hunt_kill::animate_maze,
-        ),
-        builders::hunt_kill::generate_history,
-        include_str!("../../res/hunt_kill.txt"),
-    ),
-    (
-        (
-            builders::kruskal::generate_maze,
-            builders::kruskal::animate_maze,
-        ),
-        builders::kruskal::generate_history,
-        include_str!("../../res/kruskal.txt"),
-    ),
-    (
-        (builders::prim::generate_maze, builders::prim::animate_maze),
-        builders::prim::generate_history,
-        include_str!("../../res/prim.txt"),
-    ),
-    (
-        (
-            builders::recursive_backtracker::generate_maze,
-            builders::recursive_backtracker::animate_maze,
-        ),
-        builders::recursive_backtracker::generate_history,
-        include_str!("../../res/recursive_backtracker.txt"),
-    ),
-    (
-        (
-            builders::recursive_subdivision::generate_maze,
-            builders::recursive_subdivision::animate_maze,
-        ),
-        builders::recursive_subdivision::generate_history,
-        include_str!("../../res/recursive_subdivision.txt"),
-    ),
-    (
-        (
-            builders::wilson_adder::generate_maze,
-            builders::wilson_adder::animate_maze,
-        ),
-        builders::wilson_adder::generate_history,
-        include_str!("../../res/wilson_adder.txt"),
-    ),
-    (
-        (
-            builders::wilson_carver::generate_maze,
-            builders::wilson_carver::animate_maze,
-        ),
-        builders::wilson_carver::generate_history,
-        include_str!("../../res/wilson_carver.txt"),
-    ),
 ];
