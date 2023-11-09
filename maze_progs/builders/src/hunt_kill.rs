@@ -61,7 +61,7 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
         for r in (highest_completed_row..lk.maze.rows() - 1).step_by(2) {
             for c in (1..lk.maze.cols() - 1).step_by(2) {
                 let start_candidate = maze::Point { row: r, col: c };
-                if (lk.maze.get(r, c) & build::BUILDER_BIT) == 0 {
+                if !build::is_built(lk.maze.get(r, c)) {
                     if !set_highest_completed_row {
                         highest_completed_row = r;
                         set_highest_completed_row = true;
@@ -123,7 +123,7 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
         for r in (highest_completed_row..lk.maze.rows() - 1).step_by(2) {
             for c in (1..lk.maze.cols() - 1).step_by(2) {
                 let start_candidate = maze::Point { row: r, col: c };
-                if (lk.maze.get(r, c) & build::BUILDER_BIT) == 0 {
+                if !build::is_built(lk.maze.get(r, c)) {
                     if !set_highest_completed_row {
                         if r != highest_completed_row {
                             reset_hunter_laser_history(&mut lk.maze, highest_completed_row);
@@ -352,7 +352,7 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-        let mut gen = thread_rng();
+    let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
         row: 2 * (gen.gen_range(1..lk.maze.rows() - 2) / 2) + 1,
         col: 2 * (gen.gen_range(1..lk.maze.cols() - 2) / 2) + 1,
@@ -401,7 +401,7 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
             shoot_hunter_laser(&lk.maze, r);
             for c in (1..lk.maze.cols() - 1).step_by(2) {
                 let start_candidate = maze::Point { row: r, col: c };
-                if (lk.maze.get(r, c) & build::BUILDER_BIT) == 0 {
+                if !build::is_built(lk.maze.get(r, c)) {
                     if !set_highest_completed_row {
                         highest_completed_row = r;
                         set_highest_completed_row = true;
@@ -440,7 +440,7 @@ pub fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation: build::SpeedUnit = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-        let mut gen = thread_rng();
+    let mut gen = thread_rng();
     let start: maze::Point = maze::Point {
         row: 2 * (gen.gen_range(1..lk.maze.rows() - 2) / 2) + 1,
         col: 2 * (gen.gen_range(1..lk.maze.cols() - 2) / 2) + 1,
@@ -480,7 +480,7 @@ pub fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
             shoot_mini_laser(&lk.maze, r);
             for c in (1..lk.maze.cols() - 1).step_by(2) {
                 let start_candidate = maze::Point { row: r, col: c };
-                if (lk.maze.get(r, c) & build::BUILDER_BIT) == 0 {
+                if !build::is_built(lk.maze.get(r, c)) {
                     if !set_highest_completed_row {
                         highest_completed_row = r;
                         set_highest_completed_row = true;
