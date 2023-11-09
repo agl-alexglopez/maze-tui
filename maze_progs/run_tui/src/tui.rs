@@ -8,6 +8,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     prelude::{Alignment, Color, Modifier, Rect},
     style::Style,
+    symbols::border::Set,
     widgets::{
         Block, BorderType, Borders, Clear, Paragraph, ScrollDirection, Scrollbar,
         ScrollbarOrientation, ScrollbarState, Wrap,
@@ -28,10 +29,73 @@ pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBacken
 pub type Err = Box<dyn std::error::Error>;
 pub type Result<T> = std::result::Result<T, Err>;
 
+static INSTRUCTIONS: &str = include_str!("../../res/instructions.txt");
+static INSTRUCTIONS_LINE_COUNT: usize = 70;
+static DESCRIPTION_LINE_COUNT: usize = 50;
+static POPUP_INSTRUCTIONS: &str =
+    "<i>info <esc>exit <space>play/pause\n<←/→>backstep/nextstep <↑/↓>faster/slower";
+const RED_PAUSE: Color = Color::Rgb(201, 77, 83);
+const GREEN_FORWARD: Color = Color::Rgb(77, 201, 81);
+const BLUE_REVERSE: Color = Color::Rgb(42, 111, 222);
+static FORWARD_INDICICATOR: Set = Set {
+    top_left: "→",
+    top_right: "→",
+    bottom_left: "→",
+    bottom_right: "→",
+    vertical_left: "→",
+    vertical_right: "→",
+    horizontal_top: "→",
+    horizontal_bottom: "→",
+};
+static REVERSE_INDICICATOR: Set = Set {
+    top_left: "←",
+    top_right: "←",
+    bottom_left: "←",
+    bottom_right: "←",
+    vertical_left: "←",
+    vertical_right: "←",
+    horizontal_top: "←",
+    horizontal_bottom: "←",
+};
+
 #[derive(Copy, Clone)]
 pub enum Process {
     Building,
     Solving,
+}
+
+// Event is a crowded name so we'll call it a pack.
+#[derive(Debug)]
+pub enum Pack {
+    Press(KeyEvent),
+    Resize(u16, u16),
+}
+
+#[derive(Debug)]
+pub struct EventHandler {
+    pub sender: crossbeam_channel::Sender<Pack>,
+    pub receiver: crossbeam_channel::Receiver<Pack>,
+    pub handler: thread::JoinHandle<()>,
+}
+
+pub struct Tui<'a> {
+    pub terminal: CrosstermTerminal,
+    pub events: EventHandler,
+    pub scroll: Scroller,
+    pub cmd: TextArea<'a>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Dimension {
+    pub rows: i32,
+    pub cols: i32,
+    pub offset: maze::Offset,
+}
+
+#[derive(Default)]
+pub struct Scroller {
+    pub state: ScrollbarState,
+    pub pos: usize,
 }
 
 pub struct BuildFrame<'a> {
@@ -110,40 +174,6 @@ impl<'a> Widget for SolveFrame<'a> {
             }
         }
     }
-}
-
-// Event is a crowded name so we'll call it a pack.
-#[derive(Debug)]
-pub enum Pack {
-    Press(KeyEvent),
-    Resize(u16, u16),
-}
-
-#[derive(Debug)]
-pub struct EventHandler {
-    pub sender: crossbeam_channel::Sender<Pack>,
-    pub receiver: crossbeam_channel::Receiver<Pack>,
-    pub handler: thread::JoinHandle<()>,
-}
-
-pub struct Tui<'a> {
-    pub terminal: CrosstermTerminal,
-    pub events: EventHandler,
-    pub scroll: Scroller,
-    pub cmd: TextArea<'a>,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct Dimension {
-    pub rows: i32,
-    pub cols: i32,
-    pub offset: maze::Offset,
-}
-
-#[derive(Default)]
-pub struct Scroller {
-    pub state: ScrollbarState,
-    pub pos: usize,
 }
 
 impl Scroller {
@@ -291,8 +321,8 @@ impl<'a> Tui<'a> {
                 Scrollbar::default()
                     .orientation(ScrollbarOrientation::VerticalRight)
                     .thumb_symbol("█")
-                    .begin_symbol(Some("⮝"))
-                    .end_symbol(Some("⮟")),
+                    .begin_symbol(Some("↑"))
+                    .end_symbol(Some("↓")),
                 popup_layout_h,
                 &mut self.scroll.state,
             );
@@ -364,8 +394,8 @@ impl<'a> Tui<'a> {
                 Scrollbar::default()
                     .orientation(ScrollbarOrientation::VerticalRight)
                     .thumb_symbol("█")
-                    .begin_symbol(Some("⮝"))
-                    .end_symbol(Some("⮟")),
+                    .begin_symbol(Some("↑"))
+                    .end_symbol(Some("↓")),
                 popup_layout_h,
                 &mut self.scroll.state,
             );
@@ -479,8 +509,8 @@ impl<'a> Tui<'a> {
                 Scrollbar::default()
                     .orientation(ScrollbarOrientation::VerticalRight)
                     .thumb_symbol("█")
-                    .begin_symbol(Some("⮝"))
-                    .end_symbol(Some("⮟")),
+                    .begin_symbol(Some("↑"))
+                    .end_symbol(Some("↓")),
                 popup_layout_h,
                 &mut scroll.state,
             );
@@ -516,17 +546,28 @@ impl<'a> Tui<'a> {
             ])
             .split(popup_layout_v[1])[1];
         let popup_instructions = Paragraph::new(POPUP_INSTRUCTIONS)
-            .block(
-                Block::default()
+            .block(match (pause, forward) {
+                (true, true) => Block::default()
                     .borders(Borders::ALL)
-                    .border_type(BorderType::Double)
-                    .border_style(Style::new().fg(match (pause, forward) {
-                        (true, _) => RED_PAUSE,
-                        (false, true) => GREEN_FORWARD,
-                        (false, false) => BLUE_REVERSE,
-                    }))
+                    .border_set(FORWARD_INDICICATOR)
+                    .border_style(Style::new().fg(RED_PAUSE))
                     .style(Style::default().bg(Color::Black)),
-            )
+                (true, false) => Block::default()
+                    .borders(Borders::ALL)
+                    .border_set(REVERSE_INDICICATOR)
+                    .border_style(Style::new().fg(RED_PAUSE))
+                    .style(Style::default().bg(Color::Black)),
+                (false, true) => Block::default()
+                    .borders(Borders::ALL)
+                    .border_set(FORWARD_INDICICATOR)
+                    .border_style(Style::new().fg(GREEN_FORWARD))
+                    .style(Style::default().bg(Color::Black)),
+                (false, false) => Block::default()
+                    .borders(Borders::ALL)
+                    .border_set(REVERSE_INDICICATOR)
+                    .border_style(Style::new().fg(BLUE_REVERSE))
+                    .style(Style::default().bg(Color::Black)),
+            })
             .alignment(Alignment::Center);
         self.terminal.draw(|f| {
             f.render_widget(frame, rect[0]);
@@ -592,12 +633,3 @@ impl EventHandler {
         self.receiver.try_recv().ok()
     }
 }
-
-static INSTRUCTIONS: &str = include_str!("../../res/instructions.txt");
-static INSTRUCTIONS_LINE_COUNT: usize = 70;
-static DESCRIPTION_LINE_COUNT: usize = 50;
-static POPUP_INSTRUCTIONS: &str =
-    "<i>info <esc>exit <space>play/pause\n<←/→>backstep/nextstep <↑/↓>faster/slower";
-const RED_PAUSE: Color = Color::Rgb(201, 77, 83);
-const GREEN_FORWARD: Color = Color::Rgb(77, 201, 81);
-const BLUE_REVERSE: Color = Color::Rgb(42, 111, 222);
