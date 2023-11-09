@@ -13,6 +13,15 @@ const DEFAULT_DURATION: Duration = Duration::from_micros(2000);
 const HOME_DURATION: Duration = Duration::from_millis(88);
 const MAX_DURATION: Duration = Duration::from_secs(5);
 const MIN_DURATION: Duration = Duration::from_micros(1);
+static VALID_FLAGS: &str = "VALID FLAGS:[-b][-ba][-s][-sa][-w][-m]";
+static VALID_ARGS: [(&str, &str); 6] = [
+    ("-b", "see BUILDER FLAG section"),
+    ("-m", "see MODIFICATION FLAG section"),
+    ("-w", "see WALL FLAG section"),
+    ("-s", "see SOLVER FLAG section"),
+    ("-sa", "see SOLVER ANIMATION section"),
+    ("-ba", "see BUILDER ANIMATION section"),
+];
 
 #[derive(Debug)]
 pub struct Quit {
@@ -33,6 +42,7 @@ impl fmt::Display for Quit {
 
 impl error::Error for Quit {}
 
+// A Playback just extracts the internal histories of a maze::Maze for ease of use with animations.
 #[derive(Debug, Clone)]
 struct Playback {
     maze: maze::Blueprint,
@@ -44,44 +54,12 @@ struct Playback {
     last_render: Instant,
 }
 
-impl Playback {
-    fn build_step(&mut self) -> bool {
-        if let Some(history) = self.build_tape.cur_step() {
-            if self.forward {
-                for delta in history {
-                    self.maze.buf[(delta.id.row * self.maze.cols + delta.id.col) as usize] =
-                        delta.after;
-                }
-                return self.build_tape.set_next();
-            }
-            for delta in history.iter().rev() {
-                self.maze.buf[(delta.id.row * self.maze.cols + delta.id.col) as usize] =
-                    delta.before;
-            }
-            return self.build_tape.set_prev();
-        }
-        false
-    }
+///
+/// Main TUI program running and logic.
+///
 
-    fn solve_step(&mut self) -> bool {
-        if let Some(history) = self.solve_tape.cur_step() {
-            if self.forward {
-                for delta in history {
-                    self.maze.buf[(delta.id.row * self.maze.cols + delta.id.col) as usize] =
-                        delta.after;
-                }
-                return self.solve_tape.set_next();
-            }
-            for delta in history.iter().rev() {
-                self.maze.buf[(delta.id.row * self.maze.cols + delta.id.col) as usize] =
-                    delta.before;
-            }
-            return self.solve_tape.set_prev();
-        }
-        false
-    }
-}
-
+/// The main render loop from the home page. This loop is relatively simple. When the more
+/// complex functionality of a maze animation is requested we will hand that off to another fn.
 pub fn run() -> tui::Result<()> {
     let backend = CrosstermBackend::new(std::io::stdout());
     let terminal = Terminal::new(backend)?;
@@ -90,7 +68,7 @@ pub fn run() -> tui::Result<()> {
     tui.enter()?;
     let mut play = new_home_tape(tui.padded_frame());
     'render: loop {
-        tui.home_animated(tui::SolveFrame { maze: &play.maze })?;
+        tui.home(tui::SolveFrame { maze: &play.maze })?;
         if let Some(ev) = tui.events.try_next() {
             match ev {
                 tui::Pack::Resize(_, _) => {
@@ -130,6 +108,10 @@ pub fn run() -> tui::Result<()> {
     Ok(())
 }
 
+// Keeping the three loops visible in one function like this makes it easier to reason about
+// playing the animation forward or in reverse. The handle_press function can mutate the
+// play direction but was needed to extract repetitive logic that made this function harder
+// to read.
 fn render_maze(this_run: tables::HistoryRunner, tui: &mut tui::Tui) -> tui::Result<()> {
     let render_space = tui.inner_maze_rect();
     let mut play = new_tape(&this_run);
@@ -258,6 +240,36 @@ fn handle_press(
     true
 }
 
+fn handle_reader(
+    tui: &mut tui::Tui,
+    process: tui::Process,
+    description: &str,
+    maze: &maze::Blueprint,
+    render_space: &Rc<[Rect]>,
+) -> tui::Result<()> {
+    let mut scroll = tui::Scroller::default();
+    'reading: loop {
+        tui.info_popup(process, render_space, maze, &mut scroll, description)?;
+        if let Some(tui::Pack::Press(k)) = tui.events.try_next() {
+            match k.code {
+                KeyCode::Char('i') => break 'reading,
+                KeyCode::Down => scroll.scroll(ScrollDirection::Forward),
+                KeyCode::Up => scroll.scroll(ScrollDirection::Backward),
+                KeyCode::Esc => return Err(Box::new(Quit::new())),
+                _ => {}
+            }
+        }
+    }
+    Ok(())
+}
+
+///
+/// Maze generation and solving. It is simple because we don't have to worry about animations
+/// until the maze generation and solving histories have been recorded. Then we decide how
+/// we want to play all of that back with the help of builder and solver decoding functions.
+///
+
+// A new tape runs to completion then resets the maze buffer to its starting state.
 fn new_tape(run: &tables::HistoryRunner) -> Playback {
     let monitor = monitor::Monitor::new(maze::Maze::new(run.args));
     (run.build)(monitor.clone());
@@ -285,6 +297,7 @@ fn new_tape(run: &tables::HistoryRunner) -> Playback {
     }
 }
 
+// A new home tape solves everything but then only resets the solver for less distracting home.
 fn new_home_tape(rect: Rect) -> Playback {
     let run_bg = set_random_args(&rect);
     let bg_maze = monitor::Monitor::new(maze::Maze::new(run_bg.args));
@@ -313,28 +326,9 @@ fn new_home_tape(rect: Rect) -> Playback {
     }
 }
 
-fn handle_reader(
-    tui: &mut tui::Tui,
-    process: tui::Process,
-    description: &str,
-    maze: &maze::Blueprint,
-    render_space: &Rc<[Rect]>,
-) -> tui::Result<()> {
-    let mut scroll = tui::Scroller::default();
-    'reading: loop {
-        tui.info_popup(process, render_space, maze, &mut scroll, description)?;
-        if let Some(tui::Pack::Press(k)) = tui.events.try_next() {
-            match k.code {
-                KeyCode::Char('i') => break 'reading,
-                KeyCode::Down => scroll.scroll(ScrollDirection::Forward),
-                KeyCode::Up => scroll.scroll(ScrollDirection::Backward),
-                KeyCode::Esc => return Err(Box::new(Quit::new())),
-                _ => {}
-            }
-        }
-    }
-    Ok(())
-}
+///
+/// Argument parsing from the tui-textarea or random generation if empty
+///
 
 pub fn set_command_args(cmd: String, tui: &mut tui::Tui) -> Result<tables::HistoryRunner, String> {
     if cmd.is_empty() {
@@ -443,7 +437,7 @@ fn set_random_args(rect: &Rect) -> tables::HistoryRunner {
     this_run
 }
 
-pub fn err_string(args: &tables::FlagArg) -> String {
+fn err_string(args: &tables::FlagArg) -> String {
     format!("invalid flag[{}] arg[{}] combo", args.flag, args.arg)
 }
 
@@ -455,12 +449,45 @@ fn get_arg_section(flag: &str) -> &'static str {
         .1
 }
 
-pub static VALID_FLAGS: &str = "VALID FLAGS:[-b][-ba][-s][-sa][-w][-m]";
-pub static VALID_ARGS: [(&str, &str); 6] = [
-    ("-b", "see BUILDER FLAG section"),
-    ("-m", "see MODIFICATION FLAG section"),
-    ("-w", "see WALL FLAG section"),
-    ("-s", "see SOLVER FLAG section"),
-    ("-sa", "see SOLVER ANIMATION section"),
-    ("-ba", "see BUILDER ANIMATION section"),
-];
+///
+/// History function wrappers to help simplify what the runner is responsible for with playback.
+///
+
+// A step just progresses the Tape based on whatever the current direction state is.
+impl Playback {
+    fn build_step(&mut self) -> bool {
+        if let Some(history) = self.build_tape.cur_step() {
+            if self.forward {
+                for delta in history {
+                    self.maze.buf[(delta.id.row * self.maze.cols + delta.id.col) as usize] =
+                        delta.after;
+                }
+                return self.build_tape.set_next();
+            }
+            for delta in history.iter().rev() {
+                self.maze.buf[(delta.id.row * self.maze.cols + delta.id.col) as usize] =
+                    delta.before;
+            }
+            return self.build_tape.set_prev();
+        }
+        false
+    }
+
+    fn solve_step(&mut self) -> bool {
+        if let Some(history) = self.solve_tape.cur_step() {
+            if self.forward {
+                for delta in history {
+                    self.maze.buf[(delta.id.row * self.maze.cols + delta.id.col) as usize] =
+                        delta.after;
+                }
+                return self.solve_tape.set_next();
+            }
+            for delta in history.iter().rev() {
+                self.maze.buf[(delta.id.row * self.maze.cols + delta.id.col) as usize] =
+                    delta.before;
+            }
+            return self.solve_tape.set_prev();
+        }
+        false
+    }
+}

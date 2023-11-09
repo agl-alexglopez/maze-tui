@@ -106,93 +106,7 @@ pub struct SolveFrame<'a> {
     pub maze: &'a maze::Blueprint,
 }
 
-impl<'a> Widget for BuildFrame<'a> {
-    fn render(self, _area: Rect, buf: &mut Buffer) {
-        if self.maze.is_mini() {
-            let buf_area = buf.area;
-            let row_len = cmp::min(buf_area.height, (self.maze.rows / 2) as u16);
-            let col_len = cmp::min(buf_area.width, self.maze.cols as u16);
-            for y in 0..row_len * 2 + 1 {
-                for x in 0..col_len {
-                    *buf.get_mut(x, y / 2) = build::decode_mini_square(
-                        self.maze,
-                        maze::Point {
-                            row: y as i32,
-                            col: x as i32,
-                        },
-                    );
-                }
-            }
-        } else {
-            let buf_area = buf.area;
-            let row_len = cmp::min(buf_area.height, self.maze.rows as u16);
-            let col_len = cmp::min(buf_area.width, self.maze.cols as u16);
-            let wall_row = &maze::wall_row(self.maze.wall_style_index);
-            let cols = col_len as usize;
-            for y in 0..row_len {
-                for x in 0..col_len {
-                    *buf.get_mut(x, y) = build::decode_square(
-                        wall_row,
-                        self.maze.buf[y as usize * cols + x as usize],
-                    );
-                }
-            }
-        }
-    }
-}
-
-impl<'a> Widget for SolveFrame<'a> {
-    fn render(self, _area: Rect, buf: &mut Buffer) {
-        if self.maze.is_mini() {
-            let buf_area = buf.area;
-            let row_len = cmp::min(buf_area.height, (self.maze.rows / 2) as u16);
-            let col_len = cmp::min(buf_area.width, self.maze.cols as u16);
-            for y in 0..row_len * 2 + 1 {
-                for x in 0..col_len {
-                    *buf.get_mut(x, y / 2) = solve::decode_mini_path(
-                        self.maze,
-                        maze::Point {
-                            row: y as i32,
-                            col: x as i32,
-                        },
-                    );
-                }
-            }
-        } else {
-            let buf_area = buf.area;
-            let row_len = cmp::min(buf_area.height, self.maze.rows as u16);
-            let col_len = cmp::min(buf_area.width, self.maze.cols as u16);
-            let wall_row = &maze::wall_row(self.maze.wall_style_index);
-            let cols = col_len as usize;
-            for y in 0..row_len {
-                for x in 0..col_len {
-                    *buf.get_mut(x, y) = solve::decode_square(
-                        wall_row,
-                        self.maze.buf[y as usize * cols + x as usize],
-                    );
-                }
-            }
-        }
-    }
-}
-
-impl Scroller {
-    pub fn scroll(&mut self, dir: ScrollDirection) {
-        match dir {
-            ScrollDirection::Forward => {
-                self.pos = self.pos.saturating_add(2);
-                self.state = self.state.position(self.pos);
-            }
-            ScrollDirection::Backward => {
-                self.pos = self.pos.saturating_sub(2);
-                self.state = self.state.position(self.pos);
-            }
-        }
-    }
-}
-
 impl<'a> Tui<'a> {
-    /// Constructs a new instance of [`Tui`].
     pub fn new(terminal: CrosstermTerminal, events: EventHandler) -> Self {
         let mut cmd_prompt = TextArea::default();
         cmd_prompt.set_cursor_line_style(Style::default());
@@ -212,15 +126,10 @@ impl<'a> Tui<'a> {
         }
     }
 
-    /// Initializes the terminal interface.
-    ///
-    /// It enables the raw mode and sets terminal properties.
     pub fn enter(&mut self) -> Result<()> {
         crossterm::terminal::enable_raw_mode()?;
         crossterm::execute!(std::io::stdout(), EnterAlternateScreen, EnableMouseCapture)?;
 
-        // Define a custom panic hook to reset the terminal properties.
-        // This way, you won't have your terminal messed up if an unexpected error happens.
         let panic_hook = std::panic::take_hook();
         std::panic::set_hook(Box::new(move |panic| {
             Self::reset().expect("failed to reset the terminal");
@@ -262,25 +171,18 @@ impl<'a> Tui<'a> {
         frame_block.inner(self.terminal.get_frame().size())
     }
 
-    /// Resets the terminal interface.
-    ///
-    /// This function is also used for the panic hook to revert
-    /// the terminal properties if unexpected errors occur.
     fn reset() -> Result<()> {
         crossterm::terminal::disable_raw_mode()?;
         crossterm::execute!(std::io::stdout(), LeaveAlternateScreen, DisableMouseCapture)?;
         Ok(())
     }
 
-    /// Exits the terminal interface.
-    ///
-    /// It disables the raw mode and reverts back the terminal properties.
     pub fn exit(&mut self) -> Result<()> {
         Self::reset()?;
         self.terminal.show_cursor()?;
         Ok(())
     }
-    pub fn home_animated(&mut self, maze_frame: impl Widget) -> Result<()> {
+    pub fn home(&mut self, maze_frame: impl Widget) -> Result<()> {
         let frame = self.padded_frame();
         self.terminal.draw(|f| {
             f.render_widget(maze_frame, frame);
@@ -604,9 +506,7 @@ impl EventHandler {
                             _ => {}
                         }
                     }
-                    // Ticks are important for some submodule channel communications.
                     if last_tick.elapsed() >= tick_rate {
-                        //sender.send(Pack::Tick).expect("failed to send tick event");
                         last_tick = Instant::now();
                     }
                 }
@@ -619,17 +519,98 @@ impl EventHandler {
         }
     }
 
-    /// Receive the next event from the handler thread.
-    ///
-    /// This function will always block the current thread if
-    /// there is no data available and it's possible for more data to be sent.
-    pub fn _next(&self) -> Result<Pack> {
-        Ok(self.receiver.recv()?)
-    }
-
     /// Receive the next event but only try to receive and return an option with a
     /// pack if one is available. Makes for easier conditions to check in render loops.
     pub fn try_next(&self) -> Option<Pack> {
         self.receiver.try_recv().ok()
+    }
+}
+
+///
+/// Supporting implementations
+///
+
+impl<'a> Widget for BuildFrame<'a> {
+    fn render(self, _area: Rect, buf: &mut Buffer) {
+        if self.maze.is_mini() {
+            let buf_area = buf.area;
+            let row_len = cmp::min(buf_area.height, (self.maze.rows / 2) as u16);
+            let col_len = cmp::min(buf_area.width, self.maze.cols as u16);
+            for y in 0..row_len * 2 + 1 {
+                for x in 0..col_len {
+                    *buf.get_mut(x, y / 2) = build::decode_mini_square(
+                        self.maze,
+                        maze::Point {
+                            row: y as i32,
+                            col: x as i32,
+                        },
+                    );
+                }
+            }
+        } else {
+            let buf_area = buf.area;
+            let row_len = cmp::min(buf_area.height, self.maze.rows as u16);
+            let col_len = cmp::min(buf_area.width, self.maze.cols as u16);
+            let wall_row = &maze::wall_row(self.maze.wall_style_index);
+            let cols = col_len as usize;
+            for y in 0..row_len {
+                for x in 0..col_len {
+                    *buf.get_mut(x, y) = build::decode_square(
+                        wall_row,
+                        self.maze.buf[y as usize * cols + x as usize],
+                    );
+                }
+            }
+        }
+    }
+}
+
+impl<'a> Widget for SolveFrame<'a> {
+    fn render(self, _area: Rect, buf: &mut Buffer) {
+        if self.maze.is_mini() {
+            let buf_area = buf.area;
+            let row_len = cmp::min(buf_area.height, (self.maze.rows / 2) as u16);
+            let col_len = cmp::min(buf_area.width, self.maze.cols as u16);
+            for y in 0..row_len * 2 + 1 {
+                for x in 0..col_len {
+                    *buf.get_mut(x, y / 2) = solve::decode_mini_path(
+                        self.maze,
+                        maze::Point {
+                            row: y as i32,
+                            col: x as i32,
+                        },
+                    );
+                }
+            }
+        } else {
+            let buf_area = buf.area;
+            let row_len = cmp::min(buf_area.height, self.maze.rows as u16);
+            let col_len = cmp::min(buf_area.width, self.maze.cols as u16);
+            let wall_row = &maze::wall_row(self.maze.wall_style_index);
+            let cols = col_len as usize;
+            for y in 0..row_len {
+                for x in 0..col_len {
+                    *buf.get_mut(x, y) = solve::decode_square(
+                        wall_row,
+                        self.maze.buf[y as usize * cols + x as usize],
+                    );
+                }
+            }
+        }
+    }
+}
+
+impl Scroller {
+    pub fn scroll(&mut self, dir: ScrollDirection) {
+        match dir {
+            ScrollDirection::Forward => {
+                self.pos = self.pos.saturating_add(2);
+                self.state = self.state.position(self.pos);
+            }
+            ScrollDirection::Backward => {
+                self.pos = self.pos.saturating_sub(2);
+                self.state = self.state.position(self.pos);
+            }
+        }
     }
 }
