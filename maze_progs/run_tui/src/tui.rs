@@ -42,20 +42,20 @@ static FORWARD_INDICICATOR: Set = Set {
     top_right: "→",
     bottom_left: "→",
     bottom_right: "→",
-    vertical_left: "→",
-    vertical_right: "→",
-    horizontal_top: "→",
-    horizontal_bottom: "→",
+    vertical_left: "║",
+    vertical_right: "║",
+    horizontal_top: "═",
+    horizontal_bottom: "═",
 };
 static REVERSE_INDICICATOR: Set = Set {
     top_left: "←",
     top_right: "←",
     bottom_left: "←",
     bottom_right: "←",
-    vertical_left: "←",
-    vertical_right: "←",
-    horizontal_top: "←",
-    horizontal_bottom: "←",
+    vertical_left: "║",
+    vertical_right: "║",
+    horizontal_top: "═",
+    horizontal_bottom: "═",
 };
 
 #[derive(Copy, Clone)]
