@@ -44,18 +44,18 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
     for r in (1..lk.maze.rows() - 2).step_by(2) {
         window.generate_sets(window.next_row_i());
         for c in (1..lk.maze.cols() - 1).step_by(2) {
-            let cur_id = window.at(window.cur_row, c as usize);
+            let cur_id = window.get(window.cur_row, c as usize);
             let next = maze::Point {
                 row: r,
                 col: c + NEIGHBOR_DIST,
             };
             if !build::is_square_within_perimeter_walls(&lk.maze, next)
-                || cur_id == window.at(window.cur_row, next.col as usize)
+                || cur_id == window.get(window.cur_row, next.col as usize)
                 || !coin.expect("Bernoulli coin flip broke").sample(&mut rng)
             {
                 continue;
             }
-            let neighbor_id = window.at(window.cur_row, next.col as usize);
+            let neighbor_id = window.get(window.cur_row, next.col as usize);
             build::join_squares(&mut lk.maze, maze::Point { row: r, col: c }, next);
             merge_cur_row_sets(
                 &mut window,
@@ -68,7 +68,7 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
 
         for c in (1..lk.maze.cols() - 1).step_by(2) {
             sets_in_this_row
-                .entry(window.at(window.cur_row, c as usize))
+                .entry(window.get(window.cur_row, c as usize))
                 .or_default()
                 .push(maze::Point { row: r, col: c });
         }
@@ -80,7 +80,7 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
                     continue;
                 }
                 let next_row = window.next_row_i();
-                *window.at_mut(next_row, chose.col as usize) = *set.0;
+                *window.get_mut(next_row, chose.col as usize) = *set.0;
                 build::join_squares(
                     &mut lk.maze,
                     *chose,
@@ -110,19 +110,19 @@ fn complete_final_row(maze: &mut maze::Maze, window: &mut SlidingSetWindow) {
     let r = maze.rows() - 2;
     let set_r = window.cur_row;
     for c in (1..maze.cols() - 2).step_by(2) {
-        let this_id = window.at(set_r, c as usize);
+        let this_id = window.get(set_r, c as usize);
         let next = maze::Point {
             row: r,
             col: c + NEIGHBOR_DIST,
         };
-        let neighbor_id = window.at(set_r, (c + NEIGHBOR_DIST) as usize);
+        let neighbor_id = window.get(set_r, (c + NEIGHBOR_DIST) as usize);
         if this_id == neighbor_id {
             continue;
         }
         build::join_squares(maze, maze::Point { row: r, col: c }, next);
         for set_elem in (next.col..maze.cols() - 1).step_by(2) {
-            if window.at(set_r, set_elem as usize) == neighbor_id {
-                *window.at_mut(set_r, set_elem as usize) = this_id;
+            if window.get(set_r, set_elem as usize) == neighbor_id {
+                *window.get_mut(set_r, set_elem as usize) = this_id;
             }
         }
     }
@@ -145,18 +145,18 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
     for r in (1..lk.maze.rows() - 2).step_by(2) {
         window.generate_sets(window.next_row_i());
         for c in (1..lk.maze.cols() - 1).step_by(2) {
-            let cur_id = window.at(window.cur_row, c as usize);
+            let cur_id = window.get(window.cur_row, c as usize);
             let next = maze::Point {
                 row: r,
                 col: c + NEIGHBOR_DIST,
             };
             if !build::is_square_within_perimeter_walls(&lk.maze, next)
-                || cur_id == window.at(window.cur_row, next.col as usize)
+                || cur_id == window.get(window.cur_row, next.col as usize)
                 || !coin.expect("Bernoulli coin flip broke").sample(&mut rng)
             {
                 continue;
             }
-            let neighbor_id = window.at(window.cur_row, next.col as usize);
+            let neighbor_id = window.get(window.cur_row, next.col as usize);
             build::join_squares_history(&mut lk.maze, maze::Point { row: r, col: c }, next);
             merge_cur_row_sets(
                 &mut window,
@@ -169,7 +169,7 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
 
         for c in (1..lk.maze.cols() - 1).step_by(2) {
             sets_in_this_row
-                .entry(window.at(window.cur_row, c as usize))
+                .entry(window.get(window.cur_row, c as usize))
                 .or_default()
                 .push(maze::Point { row: r, col: c });
         }
@@ -181,7 +181,7 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
                     continue;
                 }
                 let next_row = window.next_row_i();
-                *window.at_mut(next_row, chose.col as usize) = *set.0;
+                *window.get_mut(next_row, chose.col as usize) = *set.0;
                 build::join_squares_history(
                     &mut lk.maze,
                     *chose,
@@ -202,45 +202,19 @@ fn complete_final_row_history(maze: &mut maze::Maze, window: &mut SlidingSetWind
     let r = maze.rows() - 2;
     let set_r = window.cur_row;
     for c in (1..maze.cols() - 2).step_by(2) {
-        let this_id = window.at(set_r, c as usize);
+        let this_id = window.get(set_r, c as usize);
         let next = maze::Point {
             row: r,
             col: c + NEIGHBOR_DIST,
         };
-        let neighbor_id = window.at(set_r, (c + NEIGHBOR_DIST) as usize);
+        let neighbor_id = window.get(set_r, (c + NEIGHBOR_DIST) as usize);
         if this_id == neighbor_id {
             continue;
         }
         build::join_squares_history(maze, maze::Point { row: r, col: c }, next);
         for set_elem in (next.col..maze.cols() - 1).step_by(2) {
-            if window.at(set_r, set_elem as usize) == neighbor_id {
-                *window.at_mut(set_r, set_elem as usize) = this_id;
-            }
-        }
-    }
-}
-
-fn complete_final_row_animated(
-    maze: &mut maze::Maze,
-    window: &mut SlidingSetWindow,
-    animation: build::SpeedUnit,
-) {
-    let r = maze.rows() - 2;
-    let set_r = window.cur_row;
-    for c in (1..maze.cols() - 2).step_by(2) {
-        let this_id = window.at(set_r, c as usize);
-        let next = maze::Point {
-            row: r,
-            col: c + NEIGHBOR_DIST,
-        };
-        let neighbor_id = window.at(set_r, (c + NEIGHBOR_DIST) as usize);
-        if this_id == neighbor_id {
-            continue;
-        }
-        build::join_squares_animated(maze, maze::Point { row: r, col: c }, next, animation);
-        for set_elem in (next.col..maze.cols() - 1).step_by(2) {
-            if window.at(set_r, set_elem as usize) == neighbor_id {
-                *window.at_mut(set_r, set_elem as usize) = this_id;
+            if window.get(set_r, set_elem as usize) == neighbor_id {
+                *window.get_mut(set_r, set_elem as usize) = this_id;
             }
         }
     }
@@ -270,18 +244,18 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     for r in (1..lk.maze.rows() - 2).step_by(2) {
         window.generate_sets(window.next_row_i());
         for c in (1..lk.maze.cols() - 1).step_by(2) {
-            let cur_id = window.at(window.cur_row, c as usize);
+            let cur_id = window.get(window.cur_row, c as usize);
             let next = maze::Point {
                 row: r,
                 col: c + NEIGHBOR_DIST,
             };
             if !build::is_square_within_perimeter_walls(&lk.maze, next)
-                || cur_id == window.at(window.cur_row, next.col as usize)
+                || cur_id == window.get(window.cur_row, next.col as usize)
                 || !coin.expect("Bernoulli coin flip broke").sample(&mut rng)
             {
                 continue;
             }
-            let neighbor_id = window.at(window.cur_row, next.col as usize);
+            let neighbor_id = window.get(window.cur_row, next.col as usize);
             build::join_squares_animated(
                 &mut lk.maze,
                 maze::Point { row: r, col: c },
@@ -303,7 +277,7 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
 
         for c in (1..lk.maze.cols() - 1).step_by(2) {
             sets_in_this_row
-                .entry(window.at(window.cur_row, c as usize))
+                .entry(window.get(window.cur_row, c as usize))
                 .or_default()
                 .push(maze::Point { row: r, col: c });
         }
@@ -315,7 +289,7 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
                     continue;
                 }
                 let next_row = window.next_row_i();
-                *window.at_mut(next_row, chose.col as usize) = *set.0;
+                *window.get_mut(next_row, chose.col as usize) = *set.0;
                 build::join_squares_animated(
                     &mut lk.maze,
                     *chose,
@@ -348,18 +322,18 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     for r in (1..lk.maze.rows() - 2).step_by(2) {
         window.generate_sets(window.next_row_i());
         for c in (1..lk.maze.cols() - 1).step_by(2) {
-            let cur_id = window.at(window.cur_row, c as usize);
+            let cur_id = window.get(window.cur_row, c as usize);
             let next = maze::Point {
                 row: r,
                 col: c + NEIGHBOR_DIST,
             };
             if !build::is_square_within_perimeter_walls(&lk.maze, next)
-                || cur_id == window.at(window.cur_row, next.col as usize)
+                || cur_id == window.get(window.cur_row, next.col as usize)
                 || !coin.expect("Bernoulli coin flip broke").sample(&mut rng)
             {
                 continue;
             }
-            let neighbor_id = window.at(window.cur_row, next.col as usize);
+            let neighbor_id = window.get(window.cur_row, next.col as usize);
             build::join_minis_animated(
                 &mut lk.maze,
                 maze::Point { row: r, col: c },
@@ -381,7 +355,7 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
 
         for c in (1..lk.maze.cols() - 1).step_by(2) {
             sets_in_this_row
-                .entry(window.at(window.cur_row, c as usize))
+                .entry(window.get(window.cur_row, c as usize))
                 .or_default()
                 .push(maze::Point { row: r, col: c });
         }
@@ -393,7 +367,7 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
                     continue;
                 }
                 let next_row = window.next_row_i();
-                *window.at_mut(next_row, chose.col as usize) = *set.0;
+                *window.get_mut(next_row, chose.col as usize) = *set.0;
                 build::join_minis_animated(
                     &mut lk.maze,
                     *chose,
@@ -411,6 +385,32 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     complete_final_mini_row_animated(&mut lk.maze, &mut window, animation);
 }
 
+fn complete_final_row_animated(
+    maze: &mut maze::Maze,
+    window: &mut SlidingSetWindow,
+    animation: build::SpeedUnit,
+) {
+    let r = maze.rows() - 2;
+    let set_r = window.cur_row;
+    for c in (1..maze.cols() - 2).step_by(2) {
+        let this_id = window.get(set_r, c as usize);
+        let next = maze::Point {
+            row: r,
+            col: c + NEIGHBOR_DIST,
+        };
+        let neighbor_id = window.get(set_r, (c + NEIGHBOR_DIST) as usize);
+        if this_id == neighbor_id {
+            continue;
+        }
+        build::join_squares_animated(maze, maze::Point { row: r, col: c }, next, animation);
+        for set_elem in (next.col..maze.cols() - 1).step_by(2) {
+            if window.get(set_r, set_elem as usize) == neighbor_id {
+                *window.get_mut(set_r, set_elem as usize) = this_id;
+            }
+        }
+    }
+}
+
 fn complete_final_mini_row_animated(
     maze: &mut maze::Maze,
     window: &mut SlidingSetWindow,
@@ -419,19 +419,19 @@ fn complete_final_mini_row_animated(
     let r = maze.rows() - 2;
     let set_r = window.cur_row;
     for c in (1..maze.cols() - 2).step_by(2) {
-        let this_id = window.at(set_r, c as usize);
+        let this_id = window.get(set_r, c as usize);
         let next = maze::Point {
             row: r,
             col: c + NEIGHBOR_DIST,
         };
-        let neighbor_id = window.at(set_r, (c + NEIGHBOR_DIST) as usize);
+        let neighbor_id = window.get(set_r, (c + NEIGHBOR_DIST) as usize);
         if this_id == neighbor_id {
             continue;
         }
         build::join_minis_animated(maze, maze::Point { row: r, col: c }, next, animation);
         for set_elem in (next.col..maze.cols() - 1).step_by(2) {
-            if window.at(set_r, set_elem as usize) == neighbor_id {
-                *window.at_mut(set_r, set_elem as usize) = this_id;
+            if window.get(set_r, set_elem as usize) == neighbor_id {
+                *window.get_mut(set_r, set_elem as usize) = this_id;
             }
         }
     }
@@ -463,11 +463,11 @@ impl SlidingSetWindow {
         (self.cur_row + 1) % WINDOW_SIZE
     }
 
-    fn at(&self, row: usize, col: usize) -> SetId {
+    fn get(&self, row: usize, col: usize) -> SetId {
         self.sets[row * self.width + col]
     }
 
-    fn at_mut(&mut self, row: usize, col: usize) -> &mut SetId {
+    fn get_mut(&mut self, row: usize, col: usize) -> &mut SetId {
         &mut self.sets[row * self.width + col]
     }
 
