@@ -224,132 +224,6 @@ pub fn carve_path_walls(maze: &mut maze::Maze, p: maze::Point) {
     }
 }
 
-pub fn build_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUnit) {
-    let mut wall: maze::WallLine = 0b0;
-    if p.row > 0 && maze.wall_at(p.row - 1, p.col) {
-        wall |= maze::NORTH_WALL;
-        *maze.get_mut(p.row - 1, p.col) |= maze::SOUTH_WALL;
-        flush_cursor_maze_coordinate(
-            maze,
-            maze::Point {
-                row: p.row - 1,
-                col: p.col,
-            },
-        );
-        thread::sleep(time::Duration::from_micros(speed));
-    }
-    if p.row + 1 < maze.rows() && maze.wall_at(p.row + 1, p.col) {
-        wall |= maze::SOUTH_WALL;
-        *maze.get_mut(p.row + 1, p.col) |= maze::NORTH_WALL;
-        flush_cursor_maze_coordinate(
-            maze,
-            maze::Point {
-                row: p.row + 1,
-                col: p.col,
-            },
-        );
-        thread::sleep(time::Duration::from_micros(speed));
-    }
-    if p.col > 0 && maze.wall_at(p.row, p.col - 1) {
-        wall |= maze::WEST_WALL;
-        *maze.get_mut(p.row, p.col - 1) |= maze::EAST_WALL;
-        flush_cursor_maze_coordinate(
-            maze,
-            maze::Point {
-                row: p.row,
-                col: p.col - 1,
-            },
-        );
-        thread::sleep(time::Duration::from_micros(speed));
-    }
-    if p.col + 1 < maze.cols() && maze.wall_at(p.row, p.col + 1) {
-        wall |= maze::EAST_WALL;
-        *maze.get_mut(p.row, p.col + 1) |= maze::WEST_WALL;
-        flush_cursor_maze_coordinate(
-            maze,
-            maze::Point {
-                row: p.row,
-                col: p.col + 1,
-            },
-        );
-        thread::sleep(time::Duration::from_micros(speed));
-    }
-    *maze.get_mut(p.row, p.col) |= wall;
-    *maze.get_mut(p.row, p.col) |= BUILDER_BIT;
-    *maze.get_mut(p.row, p.col) &= !maze::PATH_BIT;
-    flush_cursor_maze_coordinate(
-        maze,
-        maze::Point {
-            row: p.row,
-            col: p.col,
-        },
-    );
-    thread::sleep(time::Duration::from_micros(speed));
-}
-
-pub fn build_mini_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUnit) {
-    let mut wall: maze::WallLine = 0b0;
-    if p.row > 0 && maze.wall_at(p.row - 1, p.col) {
-        wall |= maze::NORTH_WALL;
-        *maze.get_mut(p.row - 1, p.col) |= maze::SOUTH_WALL;
-        flush_mini_backtracker_coordinate(
-            maze,
-            maze::Point {
-                row: p.row - 1,
-                col: p.col,
-            },
-        );
-        thread::sleep(time::Duration::from_micros(speed));
-    }
-    if p.row + 1 < maze.rows() && maze.wall_at(p.row + 1, p.col) {
-        wall |= maze::SOUTH_WALL;
-        *maze.get_mut(p.row + 1, p.col) |= maze::NORTH_WALL;
-        flush_mini_backtracker_coordinate(
-            maze,
-            maze::Point {
-                row: p.row + 1,
-                col: p.col,
-            },
-        );
-        thread::sleep(time::Duration::from_micros(speed));
-    }
-    if p.col > 0 && maze.wall_at(p.row, p.col - 1) {
-        wall |= maze::WEST_WALL;
-        *maze.get_mut(p.row, p.col - 1) |= maze::EAST_WALL;
-        flush_mini_backtracker_coordinate(
-            maze,
-            maze::Point {
-                row: p.row,
-                col: p.col - 1,
-            },
-        );
-        thread::sleep(time::Duration::from_micros(speed));
-    }
-    if p.col + 1 < maze.cols() && maze.wall_at(p.row, p.col + 1) {
-        wall |= maze::EAST_WALL;
-        *maze.get_mut(p.row, p.col + 1) |= maze::WEST_WALL;
-        flush_mini_backtracker_coordinate(
-            maze,
-            maze::Point {
-                row: p.row,
-                col: p.col + 1,
-            },
-        );
-        thread::sleep(time::Duration::from_micros(speed));
-    }
-    *maze.get_mut(p.row, p.col) |= wall;
-    *maze.get_mut(p.row, p.col) |= BUILDER_BIT;
-    *maze.get_mut(p.row, p.col) &= !maze::PATH_BIT;
-    flush_mini_backtracker_coordinate(
-        maze,
-        maze::Point {
-            row: p.row,
-            col: p.col,
-        },
-    );
-    thread::sleep(time::Duration::from_micros(speed));
-}
-
 /// PATH CARVING HELPERS-------------------------------------------------------------------
 
 ///
@@ -921,6 +795,136 @@ pub fn build_path_history(maze: &mut maze::Maze, p: maze::Point) -> usize {
 ///
 /// Cursor based animation and printing.
 ///
+
+/// Wall adder helpers
+
+pub fn build_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUnit) {
+    let mut wall: maze::WallLine = 0b0;
+    if p.row > 0 && maze.wall_at(p.row - 1, p.col) {
+        wall |= maze::NORTH_WALL;
+        *maze.get_mut(p.row - 1, p.col) |= maze::SOUTH_WALL;
+        flush_cursor_maze_coordinate(
+            maze,
+            maze::Point {
+                row: p.row - 1,
+                col: p.col,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+    if p.row + 1 < maze.rows() && maze.wall_at(p.row + 1, p.col) {
+        wall |= maze::SOUTH_WALL;
+        *maze.get_mut(p.row + 1, p.col) |= maze::NORTH_WALL;
+        flush_cursor_maze_coordinate(
+            maze,
+            maze::Point {
+                row: p.row + 1,
+                col: p.col,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+    if p.col > 0 && maze.wall_at(p.row, p.col - 1) {
+        wall |= maze::WEST_WALL;
+        *maze.get_mut(p.row, p.col - 1) |= maze::EAST_WALL;
+        flush_cursor_maze_coordinate(
+            maze,
+            maze::Point {
+                row: p.row,
+                col: p.col - 1,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+    if p.col + 1 < maze.cols() && maze.wall_at(p.row, p.col + 1) {
+        wall |= maze::EAST_WALL;
+        *maze.get_mut(p.row, p.col + 1) |= maze::WEST_WALL;
+        flush_cursor_maze_coordinate(
+            maze,
+            maze::Point {
+                row: p.row,
+                col: p.col + 1,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+    *maze.get_mut(p.row, p.col) |= wall;
+    *maze.get_mut(p.row, p.col) |= BUILDER_BIT;
+    *maze.get_mut(p.row, p.col) &= !maze::PATH_BIT;
+    flush_cursor_maze_coordinate(
+        maze,
+        maze::Point {
+            row: p.row,
+            col: p.col,
+        },
+    );
+    thread::sleep(time::Duration::from_micros(speed));
+}
+
+pub fn build_mini_wall_line_animated(maze: &mut maze::Maze, p: maze::Point, speed: SpeedUnit) {
+    let mut wall: maze::WallLine = 0b0;
+    if p.row > 0 && maze.wall_at(p.row - 1, p.col) {
+        wall |= maze::NORTH_WALL;
+        *maze.get_mut(p.row - 1, p.col) |= maze::SOUTH_WALL;
+        flush_mini_backtracker_coordinate(
+            maze,
+            maze::Point {
+                row: p.row - 1,
+                col: p.col,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+    if p.row + 1 < maze.rows() && maze.wall_at(p.row + 1, p.col) {
+        wall |= maze::SOUTH_WALL;
+        *maze.get_mut(p.row + 1, p.col) |= maze::NORTH_WALL;
+        flush_mini_backtracker_coordinate(
+            maze,
+            maze::Point {
+                row: p.row + 1,
+                col: p.col,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+    if p.col > 0 && maze.wall_at(p.row, p.col - 1) {
+        wall |= maze::WEST_WALL;
+        *maze.get_mut(p.row, p.col - 1) |= maze::EAST_WALL;
+        flush_mini_backtracker_coordinate(
+            maze,
+            maze::Point {
+                row: p.row,
+                col: p.col - 1,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+    if p.col + 1 < maze.cols() && maze.wall_at(p.row, p.col + 1) {
+        wall |= maze::EAST_WALL;
+        *maze.get_mut(p.row, p.col + 1) |= maze::WEST_WALL;
+        flush_mini_backtracker_coordinate(
+            maze,
+            maze::Point {
+                row: p.row,
+                col: p.col + 1,
+            },
+        );
+        thread::sleep(time::Duration::from_micros(speed));
+    }
+    *maze.get_mut(p.row, p.col) |= wall;
+    *maze.get_mut(p.row, p.col) |= BUILDER_BIT;
+    *maze.get_mut(p.row, p.col) &= !maze::PATH_BIT;
+    flush_mini_backtracker_coordinate(
+        maze,
+        maze::Point {
+            row: p.row,
+            col: p.col,
+        },
+    );
+    thread::sleep(time::Duration::from_micros(speed));
+}
+
+/// Path Carver helpers.
 
 pub fn mark_origin_animated(
     maze: &mut maze::Maze,

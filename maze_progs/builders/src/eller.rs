@@ -263,7 +263,7 @@ pub fn animate_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-        let mut rng = thread_rng();
+    let mut rng = thread_rng();
     let coin = Bernoulli::new(0.66);
     let mut window = SlidingSetWindow::new(&lk.maze);
     let mut sets_in_this_row: HashMap<SetId, Vec<maze::Point>> = HashMap::new();
@@ -341,7 +341,7 @@ fn animate_mini_maze(monitor: monitor::MazeReceiver, speed: speed::Speed) {
     let animation = build::BUILDER_SPEEDS[speed as usize];
     build::fill_maze_with_walls(&mut lk.maze);
     build::flush_grid(&lk.maze);
-        let mut rng = thread_rng();
+    let mut rng = thread_rng();
     let coin = Bernoulli::new(0.66);
     let mut window = SlidingSetWindow::new(&lk.maze);
     let mut sets_in_this_row: HashMap<SetId, Vec<maze::Point>> = HashMap::new();
