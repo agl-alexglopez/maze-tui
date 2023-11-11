@@ -51,7 +51,7 @@ struct Playback {
     forward: bool,
     pause: bool,
     speed: Duration,
-    last_render: Instant,
+    last_delta: Instant,
 }
 
 ///
@@ -94,14 +94,11 @@ pub fn run() -> tui::Result<()> {
                 },
             }
         }
-        let now = Instant::now();
-        if now - play.last_render >= play.speed {
-            play.forward = if play.forward {
-                play.solve_step()
-            } else {
-                !play.solve_step()
-            };
-            play.last_render = now;
+        if play.pause {
+            play.forward = !play.forward;
+            play.pause = !play.pause;
+        } else if !play.solve_delta() {
+            play.forward = true;
         }
     }
     tui.exit()?;
@@ -137,16 +134,8 @@ fn render_maze(this_run: tables::HistoryRunner, tui: &mut tui::Tui) -> tui::Resu
                     break 'rendering;
                 }
             }
-            let now = Instant::now();
-            if !play.pause && now - play.last_render >= play.speed {
-                if play.forward {
-                    if !play.build_step() {
-                        break 'building;
-                    }
-                } else {
-                    play.forward = !play.build_step();
-                }
-                play.last_render = now;
+            if !play.build_delta() {
+                break 'building;
             }
         }
         'solving: loop {
@@ -168,14 +157,8 @@ fn render_maze(this_run: tables::HistoryRunner, tui: &mut tui::Tui) -> tui::Resu
                     break 'rendering;
                 }
             }
-            let now = Instant::now();
-            if !play.pause && now - play.last_render >= play.speed {
-                if play.forward {
-                    play.solve_step();
-                } else if !play.solve_step() {
-                    break 'solving;
-                }
-                play.last_render = now;
+            if !play.solve_delta() {
+                break 'solving;
             }
         }
     }
@@ -288,7 +271,7 @@ fn new_tape(run: &tables::HistoryRunner) -> Playback {
                     forward: true,
                     pause: false,
                     speed: DEFAULT_DURATION,
-                    last_render: Instant::now(),
+                    last_delta: Instant::now(),
                 }
             }
             Err(_) => print::maze_panic!("rendering cannot progress without lock"),
@@ -317,7 +300,7 @@ fn new_home_tape(rect: Rect) -> Playback {
                     forward: true,
                     pause: false,
                     speed: HOME_DURATION,
-                    last_render: Instant::now(),
+                    last_delta: Instant::now(),
                 }
             }
             Err(_) => print::maze_panic!("rendering cannot progress without lock"),
@@ -489,5 +472,35 @@ impl Playback {
             return self.solve_tape.set_prev();
         }
         false
+    }
+
+    fn build_delta(&mut self) -> bool {
+        let now = Instant::now();
+        if !self.pause && now - self.last_delta >= self.speed {
+            if self.forward {
+                if !self.build_step() {
+                    return false;
+                }
+            } else {
+                self.forward = !self.build_step();
+            }
+            self.last_delta = now;
+        }
+        true
+    }
+
+    fn solve_delta(&mut self) -> bool {
+        let now = Instant::now();
+        if !self.pause && now - self.last_delta >= self.speed {
+            if self.forward {
+                if !self.solve_step() {
+                    self.pause = true;
+                }
+            } else if !self.solve_step() {
+                return false;
+            }
+            self.last_delta = now;
+        }
+        true
     }
 }
