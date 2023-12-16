@@ -57,7 +57,7 @@ struct Playback {
 pub fn run() -> tui::Result<()> {
     let backend = CrosstermBackend::new(std::io::stdout());
     let terminal = Terminal::new(backend)?;
-    let events = tui::EventHandler::new(4.0, 240.0);
+    let events = tui::EventHandler::new(4.0);
     let mut tui = tui::Tui::new(terminal, events);
     tui.enter()?;
     let mut play = new_home_tape(tui.padded_frame());
@@ -81,7 +81,7 @@ pub fn run() -> tui::Result<()> {
                         Err(msg) => 'reading_message: loop {
                             if let Some(ev) = tui.events.next() {
                                 match ev {
-                                    tui::Pack::Render | tui::Pack::Delta => {
+                                    tui::Pack::Delta => {
                                         tui.error_popup(
                                             &msg,
                                             tui::SolveFrame { maze: &play.maze },
@@ -139,7 +139,6 @@ fn render_maze(this_run: tables::HistoryRunner, tui: &mut tui::Tui) -> tui::Resu
                         }
                     }
                     tui::Pack::Resize(_, _) => break 'rendering,
-                    _ => {}
                 }
             }
             tui.render_maze_frame(
@@ -172,7 +171,6 @@ fn render_maze(this_run: tables::HistoryRunner, tui: &mut tui::Tui) -> tui::Resu
                         }
                     }
                     tui::Pack::Resize(_, _) => break 'rendering,
-                    _ => {}
                 }
             }
             tui.render_maze_frame(
@@ -249,7 +247,7 @@ fn handle_reader(
                     KeyCode::Esc => return Err(Box::new(Quit::new())),
                     _ => {}
                 },
-                tui::Pack::Render | tui::Pack::Delta => {
+                tui::Pack::Delta => {
                     tui.info_popup(process, render_space, maze, &mut scroll, description)?;
                 }
                 tui::Pack::Resize(_, _) => return Err(Box::new(Quit::new())),

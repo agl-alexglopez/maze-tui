@@ -72,7 +72,6 @@ pub enum Process {
 pub enum Pack {
     Press(KeyEvent),
     Resize(u16, u16),
-    Render,
     Delta,
 }
 
@@ -481,38 +480,31 @@ impl<'a> Tui<'a> {
 
 impl EventHandler {
     /// Constructs a new instance of [`EventHandler`].
-    pub fn new(tick_rate: f64, frame_rate: f64) -> Self {
-        let ticks = Duration::from_secs_f64(1.0 / tick_rate);
-        let frames = Duration::from_secs_f64(1.0 / frame_rate);
-        let mut delta_rate = DEFAULT_DURATION;
+    pub fn new(delta_rate: f64) -> Self {
+        let mut deltas = Duration::from_secs_f64(1.0 / delta_rate);
         let (sender, receiver) = unbounded();
         let handler = {
             let sender = sender.clone();
             thread::spawn(move || {
-                let mut last_tick = Instant::now();
-                let mut last_frame = Instant::now();
                 let mut last_delta = Instant::now();
                 loop {
-                    let timeout = ticks.checked_sub(Instant::now().elapsed()).unwrap_or(ticks);
-                    if event::poll(timeout).expect("no events available") {
+                    if event::poll(MIN_DURATION).expect("no events available") {
                         match event::read().expect("unable to read event") {
                             CtEvent::Key(e) => {
                                 if e.kind == event::KeyEventKind::Press {
                                     match e.code {
-                                        KeyCode::Down => {
-                                            delta_rate = std::cmp::min(
-                                                delta_rate.saturating_mul(2),
-                                                MAX_DURATION,
-                                            );
-                                            sender.send(Pack::Press(e)).expect("couldn't send.");
-                                        }
-                                        KeyCode::Up => {
-                                            delta_rate = match delta_rate.checked_div(2) {
+                                        KeyCode::Char('>') => {
+                                            deltas = match deltas.checked_div(2) {
                                                 Some(t) => t,
                                                 None => Duration::ZERO,
                                             };
-                                            delta_rate = std::cmp::max(delta_rate, MIN_DURATION);
-                                            sender.send(Pack::Press(e)).expect("couldn't send.");
+                                            deltas = std::cmp::max(deltas, MIN_DURATION);
+                                        }
+                                        KeyCode::Char('<') => {
+                                            deltas = std::cmp::min(
+                                                deltas.saturating_mul(2),
+                                                MAX_DURATION,
+                                            );
                                         }
                                         _ => {
                                             sender.send(Pack::Press(e)).expect("couldn't send.");
@@ -527,16 +519,9 @@ impl EventHandler {
                         }
                     }
                     let now = Instant::now();
-                    if now - last_delta >= delta_rate {
+                    if now - last_delta >= deltas {
                         sender.send(Pack::Delta).expect("could not send.");
                         last_delta = Instant::now();
-                    }
-                    if now - last_tick >= ticks {
-                        last_tick = Instant::now();
-                    }
-                    if now - last_frame >= frames {
-                        sender.send(Pack::Render).expect("could not send.");
-                        last_frame = Instant::now();
                     }
                 }
             })
