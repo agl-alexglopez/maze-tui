@@ -23,7 +23,7 @@ $ cd maze_tui/maze_progs/
 $ cargo run --release --bin run_tui
 ```
 
-You will be greeted by the home page. Read the directions or if you just want to see some cool maze animations right away press `<Enter>`. Check out the pausing, arrow commands, and stepping capabilities for how to control the animation you are watching. See the introduction below.
+You will be greeted by the home page. Read the directions or if you just want to see some cool maze animations right away press `[ENTER]`. Check out the pausing, arrow commands, and stepping capabilities for how to control the animation you are watching. See the introduction below.
 
 ## Run TUI Program
 
