@@ -83,11 +83,11 @@ WALL FLAG[-w] Set the wall style for the maze.
     [spikes] - Connected lines with spikes.
 
 Animations can play forward or reversed.
-Cancel any animation by pressing <escape>.
-Pause/Play an animation with <space>
+Cancel any animation by pressing [ESCAPE].
+Pause/Play an animation with [SPACE]
 Slower or faster [</>]. Try it and watch the background!
 Step next/previous or change the play direction with [←/→]
-Zoom out/in with [Ctrl-[-]]/[Ctrl-[+]]
+Zoom out/in with [CTRL-[-]]/[CTRL-[+]]
 If any flags are omitted, defaults are used.
 An empty command line will create a random maze.
 

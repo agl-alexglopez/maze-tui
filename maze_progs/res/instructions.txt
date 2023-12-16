@@ -56,7 +56,7 @@ Cancel any animation by pressing [ESCAPE].                   ░  ░░ ░ ░
 Pause/Play an animation with [SPACE].                        ░  ░░ ░ ░░░  ░▒  ░▒▓ ▒▒▒ ▒▒▓ ▒▓▓▒▒▒
 Slower or faster [</>]. Try it and watch the background!     ░  ░░ ░ ░░░  ░▒  ░▒▒ ▒▒▒ ▒▒▓ ▒▓▓▒▒▒
 Step next/previous or change play direction with [←/→].      ░  ░░ ░ ░░░  ░▒  ░▒▒ ▒▒▒ ▒▒▓ ▒▓▓▒▒▒
-Zoom out/in with [Ctrl-[-]]/[Ctrl-[+]].                      ░  ░ ░  ░ ░░ ░▒   ▒▒ ▒▒░ ▒▒▒ ▒▓▒░░░
+Zoom out/in with [CTRL-[-]]/[CTRL-[+]].                      ░  ░ ░  ░ ░░ ░▒   ▒▒ ▒▒░ ▒▒▒ ▒▓▒░░░
 If any flags are omitted, defaults are used.                 ░  ░░░  ░ ░  ░░   ▒▒ ▒▒░ ▒▒▒ ▒▓▒░░░
 An empty command line will create a random maze.               ░░ ░  ░ ░   ░░  ▒░ ▒▒  ▒▒▒ ▒▓▒░░░
                                                              ░  ░░  ░░    ░░░  ▒░ ░▒  ▒▒▒ ▒▓▒░░░
