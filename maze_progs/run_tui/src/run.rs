@@ -482,27 +482,29 @@ impl Playback {
     }
 
     fn build_delta(&mut self) -> bool {
-        if !self.pause {
-            if self.forward {
-                if !self.build_step() {
-                    return false;
-                }
-            } else {
-                self.forward = !self.build_step();
+        if self.pause {
+            return true;
+        }
+        if self.forward {
+            if !self.build_step() {
+                return false;
             }
+        } else {
+            self.forward = !self.build_step();
         }
         true
     }
 
     fn solve_delta(&mut self) -> bool {
-        if !self.pause {
-            if self.forward {
-                if !self.solve_step() {
-                    self.pause = true;
-                }
-            } else if !self.solve_step() {
-                return false;
+        if self.pause {
+            return true;
+        }
+        if self.forward {
+            if !self.solve_step() {
+                self.pause = true;
             }
+        } else if !self.solve_step() {
+            return false;
         }
         true
     }
