@@ -1,6 +1,6 @@
 use builders::build;
 use crossbeam_channel::{self, unbounded};
-use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyEvent};
+use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyCode, KeyEvent};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use ratatui::widgets::Widget;
 use ratatui::{
@@ -24,6 +24,9 @@ use std::{
 };
 
 pub static PLACEHOLDER: &str = "Type Command or Press <ENTER> for Random";
+const DEFAULT_DURATION: Duration = Duration::from_micros(2000);
+const MAX_DURATION: Duration = Duration::from_secs(5);
+const MIN_DURATION: Duration = Duration::from_micros(1);
 pub type CtEvent = crossterm::event::Event;
 pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stdout>>;
 pub type Err = Box<dyn std::error::Error>;
@@ -69,6 +72,8 @@ pub enum Process {
 pub enum Pack {
     Press(KeyEvent),
     Resize(u16, u16),
+    Render,
+    Delta,
 }
 
 #[derive(Debug)]
@@ -255,7 +260,7 @@ impl<'a> Tui<'a> {
         self.scroll.scroll(dir)
     }
 
-    pub fn error_popup(&mut self, msg: String, maze_frame: impl Widget) -> Result<()> {
+    pub fn error_popup(&mut self, msg: &str, maze_frame: impl Widget) -> Result<()> {
         let frame = self.padded_frame();
         self.terminal.draw(|f| {
             f.render_widget(maze_frame, frame);
@@ -336,7 +341,7 @@ impl<'a> Tui<'a> {
                     Constraint::Percentage((100 - 30) / 2),
                 ])
                 .split(err_layout_v[1])[1];
-            let err_instructions = Paragraph::new(msg)
+            let err_instructions = Paragraph::new(msg.to_owned())
                 .wrap(Wrap { trim: true })
                 .block(
                     Block::default()
@@ -353,11 +358,6 @@ impl<'a> Tui<'a> {
             f.render_widget(Clear, err_layout_h);
             f.render_widget(err_instructions, err_layout_h);
         })?;
-        'reading_message: loop {
-            if self.events.try_next().is_some() {
-                break 'reading_message;
-            }
-        }
         Ok(())
     }
 
@@ -481,23 +481,43 @@ impl<'a> Tui<'a> {
 
 impl EventHandler {
     /// Constructs a new instance of [`EventHandler`].
-    pub fn new(tick_rate: u64) -> Self {
-        let tick_rate = Duration::from_millis(tick_rate);
+    pub fn new(tick_rate: f64, frame_rate: f64) -> Self {
+        let ticks = Duration::from_secs_f64(1.0 / tick_rate);
+        let frames = Duration::from_secs_f64(1.0 / frame_rate);
+        let mut delta_rate = DEFAULT_DURATION;
         let (sender, receiver) = unbounded();
         let handler = {
             let sender = sender.clone();
             thread::spawn(move || {
                 let mut last_tick = Instant::now();
+                let mut last_frame = Instant::now();
+                let mut last_delta = Instant::now();
                 loop {
-                    let timeout = tick_rate
-                        .checked_sub(Instant::now().elapsed())
-                        .unwrap_or(tick_rate);
-
+                    let timeout = ticks.checked_sub(Instant::now().elapsed()).unwrap_or(ticks);
                     if event::poll(timeout).expect("no events available") {
                         match event::read().expect("unable to read event") {
                             CtEvent::Key(e) => {
                                 if e.kind == event::KeyEventKind::Press {
-                                    sender.send(Pack::Press(e)).expect("couldn't send.");
+                                    match e.code {
+                                        KeyCode::Down => {
+                                            delta_rate = std::cmp::min(
+                                                delta_rate.saturating_mul(2),
+                                                MAX_DURATION,
+                                            );
+                                            sender.send(Pack::Press(e)).expect("couldn't send.");
+                                        }
+                                        KeyCode::Up => {
+                                            delta_rate = match delta_rate.checked_div(2) {
+                                                Some(t) => t,
+                                                None => Duration::ZERO,
+                                            };
+                                            delta_rate = std::cmp::max(delta_rate, MIN_DURATION);
+                                            sender.send(Pack::Press(e)).expect("couldn't send.");
+                                        }
+                                        _ => {
+                                            sender.send(Pack::Press(e)).expect("couldn't send.");
+                                        }
+                                    }
                                 }
                             }
                             CtEvent::Resize(w, h) => {
@@ -506,8 +526,17 @@ impl EventHandler {
                             _ => {}
                         }
                     }
-                    if last_tick.elapsed() >= tick_rate {
+                    let now = Instant::now();
+                    if now - last_delta >= delta_rate {
+                        sender.send(Pack::Delta).expect("could not send.");
+                        last_delta = Instant::now();
+                    }
+                    if now - last_tick >= ticks {
                         last_tick = Instant::now();
+                    }
+                    if now - last_frame >= frames {
+                        sender.send(Pack::Render).expect("could not send.");
+                        last_frame = Instant::now();
                     }
                 }
             })
@@ -519,10 +548,8 @@ impl EventHandler {
         }
     }
 
-    /// Receive the next event but only try to receive and return an option with a
-    /// pack if one is available. Makes for easier conditions to check in render loops.
-    pub fn try_next(&self) -> Option<Pack> {
-        self.receiver.try_recv().ok()
+    pub fn next(&self) -> Option<Pack> {
+        self.receiver.recv().ok()
     }
 }
 
