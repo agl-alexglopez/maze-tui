@@ -24,9 +24,6 @@ use std::{
 };
 
 pub static PLACEHOLDER: &str = "Type Command or Press <ENTER> for Random";
-const DEFAULT_DURATION: Duration = Duration::from_micros(2000);
-const MAX_DURATION: Duration = Duration::from_secs(5);
-const MIN_DURATION: Duration = Duration::from_micros(1);
 pub type CtEvent = crossterm::event::Event;
 pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stdout>>;
 pub type Err = Box<dyn std::error::Error>;
@@ -60,6 +57,8 @@ static REVERSE_INDICICATOR: Set = Set {
     horizontal_top: "═",
     horizontal_bottom: "═",
 };
+const MAX_DURATION: Duration = Duration::from_secs(5);
+const MIN_DURATION: Duration = Duration::from_micros(1);
 
 #[derive(Copy, Clone)]
 pub enum Process {
@@ -488,6 +487,9 @@ impl EventHandler {
             thread::spawn(move || {
                 let mut last_delta = Instant::now();
                 loop {
+                    // If we poll at the min acceptable duration always then when the user speeds
+                    // up or slows down the deltas for the maze rendering speed we still have a
+                    // responsive UI not tied to rendering speed and we have a CPU utilization cap.
                     if event::poll(MIN_DURATION).expect("no events available") {
                         match event::read().expect("unable to read event") {
                             CtEvent::Key(e) => {
@@ -518,8 +520,7 @@ impl EventHandler {
                             _ => {}
                         }
                     }
-                    let now = Instant::now();
-                    if now - last_delta >= deltas {
+                    if last_delta.elapsed() >= deltas {
                         sender.send(Pack::Delta).expect("could not send.");
                         last_delta = Instant::now();
                     }
