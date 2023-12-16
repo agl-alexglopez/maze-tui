@@ -85,7 +85,7 @@ WALL FLAG[-w] Set the wall style for the maze.
 Animations can play forward or reversed.
 Cancel any animation by pressing <escape>.
 Pause/Play an animation with <space>
-Slow down or speed up the animation with [</>]
+Faster or slower [</>]. Try it and watch the background!
 Step next/previous or change the play direction with [←/→]
 Zoom out/in with [Ctrl-[-]]/[Ctrl-[+]]
 If any flags are omitted, defaults are used.
