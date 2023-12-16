@@ -1,6 +1,6 @@
 use builders::build;
 use crossbeam_channel::{self, unbounded};
-use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyEvent};
+use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyCode, KeyEvent};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use ratatui::widgets::Widget;
 use ratatui::{
@@ -33,7 +33,7 @@ static INSTRUCTIONS: &str = include_str!("../../res/instructions.txt");
 static INSTRUCTIONS_LINE_COUNT: usize = 70;
 static DESCRIPTION_LINE_COUNT: usize = 50;
 static POPUP_INSTRUCTIONS: &str =
-    "<i>info <esc>exit <space>play/pause\n<←/→>backstep/nextstep <↑/↓>faster/slower";
+    "[i]info [ESC]exit [SPACE]play/pause\n[←/→]backstep/nextstep [</>]slower/faster";
 const RED_PAUSE: Color = Color::Rgb(201, 77, 83);
 const GREEN_FORWARD: Color = Color::Rgb(77, 201, 81);
 const BLUE_REVERSE: Color = Color::Rgb(42, 111, 222);
@@ -57,6 +57,8 @@ static REVERSE_INDICICATOR: Set = Set {
     horizontal_top: "═",
     horizontal_bottom: "═",
 };
+const MAX_DURATION: Duration = Duration::from_secs(5);
+const MIN_DURATION: Duration = Duration::from_micros(1);
 
 #[derive(Copy, Clone)]
 pub enum Process {
@@ -69,6 +71,7 @@ pub enum Process {
 pub enum Pack {
     Press(KeyEvent),
     Resize(u16, u16),
+    Render,
 }
 
 #[derive(Debug)]
@@ -255,7 +258,7 @@ impl<'a> Tui<'a> {
         self.scroll.scroll(dir)
     }
 
-    pub fn error_popup(&mut self, msg: String, maze_frame: impl Widget) -> Result<()> {
+    pub fn error_popup(&mut self, msg: &str, maze_frame: impl Widget) -> Result<()> {
         let frame = self.padded_frame();
         self.terminal.draw(|f| {
             f.render_widget(maze_frame, frame);
@@ -336,7 +339,7 @@ impl<'a> Tui<'a> {
                     Constraint::Percentage((100 - 30) / 2),
                 ])
                 .split(err_layout_v[1])[1];
-            let err_instructions = Paragraph::new(msg)
+            let err_instructions = Paragraph::new(msg.to_owned())
                 .wrap(Wrap { trim: true })
                 .block(
                     Block::default()
@@ -353,11 +356,6 @@ impl<'a> Tui<'a> {
             f.render_widget(Clear, err_layout_h);
             f.render_widget(err_instructions, err_layout_h);
         })?;
-        'reading_message: loop {
-            if self.events.try_next().is_some() {
-                break 'reading_message;
-            }
-        }
         Ok(())
     }
 
@@ -481,23 +479,39 @@ impl<'a> Tui<'a> {
 
 impl EventHandler {
     /// Constructs a new instance of [`EventHandler`].
-    pub fn new(tick_rate: u64) -> Self {
-        let tick_rate = Duration::from_millis(tick_rate);
+    pub fn new(delta_rate: f64) -> Self {
+        let mut deltas = Duration::from_secs_f64(1.0 / delta_rate);
         let (sender, receiver) = unbounded();
         let handler = {
             let sender = sender.clone();
             thread::spawn(move || {
-                let mut last_tick = Instant::now();
+                let mut last_delta = Instant::now();
                 loop {
-                    let timeout = tick_rate
-                        .checked_sub(Instant::now().elapsed())
-                        .unwrap_or(tick_rate);
-
-                    if event::poll(timeout).expect("no events available") {
+                    // If we poll at the min acceptable duration always then when the user speeds
+                    // up or slows down the deltas for the maze rendering speed we still have a
+                    // responsive UI not tied to rendering speed and we have a CPU utilization cap.
+                    if event::poll(MIN_DURATION).expect("no events available") {
                         match event::read().expect("unable to read event") {
                             CtEvent::Key(e) => {
                                 if e.kind == event::KeyEventKind::Press {
-                                    sender.send(Pack::Press(e)).expect("couldn't send.");
+                                    match e.code {
+                                        KeyCode::Char('>') => {
+                                            deltas = match deltas.checked_div(2) {
+                                                Some(t) => t,
+                                                None => Duration::ZERO,
+                                            };
+                                            deltas = std::cmp::max(deltas, MIN_DURATION);
+                                        }
+                                        KeyCode::Char('<') => {
+                                            deltas = std::cmp::min(
+                                                deltas.saturating_mul(2),
+                                                MAX_DURATION,
+                                            );
+                                        }
+                                        _ => {
+                                            sender.send(Pack::Press(e)).expect("couldn't send.");
+                                        }
+                                    }
                                 }
                             }
                             CtEvent::Resize(w, h) => {
@@ -506,8 +520,9 @@ impl EventHandler {
                             _ => {}
                         }
                     }
-                    if last_tick.elapsed() >= tick_rate {
-                        last_tick = Instant::now();
+                    if last_delta.elapsed() >= deltas {
+                        sender.send(Pack::Render).expect("could not send.");
+                        last_delta = Instant::now();
                     }
                 }
             })
@@ -519,10 +534,8 @@ impl EventHandler {
         }
     }
 
-    /// Receive the next event but only try to receive and return an option with a
-    /// pack if one is available. Makes for easier conditions to check in render loops.
-    pub fn try_next(&self) -> Option<Pack> {
-        self.receiver.try_recv().ok()
+    pub fn next(&self) -> Option<Pack> {
+        self.receiver.recv().ok()
     }
 }
 

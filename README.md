@@ -6,10 +6,10 @@
 
 ## Requirements
 
-- Rustc >= 1.73.0 or as new as possible `rustup update`. An earlier version may work but if you receive an error regarding the equality operator `==` a newer rustc version fixes that issue. 
+- Rustc >= 1.73.0 or as new as possible `rustup update`. An earlier version may work but if you receive an error regarding the equality operator `==` a newer rustc version fixes that issue.
 - A terminal with full font support for special Unicode characters. This project leverages Unicode Box-Drawing characters.
 - A terminal with support for RGB colors as defined by Crossterm's compatibility specifications. ANSI color codes are also used.
-- Cargo to build and run the project.   
+- Cargo to build and run the project.
 
 ## Quick Start Guide
 
@@ -38,9 +38,9 @@ Here are the instructions that greet you upon running the application.
 ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝       ╚═╝    ╚═════╝ ╚═╝
 
 Use flags, followed by arguments, in any order.
-Press <ENTER> to confirm your flag choices.
+Press [ENTER] to confirm your flag choices.
 
-(scroll with <↓>/<↑>, exit with <ESC>)
+(scroll with [↓/↑], exit with [ESC])
 
 BUILDER FLAG[-b] Set maze building algorithm.
     [rdfs] - Randomized depth first search.
@@ -85,9 +85,9 @@ WALL FLAG[-w] Set the wall style for the maze.
 Animations can play forward or reversed.
 Cancel any animation by pressing <escape>.
 Pause/Play an animation with <space>
-Speed up or slow down the animation with <↑/↓>
-Step next/previous or change the play direction with <←/→>
-Zoom out/in with <Ctrl-[-]>/<Ctrl-[+]>
+Faster or slower [</>]. Try it and watch the background!
+Step next/previous or change the play direction with [←/→]
+Zoom out/in with [Ctrl-[-]]/[Ctrl-[+]]
 If any flags are omitted, defaults are used.
 An empty command line will create a random maze.
 
@@ -126,4 +126,4 @@ Please read the [wiki](https://github.com/agl-alexglopez/maze-tui/wiki) for more
 - Windows is slow, sorry. For some reason the animations are much slower in Windows Terminal in my experience. It's not horrible but try smaller mazes at first.
 - Windows Terminal does not render fonts correctly. Depending on your font the Box-Drawing characters may be slightly disconnected or at times completely incorrect. I develop this project on WSL2 sometimes and notice the problems. Try the `-w contrast` or `-w half` option for smoother animations.
 - Mac and many Linux distributions render everything beautifully in my experience (as long as fully featured fonts are installed)!
-- Experiment with pausing with space `<space>`, speeding the program up or slowing it down with `<↑/↓>`, or stepping through it one delta at a time with `<←/→>` (the left and right arrows also change the direction of the animation based on the last direction you pressed). This is a great way to understand the algorithms at play!
+- Experiment with pausing with space `[SPACE]`, slowing the program down or speeding it up with `[</>]`, or stepping through it one delta at a time with `[←/→]` (the left and right arrows also change the direction of the animation based on the last direction you pressed). This is a great way to understand the algorithms at play!
