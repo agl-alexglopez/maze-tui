@@ -71,7 +71,7 @@ pub enum Process {
 pub enum Pack {
     Press(KeyEvent),
     Resize(u16, u16),
-    Delta,
+    Render,
 }
 
 #[derive(Debug)]
@@ -521,7 +521,7 @@ impl EventHandler {
                         }
                     }
                     if last_delta.elapsed() >= deltas {
-                        sender.send(Pack::Delta).expect("could not send.");
+                        sender.send(Pack::Render).expect("could not send.");
                         last_delta = Instant::now();
                     }
                 }

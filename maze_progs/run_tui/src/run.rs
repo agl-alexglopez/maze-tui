@@ -81,7 +81,7 @@ pub fn run() -> tui::Result<()> {
                         Err(msg) => 'reading_message: loop {
                             if let Some(ev) = tui.events.next() {
                                 match ev {
-                                    tui::Pack::Delta => {
+                                    tui::Pack::Render => {
                                         tui.error_popup(
                                             &msg,
                                             tui::SolveFrame { maze: &play.maze },
@@ -112,8 +112,7 @@ pub fn run() -> tui::Result<()> {
 
 // Keeping the three loops visible in one function like this makes it easier to reason about
 // playing the animation forward or in reverse. The handle_press function can mutate the
-// play direction but was needed to extract repetitive logic that made this function harder
-// to read.
+// play direction but needed to extract repetitive logic that made this function harder to read.
 fn render_maze(this_run: tables::HistoryRunner, tui: &mut tui::Tui) -> tui::Result<()> {
     let render_space = tui.inner_maze_rect();
     let mut play = new_tape(&this_run);
@@ -133,7 +132,7 @@ fn render_maze(this_run: tables::HistoryRunner, tui: &mut tui::Tui) -> tui::Resu
                             break 'rendering;
                         }
                     }
-                    tui::Pack::Delta => {
+                    tui::Pack::Render => {
                         if !play.build_delta() {
                             break 'building;
                         }
@@ -165,7 +164,7 @@ fn render_maze(this_run: tables::HistoryRunner, tui: &mut tui::Tui) -> tui::Resu
                             break 'rendering;
                         }
                     }
-                    tui::Pack::Delta => {
+                    tui::Pack::Render => {
                         if !play.solve_delta() {
                             break 'solving;
                         }
@@ -247,7 +246,7 @@ fn handle_reader(
                     KeyCode::Esc => return Err(Box::new(Quit::new())),
                     _ => {}
                 },
-                tui::Pack::Delta => {
+                tui::Pack::Render => {
                     tui.info_popup(process, render_space, maze, &mut scroll, description)?;
                 }
                 tui::Pack::Resize(_, _) => return Err(Box::new(Quit::new())),
