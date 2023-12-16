@@ -33,7 +33,7 @@ static INSTRUCTIONS: &str = include_str!("../../res/instructions.txt");
 static INSTRUCTIONS_LINE_COUNT: usize = 70;
 static DESCRIPTION_LINE_COUNT: usize = 50;
 static POPUP_INSTRUCTIONS: &str =
-    "<i>info <esc>exit <space>play/pause\n<←/→>backstep/nextstep <↑/↓>faster/slower";
+    "[i]info [ESC]exit [SPACE]play/pause\n[←/→]backstep/nextstep [</>]slower/faster";
 const RED_PAUSE: Color = Color::Rgb(201, 77, 83);
 const GREEN_FORWARD: Color = Color::Rgb(77, 201, 81);
 const BLUE_REVERSE: Color = Color::Rgb(42, 111, 222);
