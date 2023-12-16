@@ -40,7 +40,7 @@ Here are the instructions that greet you upon running the application.
 Use flags, followed by arguments, in any order.
 Press [ENTER] to confirm your flag choices.
 
-(scroll with [↓/↑], exit with [ESC])
+(scroll with [↓/↑], exit with [ESCAPE])
 
 BUILDER FLAG[-b] Set maze building algorithm.
     [rdfs] - Randomized depth first search.
