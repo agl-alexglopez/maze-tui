@@ -71,6 +71,8 @@ SOLVER FLAG[-s] Set maze solving algorithm.
     [bfs-hunt] - Breadth First Search
     [bfs-gather] - Breadth First Search
     [bfs-corner] - Breadth First Search
+    [distance] - Path Distances from Center
+    [runs] - Path Run Lengths
 
 WALL FLAG[-w] Set the wall style for the maze.
     [mini] - Half size walls and paths.
