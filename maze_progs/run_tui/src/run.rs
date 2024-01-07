@@ -61,49 +61,45 @@ pub fn run() -> tui::Result<()> {
     let mut tui = tui::Tui::new(terminal, events);
     tui.enter()?;
     let mut play = new_home_tape(tui.padded_frame());
-    'render: loop {
-        tui.home(tui::SolveFrame { maze: &play.maze })?;
-        if let Some(ev) = tui.events.next() {
-            match ev {
-                tui::Pack::Resize(_, _) => {
-                    play = new_home_tape(tui.padded_frame());
-                }
-                tui::Pack::Press(ev) => match ev.into() {
-                    Input { key: Key::Esc, .. } => break 'render,
-                    Input { key: Key::Down, .. } => tui.scroll(ScrollDirection::Forward),
-                    Input { key: Key::Up, .. } => tui.scroll(ScrollDirection::Backward),
-                    Input {
-                        key: Key::Enter, ..
-                    } => match set_command_args(tui.cmd.lines()[0].to_string(), &mut tui) {
-                        Ok(run) => {
-                            render_maze(run, &mut tui)?;
-                        }
-                        Err(msg) => 'reading_message: loop {
-                            if let Some(ev) = tui.events.next() {
-                                match ev {
-                                    tui::Pack::Render => {
-                                        tui.error_popup(
-                                            &msg,
-                                            tui::SolveFrame { maze: &play.maze },
-                                        )?;
-                                    }
-                                    _ => break 'reading_message,
-                                }
-                            }
-                        },
-                    },
-                    input => {
-                        tui.cmd_input(input);
-                    }
-                },
-                _ => {}
+    'render: while let Some(ev) = tui.events.next() {
+        match ev {
+            tui::Pack::Resize(_, _) => {
+                play = new_home_tape(tui.padded_frame());
             }
-        }
-        if play.pause {
-            play.forward = !play.forward;
-            play.pause = !play.pause;
-        } else if !play.solve_delta() {
-            play.forward = true;
+            tui::Pack::Press(ev) => match ev.into() {
+                Input { key: Key::Esc, .. } => break 'render,
+                Input { key: Key::Down, .. } => tui.scroll(ScrollDirection::Forward),
+                Input { key: Key::Up, .. } => tui.scroll(ScrollDirection::Backward),
+                Input {
+                    key: Key::Enter, ..
+                } => match set_command_args(tui.cmd.lines()[0].to_string(), &mut tui) {
+                    Ok(run) => {
+                        render_maze(run, &mut tui)?;
+                    }
+                    Err(msg) => 'reading_message: loop {
+                        if let Some(ev) = tui.events.next() {
+                            match ev {
+                                tui::Pack::Render => {
+                                    tui.error_popup(&msg, tui::SolveFrame { maze: &play.maze })?;
+                                }
+                                _ => break 'reading_message,
+                            }
+                        }
+                    },
+                },
+                input => {
+                    tui.cmd_input(input);
+                }
+            },
+            tui::Pack::Render => {
+                if play.pause {
+                    play.forward = !play.forward;
+                    play.pause = !play.pause;
+                } else if !play.solve_delta() {
+                    play.forward = true;
+                }
+                tui.home(tui::SolveFrame { maze: &play.maze })?;
+            }
         }
     }
     tui.exit()?;
@@ -117,67 +113,63 @@ fn render_maze(this_run: tables::HistoryRunner, tui: &mut tui::Tui) -> tui::Resu
     let render_space = tui.inner_maze_rect();
     let mut play = new_tape(&this_run);
     'rendering: loop {
-        'building: loop {
-            if let Some(ev) = tui.events.next() {
-                match ev {
-                    tui::Pack::Press(ev) => {
-                        if !handle_press(
-                            tui,
-                            ev.code,
-                            tui::Process::Building,
-                            &this_run,
-                            &mut play,
-                            &render_space,
-                        ) {
-                            break 'rendering;
-                        }
+        'building: while let Some(ev) = tui.events.next() {
+            match ev {
+                tui::Pack::Press(ev) => {
+                    if !handle_press(
+                        tui,
+                        ev.code,
+                        tui::Process::Building,
+                        &this_run,
+                        &mut play,
+                        &render_space,
+                    ) {
+                        break 'rendering;
                     }
-                    tui::Pack::Render => {
-                        if !play.build_delta() {
-                            break 'building;
-                        }
-                    }
-                    tui::Pack::Resize(_, _) => break 'rendering,
                 }
+                tui::Pack::Render => {
+                    if !play.build_delta() {
+                        break 'building;
+                    }
+                    tui.render_maze_frame(
+                        tui::BuildFrame {
+                            maze: &mut play.maze,
+                        },
+                        &render_space,
+                        play.forward,
+                        play.pause,
+                    )?;
+                }
+                tui::Pack::Resize(_, _) => break 'rendering,
             }
-            tui.render_maze_frame(
-                tui::BuildFrame {
-                    maze: &mut play.maze,
-                },
-                &render_space,
-                play.forward,
-                play.pause,
-            )?;
         }
-        'solving: loop {
-            if let Some(ev) = tui.events.next() {
-                match ev {
-                    tui::Pack::Press(ev) => {
-                        if !handle_press(
-                            tui,
-                            ev.code,
-                            tui::Process::Solving,
-                            &this_run,
-                            &mut play,
-                            &render_space,
-                        ) {
-                            break 'rendering;
-                        }
+        'solving: while let Some(ev) = tui.events.next() {
+            match ev {
+                tui::Pack::Press(ev) => {
+                    if !handle_press(
+                        tui,
+                        ev.code,
+                        tui::Process::Solving,
+                        &this_run,
+                        &mut play,
+                        &render_space,
+                    ) {
+                        break 'rendering;
                     }
-                    tui::Pack::Render => {
-                        if !play.solve_delta() {
-                            break 'solving;
-                        }
-                    }
-                    tui::Pack::Resize(_, _) => break 'rendering,
                 }
+                tui::Pack::Render => {
+                    if !play.solve_delta() {
+                        break 'solving;
+                    }
+                    tui.render_maze_frame(
+                        tui::SolveFrame { maze: &play.maze },
+                        &render_space,
+                        play.forward,
+                        play.pause,
+                    )?;
+                }
+                tui::Pack::Resize(_, _) => break 'rendering,
             }
-            tui.render_maze_frame(
-                tui::SolveFrame { maze: &play.maze },
-                &render_space,
-                play.forward,
-                play.pause,
-            )?;
         }
     }
     Ok(())
