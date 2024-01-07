@@ -519,8 +519,7 @@ impl EventHandler {
                             }
                             _ => {}
                         }
-                    }
-                    if last_delta.elapsed() >= deltas {
+                    } else if last_delta.elapsed() >= deltas {
                         sender.send(Pack::Render).expect("could not send.");
                         last_delta = Instant::now();
                     }
