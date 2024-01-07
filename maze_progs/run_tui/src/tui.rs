@@ -58,7 +58,8 @@ static REVERSE_INDICICATOR: Set = Set {
     horizontal_bottom: "═",
 };
 const MAX_DURATION: Duration = Duration::from_secs(5);
-const MIN_DURATION: Duration = Duration::from_micros(1);
+const MIN_DURATION: Duration = Duration::from_millis(1);
+const MIN_POLL: Duration = Duration::from_millis(1);
 
 #[derive(Copy, Clone)]
 pub enum Process {
@@ -490,7 +491,7 @@ impl EventHandler {
                     // If we poll at the min acceptable duration always then when the user speeds
                     // up or slows down the deltas for the maze rendering speed we still have a
                     // responsive UI not tied to rendering speed and we have a CPU utilization cap.
-                    if event::poll(MIN_DURATION).expect("no events available") {
+                    if event::poll(MIN_POLL).expect("no events available") {
                         match event::read().expect("unable to read event") {
                             CtEvent::Key(e) => {
                                 if e.kind == event::KeyEventKind::Press {
@@ -498,7 +499,7 @@ impl EventHandler {
                                         KeyCode::Char('>') => {
                                             deltas = match deltas.checked_div(2) {
                                                 Some(t) => t,
-                                                None => Duration::ZERO,
+                                                None => MIN_DURATION,
                                             };
                                             deltas = std::cmp::max(deltas, MIN_DURATION);
                                         }
@@ -509,18 +510,22 @@ impl EventHandler {
                                             );
                                         }
                                         _ => {
-                                            sender.send(Pack::Press(e)).expect("couldn't send.");
+                                            sender
+                                                .send(Pack::Press(e))
+                                                .expect("couldn't send press.");
                                         }
                                     }
                                 }
                             }
                             CtEvent::Resize(w, h) => {
-                                sender.send(Pack::Resize(w, h)).expect("could not send.");
+                                sender
+                                    .send(Pack::Resize(w, h))
+                                    .expect("could not send resize.");
                             }
                             _ => {}
                         }
                     } else if last_delta.elapsed() >= deltas {
-                        sender.send(Pack::Render).expect("could not send.");
+                        sender.send(Pack::Render).expect("could not send delta.");
                         last_delta = Instant::now();
                     }
                 }
