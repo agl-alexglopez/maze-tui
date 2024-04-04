@@ -42,14 +42,12 @@ checksum = "327762f6e5a765692301e5bb513e0d9fef63be86bbc14528052b1cd3e6f03e07"
 name = "builders"
 version = "0.1.0"
 dependencies = [
- "crossbeam-channel",
  "crossterm 0.26.1",
  "maze",
  "monitor",
  "print",
  "rand",
  "ratatui",
- "speed",
 ]
 
 [[package]]
@@ -122,30 +120,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "acdd7c62a3665c7f6830a51635d9ac9b23ed385797f70a83bb8bafe9c572ab2b"
 dependencies = [
  "winapi",
-]
-
-[[package]]
-name = "ctrlc"
-version = "3.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82e95fbd621905b854affdc67943b043a0fbb6ed7385fd5a25650d19a8a6cfdf"
-dependencies = [
- "nix",
- "windows-sys",
-]
-
-[[package]]
-name = "demo"
-version = "0.1.0"
-dependencies = [
- "crossbeam-channel",
- "crossterm 0.26.1",
- "ctrlc",
- "maze",
- "monitor",
- "print",
- "rand",
- "tables",
 ]
 
 [[package]]
@@ -252,17 +226,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nix"
-version = "0.27.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2eb04e9c688eff1c89d72b407f168cf79bb9e867a9d3323ed6c01519eb9cc053"
-dependencies = [
- "bitflags 2.4.1",
- "cfg-if",
- "libc",
-]
-
-[[package]]
 name = "once_cell"
 version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -279,7 +242,6 @@ dependencies = [
  "print",
  "rand",
  "solvers",
- "speed",
 ]
 
 [[package]]
@@ -401,21 +363,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "run_maze"
-version = "0.1.0"
-dependencies = [
- "builders",
- "crossbeam-channel",
- "crossterm 0.26.1",
- "ctrlc",
- "maze",
- "monitor",
- "print",
- "rand",
- "tables",
-]
-
-[[package]]
 name = "run_tui"
 version = "0.1.0"
 dependencies = [
@@ -492,12 +439,7 @@ dependencies = [
  "print",
  "rand",
  "ratatui",
- "speed",
 ]
-
-[[package]]
-name = "speed"
-version = "0.1.0"
 
 [[package]]
 name = "strum"
@@ -541,7 +483,6 @@ dependencies = [
  "monitor",
  "painters",
  "solvers",
- "speed",
 ]
 
 [[package]]

@@ -2,7 +2,6 @@ use builders::build;
 use crossbeam_channel::{self, unbounded};
 use crossterm::event::{self, DisableMouseCapture, EnableMouseCapture, KeyCode, KeyEvent};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
-use ratatui::widgets::Widget;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout},
@@ -11,7 +10,7 @@ use ratatui::{
     symbols::border::Set,
     widgets::{
         Block, BorderType, Borders, Clear, Paragraph, ScrollDirection, Scrollbar,
-        ScrollbarOrientation, ScrollbarState, Wrap,
+        ScrollbarOrientation, ScrollbarState, Widget, Wrap,
     },
 };
 use solvers::solve;
