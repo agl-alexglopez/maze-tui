@@ -1,7 +1,5 @@
 [workspace]
 members = [
-    "run_maze",
-    "demo",
     "run_tui",
     "maze",
     "monitor",
@@ -10,6 +8,5 @@ members = [
     "solvers",
     "painters",
     "print",
-    "speed",
 ]
 resolver = "2"

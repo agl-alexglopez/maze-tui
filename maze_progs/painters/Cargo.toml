@@ -11,6 +11,5 @@ monitor = { path = "../monitor" }
 builders = { path = "../builders" }
 solvers = { path = "../solvers" }
 print = { path = "../print" }
-speed = { path = "../speed" }
 crossterm = "0.26.1"
 rand = "0.8.5"

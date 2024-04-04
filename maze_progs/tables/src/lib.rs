@@ -19,14 +19,6 @@ pub use solvers::floodfs;
 pub use solvers::rdfs;
 pub use solvers::solve;
 
-pub type BuildCursorFunction = (
-    fn(monitor::MazeReceiver),
-    fn(monitor::MazeReceiver, speed::Speed),
-);
-pub type SolveCursorFunction = (
-    fn(monitor::MazeReceiver),
-    fn(monitor::MazeReceiver, speed::Speed),
-);
 pub type BuildHistoryFunction = fn(monitor::MazeMonitor);
 pub type SolveHistoryFunction = fn(monitor::MazeMonitor);
 
@@ -39,18 +31,6 @@ pub struct FlagArg<'a, 'b> {
 pub enum ViewingMode {
     StaticImage,
     AnimatedPlayback,
-}
-
-#[derive(Clone, Copy)]
-pub struct CursorRunner {
-    pub args: maze::MazeArgs,
-    pub build_view: ViewingMode,
-    pub build_speed: speed::Speed,
-    pub build: BuildCursorFunction,
-    pub modify: Option<BuildCursorFunction>,
-    pub solve_view: ViewingMode,
-    pub solve_speed: speed::Speed,
-    pub solve: SolveCursorFunction,
 }
 
 #[derive(Clone, Copy)]
@@ -78,35 +58,6 @@ impl HistoryRunner {
 }
 
 impl Default for HistoryRunner {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl CursorRunner {
-    pub fn new() -> Self {
-        Self {
-            args: maze::MazeArgs {
-                odd_rows: 33,
-                odd_cols: 111,
-                offset: maze::Offset::default(),
-                style: maze::MazeStyle::Sharp,
-            },
-            build_view: ViewingMode::StaticImage,
-            build_speed: speed::Speed::Speed4,
-            build: (
-                recursive_backtracker::generate_maze,
-                recursive_backtracker::animate_maze,
-            ),
-            modify: None,
-            solve_view: ViewingMode::StaticImage,
-            solve_speed: speed::Speed::Speed4,
-            solve: (dfs::hunt, dfs::animate_hunt),
-        }
-    }
-}
-
-impl Default for CursorRunner {
     fn default() -> Self {
         Self::new()
     }
@@ -229,80 +180,4 @@ pub static DESCRIPTIONS: [(BuildHistoryFunction, &str); 10] = [
         builders::wilson_carver::generate_history,
         include_str!("../../res/wilson_carver.txt"),
     ),
-];
-
-///
-/// Cursor animation specific lookups
-///
-
-pub const SPEEDS: [(&str, speed::Speed); 7] = [
-    ("1", speed::Speed::Speed1),
-    ("2", speed::Speed::Speed2),
-    ("3", speed::Speed::Speed3),
-    ("4", speed::Speed::Speed4),
-    ("5", speed::Speed::Speed5),
-    ("6", speed::Speed::Speed6),
-    ("7", speed::Speed::Speed7),
-];
-
-pub const CURSOR_BUILDERS: [(&str, BuildCursorFunction); 10] = [
-    ("arena", (arena::generate_maze, arena::animate_maze)),
-    (
-        "rdfs",
-        (
-            recursive_backtracker::generate_maze,
-            recursive_backtracker::animate_maze,
-        ),
-    ),
-    (
-        "hunt-kill",
-        (hunt_kill::generate_maze, hunt_kill::animate_maze),
-    ),
-    (
-        "fractal",
-        (
-            recursive_subdivision::generate_maze,
-            recursive_subdivision::animate_maze,
-        ),
-    ),
-    ("prim", (prim::generate_maze, prim::animate_maze)),
-    ("kruskal", (kruskal::generate_maze, kruskal::animate_maze)),
-    ("eller", (eller::generate_maze, eller::animate_maze)),
-    (
-        "wilson",
-        (wilson_carver::generate_maze, wilson_carver::animate_maze),
-    ),
-    (
-        "wilson-walls",
-        (wilson_adder::generate_maze, wilson_adder::animate_maze),
-    ),
-    ("grid", (grid::generate_maze, grid::animate_maze)),
-];
-
-pub const CURSOR_MODIFICATIONS: [(&str, BuildCursorFunction); 2] = [
-    ("cross", (modify::add_cross, modify::add_cross_animated)),
-    ("x", (modify::add_x, modify::add_x_animated)),
-];
-
-pub const CURSOR_SOLVERS: [(&str, SolveCursorFunction); 14] = [
-    ("dfs-hunt", (dfs::hunt, dfs::animate_hunt)),
-    ("dfs-gather", (dfs::gather, dfs::animate_gather)),
-    ("dfs-corner", (dfs::corner, dfs::animate_corner)),
-    ("rdfs-hunt", (rdfs::hunt, rdfs::animate_hunt)),
-    ("rdfs-gather", (rdfs::gather, rdfs::animate_gather)),
-    ("rdfs-corner", (rdfs::corner, rdfs::animate_corner)),
-    ("bfs-hunt", (bfs::hunt, bfs::animate_hunt)),
-    ("bfs-gather", (bfs::gather, bfs::animate_gather)),
-    ("bfs-corner", (bfs::corner, bfs::animate_corner)),
-    ("floodfs-hunt", (floodfs::hunt, floodfs::animate_hunt)),
-    ("floodfs-gather", (floodfs::gather, floodfs::animate_gather)),
-    ("floodfs-corner", (floodfs::corner, floodfs::animate_corner)),
-    (
-        "distance",
-        (
-            distance::paint_distance_from_center,
-            distance::animate_distance_from_center,
-        ),
-    ),
-    ("runs", (runs::paint_run_lengths, runs::animate_run_lengths)),
 ];

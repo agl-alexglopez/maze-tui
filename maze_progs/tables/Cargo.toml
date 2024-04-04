@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-speed = { path = "../speed" }
 maze = { path = "../maze" }
 monitor = { path = "../monitor" }
 solvers = { path = "../solvers" }
