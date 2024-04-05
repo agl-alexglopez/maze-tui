@@ -241,8 +241,8 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
         if maze.path_at(p.row, p.col) {
             if maze.path_at(p.row - 1, p.col) {
                 let neighbor_square = maze.get(p.row - 1, p.col);
+                // A special square is our neighbor.
                 if is_start_or_finish(neighbor_square) {
-                    // A special square is our neighbor.
                     return Cell {
                         symbol: '▀'.to_string(),
                         fg: RatColor::Indexed(ANSI_CYN),
@@ -282,12 +282,12 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
             skip: false,
         };
     }
-    // This is an even row. Let's run the logic for both paths and walls being here.
+    // p.row % 2 == 0. This is an even row. Run the logic for both paths and walls being here.
     if maze.path_at(p.row, p.col) {
         if maze.path_at(p.row + 1, p.col) {
             let neighbor_square = maze.get(p.row + 1, p.col);
+            // A special neighbor is below us so we must split the square colors.
             if is_start_or_finish(neighbor_square) {
-                // A special neighbor is below us so we must split the square colors.
                 return Cell {
                     symbol: '▀'.to_string(),
                     fg: RatColor::Indexed(ANSI_CYN),
@@ -320,8 +320,8 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
     // This is a wall square in an even row. A path or other wall can be below.
     if p.row + 1 < maze.rows && maze.path_at(p.row + 1, p.col) {
         let neighbor_square = maze.get(p.row + 1, p.col);
+        // The wall has a special neighbor so color halves appropriately.
         if is_start_or_finish(neighbor_square) {
-            // The wall has a special neighbor so color halves appropriately.
             return Cell {
                 symbol: '▀'.to_string(),
                 fg: RatColor::Reset,
@@ -342,7 +342,7 @@ pub fn decode_mini_path(maze: &maze::Blueprint, p: maze::Point) -> Cell {
         };
     }
     // Edge case. If a wall is below us in an even row it will print the full block for us when we
-    // get to it. If not we are at the end of the maze and this is the right square to print.
+    // get to it. If not we are at the end of the maze and this is the correct mini to print.
     Cell {
         symbol: '▀'.to_string(),
         fg: RatColor::Reset,

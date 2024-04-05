@@ -132,7 +132,7 @@ fn hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
             print::maze_panic!("Solve thread print::maze_panic!");
         }
 
-        // Bias threads towards their original dispatch direction with do-while loop.
+        // Bias threads towards their original dispatch direction.
         let mut i = guide.index;
         for _ in 0..solve::NUM_DIRECTIONS {
             let p: &maze::Point = &maze::CARDINAL_DIRECTIONS[i];
@@ -225,7 +225,7 @@ fn gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
             print::maze_panic!("Solve thread print::maze_panic!");
         }
 
-        // Bias threads towards their original dispatch direction with do-while loop.
+        // Bias threads towards their original dispatch direction.
         let mut i = guide.index;
         for _ in 0..solve::NUM_DIRECTIONS {
             let p: &maze::Point = &maze::CARDINAL_DIRECTIONS[i];
@@ -420,7 +420,7 @@ fn hunter_history(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
             print::maze_panic!("Solve thread print::maze_panic!");
         }
 
-        // Bias threads towards their original dispatch direction with do-while loop.
+        // Bias threads towards their original dispatch direction.
         let mut i = guide.index;
         for _ in 0..solve::NUM_DIRECTIONS {
             let p: &maze::Point = &maze::CARDINAL_DIRECTIONS[i];
@@ -543,7 +543,7 @@ fn gatherer_history(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
             print::maze_panic!("Solve thread print::maze_panic!");
         }
 
-        // Bias threads towards their original dispatch direction with do-while loop.
+        // Bias threads towards their original dispatch direction.
         let mut i = guide.index;
         for _ in 0..solve::NUM_DIRECTIONS {
             let p: &maze::Point = &maze::CARDINAL_DIRECTIONS[i];
