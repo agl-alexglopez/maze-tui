@@ -17,6 +17,7 @@ pub const NUM_PAINTERS: usize = 4;
 pub const ANIMATION_SPEEDS: [SpeedUnit; 8] = [0, 10000, 5000, 2000, 1000, 500, 250, 50];
 pub const RED_SHIFT: maze::Square = 16;
 pub const GREEN_SHIFT: maze::Square = 8;
+pub const NUM_DIRECTIONS: u16 = 4;
 
 #[inline]
 pub fn has_paint_vals(square: maze::Square) -> bool {

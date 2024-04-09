@@ -208,7 +208,7 @@ fn painter_history(monitor: monitor::MazeMonitor, guide: rgb::ThreadGuide) {
             Err(p) => print::maze_panic!("Thread panicked with lock: {}", p),
         };
         let mut i = guide.bias;
-        while {
+        for _ in 0..rgb::NUM_DIRECTIONS {
             let p = &maze::CARDINAL_DIRECTIONS[i];
             let next = maze::Point {
                 row: cur.row + p.row,
@@ -229,7 +229,6 @@ fn painter_history(monitor: monitor::MazeMonitor, guide: rgb::ThreadGuide) {
                 bfs.push_back(next);
             }
             i = (i + 1) % rgb::NUM_PAINTERS;
-            i != guide.bias
-        } {}
+        }
     }
 }
