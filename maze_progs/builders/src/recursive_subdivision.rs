@@ -33,7 +33,7 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
     }]);
     while let Some(chamber) = chamber_stack.pop() {
         if chamber.h >= chamber.w && chamber.w > MIN_CHAMBER {
-            let divide = random_even_div(&mut rng, chamber.h);
+            let divide = rand_even_div(&mut rng, chamber.h);
             let passage = rand_odd_pass(&mut rng, chamber.w);
             for c in 0..chamber.w {
                 if c == passage {
@@ -61,7 +61,7 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
                 w: chamber.w,
             });
         } else if chamber.w > chamber.h && chamber.h > MIN_CHAMBER {
-            let divide = random_even_div(&mut rng, chamber.w);
+            let divide = rand_even_div(&mut rng, chamber.w);
             let passage = rand_odd_pass(&mut rng, chamber.h);
             for r in 0..chamber.h {
                 if r == passage {
@@ -110,7 +110,7 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
     }]);
     while let Some(chamber) = chamber_stack.pop() {
         if chamber.h >= chamber.w && chamber.w > MIN_CHAMBER {
-            let divide = random_even_div(&mut rng, chamber.h);
+            let divide = rand_even_div(&mut rng, chamber.h);
             let passage = rand_odd_pass(&mut rng, chamber.w);
             for c in 0..chamber.w {
                 if c == passage {
@@ -138,7 +138,7 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
                 w: chamber.w,
             });
         } else if chamber.w > chamber.h && chamber.h > MIN_CHAMBER {
-            let divide = random_even_div(&mut rng, chamber.w);
+            let divide = rand_even_div(&mut rng, chamber.w);
             let passage = rand_odd_pass(&mut rng, chamber.h);
             for r in 0..chamber.h {
                 if r == passage {
@@ -173,7 +173,7 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
 /// Data only helpers.
 ///
 
-fn random_even_div(rng: &mut ThreadRng, axis_limit: i32) -> i32 {
+fn rand_even_div(rng: &mut ThreadRng, axis_limit: i32) -> i32 {
     2 * rng.gen_range(1..=((axis_limit - 2) / 2))
 }
 

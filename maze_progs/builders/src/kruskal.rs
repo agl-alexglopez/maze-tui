@@ -37,22 +37,22 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
             } else {
                 print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
             }
-            continue;
-        }
-        let left = maze::Point {
-            row: w.row,
-            col: w.col - 1,
-        };
-        let right = maze::Point {
-            row: w.row,
-            col: w.col + 1,
-        };
-        if let (Some(l_id), Some(r_id)) = (ids.get(&left), ids.get(&right)) {
-            if sets.made_union(*l_id, *r_id) {
-                build::join_squares(&mut lk.maze, right, left);
-            }
         } else {
-            print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
+            let left = maze::Point {
+                row: w.row,
+                col: w.col - 1,
+            };
+            let right = maze::Point {
+                row: w.row,
+                col: w.col + 1,
+            };
+            if let (Some(l_id), Some(r_id)) = (ids.get(&left), ids.get(&right)) {
+                if sets.made_union(*l_id, *r_id) {
+                    build::join_squares(&mut lk.maze, right, left);
+                }
+            } else {
+                print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
+            }
         }
     }
 }
@@ -88,22 +88,22 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
             } else {
                 print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
             }
-            continue;
-        }
-        let left = maze::Point {
-            row: w.row,
-            col: w.col - 1,
-        };
-        let right = maze::Point {
-            row: w.row,
-            col: w.col + 1,
-        };
-        if let (Some(l_id), Some(r_id)) = (ids.get(&left), ids.get(&right)) {
-            if sets.made_union(*l_id, *r_id) {
-                build::join_squares_history(&mut lk.maze, right, left);
-            }
         } else {
-            print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
+            let left = maze::Point {
+                row: w.row,
+                col: w.col - 1,
+            };
+            let right = maze::Point {
+                row: w.row,
+                col: w.col + 1,
+            };
+            if let (Some(l_id), Some(r_id)) = (ids.get(&left), ids.get(&right)) {
+                if sets.made_union(*l_id, *r_id) {
+                    build::join_squares_history(&mut lk.maze, right, left);
+                }
+            } else {
+                print::maze_panic!("Kruskal couldn't find a cell id. Build broke.");
+            }
         }
     }
 }

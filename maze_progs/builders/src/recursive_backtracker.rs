@@ -19,7 +19,7 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
     };
     let mut random_direction_indices: [usize; build::NUM_DIRECTIONS] = [0, 1, 2, 3];
     let mut cur: maze::Point = start;
-    'branching: loop {
+    'descending: loop {
         random_direction_indices.shuffle(&mut gen);
         for &i in random_direction_indices.iter() {
             let direction = &build::GENERATE_DIRECTIONS[i];
@@ -30,7 +30,7 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
             if build::can_build_new_square(&lk.maze, branch) {
                 build::carve_path_markings(&mut lk.maze, cur, branch);
                 cur = branch;
-                continue 'branching;
+                continue 'descending;
             }
         }
         let dir: build::BacktrackMarker = lk.maze.get(cur.row, cur.col) & build::MARKERS_MASK;
@@ -69,7 +69,7 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
     };
     let mut random_direction_indices: [usize; build::NUM_DIRECTIONS] = [0, 1, 2, 3];
     let mut cur: maze::Point = start;
-    'branching: loop {
+    'descending: loop {
         random_direction_indices.shuffle(&mut gen);
         for &i in random_direction_indices.iter() {
             let direction = &build::GENERATE_DIRECTIONS[i];
@@ -80,7 +80,7 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
             if build::can_build_new_square(&lk.maze, branch) {
                 build::carve_path_history(&mut lk.maze, cur, branch);
                 cur = branch;
-                continue 'branching;
+                continue 'descending;
             }
         }
         let dir: build::BacktrackMarker = lk.maze.get(cur.row, cur.col) & build::MARKERS_MASK;
