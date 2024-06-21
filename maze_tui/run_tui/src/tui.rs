@@ -70,15 +70,13 @@ pub enum Process {
 #[derive(Debug)]
 pub enum Pack {
     Press(KeyEvent),
-    Resize(u16, u16),
+    Resize((), ()),
     Render,
 }
 
 #[derive(Debug)]
 pub struct EventHandler {
-    pub sender: crossbeam_channel::Sender<Pack>,
     pub receiver: crossbeam_channel::Receiver<Pack>,
-    pub handler: thread::JoinHandle<()>,
 }
 
 pub struct Tui<'a> {
@@ -482,59 +480,49 @@ impl EventHandler {
     pub fn new(delta_rate: f64) -> Self {
         let mut deltas = Duration::from_secs_f64(1.0 / delta_rate);
         let (sender, receiver) = unbounded();
-        let handler = {
-            let sender = sender.clone();
-            thread::spawn(move || {
-                let mut last_delta = Instant::now();
-                loop {
-                    // If we poll at the min acceptable duration always then when the user speeds
-                    // up or slows down the deltas for the maze rendering speed we still have a
-                    // responsive UI not tied to rendering speed and we have a CPU utilization cap.
-                    if event::poll(MIN_POLL).expect("no events available") {
-                        match event::read().expect("unable to read event") {
-                            CtEvent::Key(e) => {
-                                if e.kind == event::KeyEventKind::Press {
-                                    match e.code {
-                                        KeyCode::Char('>') => {
-                                            deltas = match deltas.checked_div(2) {
-                                                Some(t) => t,
-                                                None => MIN_DURATION,
-                                            };
-                                            deltas = std::cmp::max(deltas, MIN_DURATION);
-                                        }
-                                        KeyCode::Char('<') => {
-                                            deltas = std::cmp::min(
-                                                deltas.saturating_mul(2),
-                                                MAX_DURATION,
-                                            );
-                                        }
-                                        _ => {
-                                            sender
-                                                .send(Pack::Press(e))
-                                                .expect("couldn't send press.");
-                                        }
+        let sender = sender.clone();
+        thread::spawn(move || {
+            let mut last_delta = Instant::now();
+            loop {
+                // If we poll at the min acceptable duration always then when the user speeds
+                // up or slows down the deltas for the maze rendering speed we still have a
+                // responsive UI not tied to rendering speed and we have a CPU utilization cap.
+                if event::poll(MIN_POLL).expect("no events available") {
+                    match event::read().expect("unable to read event") {
+                        CtEvent::Key(e) => {
+                            if e.kind == event::KeyEventKind::Press {
+                                match e.code {
+                                    KeyCode::Char('>') => {
+                                        deltas = match deltas.checked_div(2) {
+                                            Some(t) => t,
+                                            None => MIN_DURATION,
+                                        };
+                                        deltas = std::cmp::max(deltas, MIN_DURATION);
+                                    }
+                                    KeyCode::Char('<') => {
+                                        deltas =
+                                            std::cmp::min(deltas.saturating_mul(2), MAX_DURATION);
+                                    }
+                                    _ => {
+                                        sender.send(Pack::Press(e)).expect("couldn't send press.");
                                     }
                                 }
                             }
-                            CtEvent::Resize(w, h) => {
-                                sender
-                                    .send(Pack::Resize(w, h))
-                                    .expect("could not send resize.");
-                            }
-                            _ => {}
                         }
-                    } else if last_delta.elapsed() >= deltas {
-                        sender.send(Pack::Render).expect("could not send delta.");
-                        last_delta = Instant::now();
+                        CtEvent::Resize(_, _) => {
+                            sender
+                                .send(Pack::Resize((), ()))
+                                .expect("could not send resize.");
+                        }
+                        _ => {}
                     }
+                } else if last_delta.elapsed() >= deltas {
+                    sender.send(Pack::Render).expect("could not send delta.");
+                    last_delta = Instant::now();
                 }
-            })
-        };
-        Self {
-            sender,
-            receiver,
-            handler,
-        }
+            }
+        });
+        Self { receiver }
     }
 
     pub fn next(&self) -> Option<Pack> {
