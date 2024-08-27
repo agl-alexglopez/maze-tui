@@ -19,7 +19,7 @@ If you just want to get started follow these steps.
 
 ```zsh
 $ git clone https://github.com/agl-alexglopez/maze-tui.git
-$ cd maze_tui/
+$ cd maze_tui/maze_tui
 $ cargo run --release --bin run_tui
 ```
 
