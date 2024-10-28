@@ -77,15 +77,12 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
                 });
             }
         }
-        match max_neighbor {
-            Some(neighbor) => {
-                build::join_squares(&mut lk.maze, cur.p, neighbor.p);
-                pq.push(neighbor);
-            }
-            None => {
-                pq.pop();
-            }
-        };
+        if let Some(neighbor) = max_neighbor {
+            build::join_squares(&mut lk.maze, cur.p, neighbor.p);
+            pq.push(neighbor);
+        } else {
+            pq.pop();
+        }
     }
 }
 
@@ -135,14 +132,11 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
                 });
             }
         }
-        match max_neighbor {
-            Some(neighbor) => {
-                build::join_squares_history(&mut lk.maze, cur.p, neighbor.p);
-                pq.push(neighbor);
-            }
-            None => {
-                pq.pop();
-            }
-        };
+        if let Some(neighbor) = max_neighbor {
+            build::join_squares_history(&mut lk.maze, cur.p, neighbor.p);
+            pq.push(neighbor);
+        } else {
+            pq.pop();
+        }
     }
 }

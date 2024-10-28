@@ -54,15 +54,11 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
             if !is_valid_step(&lk.maze, cur.next, cur.prev) {
                 continue 'choosing_step;
             }
-            match complete_walk(&mut lk.maze, cur) {
-                Some(new_walk) => {
-                    cur = new_walk;
-                    continue 'walking;
-                }
-                None => {
-                    return;
-                }
-            }
+            cur = match complete_walk(&mut lk.maze, cur) {
+                None => return,
+                Some(new_walk) => new_walk,
+            };
+            continue 'walking;
         }
     }
 }
@@ -71,22 +67,16 @@ fn complete_walk(maze: &mut maze::Maze, mut walk: RandomWalk) -> Option<RandomWa
     if build::has_builder_bit(maze, walk.next) {
         build_with_marks(maze, walk.walk, walk.next);
         connect_walk(maze, walk.walk);
-        match build::choose_point_from_row_start(
-            maze,
-            walk.prev_row_start,
-            build::ParityPoint::Even,
-        ) {
-            Some(point) => {
-                walk.prev_row_start = point.row;
-                walk.walk = point;
-                *maze.get_mut(walk.walk.row, walk.walk.col) &= !build::MARKERS_MASK;
-                walk.prev = maze::Point { row: 0, col: 0 };
-                return Some(walk);
-            }
-            None => {
-                return None;
-            }
-        };
+        if let Some(point) =
+            build::choose_point_from_row_start(maze, walk.prev_row_start, build::ParityPoint::Even)
+        {
+            walk.prev_row_start = point.row;
+            walk.walk = point;
+            *maze.get_mut(walk.walk.row, walk.walk.col) &= !build::MARKERS_MASK;
+            walk.prev = maze::Point { row: 0, col: 0 };
+            return Some(walk);
+        }
+        return None;
     }
     if found_loop(maze, walk.next) {
         erase_loop(
@@ -192,15 +182,11 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
             if !is_valid_step(&lk.maze, cur.next, cur.prev) {
                 continue 'choosing_step;
             }
-            match complete_walk_history(&mut lk.maze, cur) {
-                Some(new_walk) => {
-                    cur = new_walk;
-                    continue 'walking;
-                }
-                None => {
-                    return;
-                }
-            }
+            cur = match complete_walk_history(&mut lk.maze, cur) {
+                None => return,
+                Some(new_walk) => new_walk,
+            };
+            continue 'walking;
         }
     }
 }
@@ -209,22 +195,16 @@ fn complete_walk_history(maze: &mut maze::Maze, mut walk: RandomWalk) -> Option<
     if build::has_builder_bit(maze, walk.next) {
         bridge_gap_history(maze, walk.walk, walk.next);
         connect_walk_history(maze, walk.walk);
-        match build::choose_point_from_row_start(
-            maze,
-            walk.prev_row_start,
-            build::ParityPoint::Even,
-        ) {
-            Some(point) => {
-                walk.prev_row_start = point.row;
-                walk.walk = point;
-                *maze.get_mut(walk.walk.row, walk.walk.col) &= !build::MARKERS_MASK;
-                walk.prev = maze::Point { row: 0, col: 0 };
-                return Some(walk);
-            }
-            None => {
-                return None;
-            }
-        };
+        if let Some(point) =
+            build::choose_point_from_row_start(maze, walk.prev_row_start, build::ParityPoint::Even)
+        {
+            walk.prev_row_start = point.row;
+            walk.walk = point;
+            *maze.get_mut(walk.walk.row, walk.walk.col) &= !build::MARKERS_MASK;
+            walk.prev = maze::Point { row: 0, col: 0 };
+            return Some(walk);
+        }
+        return None;
     }
     if found_loop(maze, walk.next) {
         erase_loop_history(
