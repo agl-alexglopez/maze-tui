@@ -9,7 +9,6 @@ use rand::{thread_rng, Rng};
 ///
 /// Data only modifiers
 ///
-
 pub fn paint_distance_from_center(monitor: monitor::MazeReceiver) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
@@ -70,7 +69,6 @@ fn painter(maze: &mut maze::Maze, map: &monitor::MaxMap) {
 ///
 /// History based solvers.
 ///
-
 pub fn paint_distance_from_center_history(monitor: monitor::MazeMonitor) {
     let start = if let Ok(mut lk) = monitor.lock() {
         let row_mid = lk.maze.rows() / 2;

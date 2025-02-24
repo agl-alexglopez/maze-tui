@@ -8,7 +8,6 @@ use std::thread;
 ///
 /// Data only solvers------------------------------------------------------------------------------
 ///
-
 pub fn hunt(monitor: monitor::MazeReceiver) {
     let all_start: maze::Point = if let Ok(mut lk) = monitor.solver.lock() {
         let all_start = solve::pick_random_point(&lk.maze);
@@ -253,7 +252,6 @@ fn gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
 ///
 /// History based solvers for recording and playback-----------------------------------------------
 ///
-
 pub fn hunt_history(monitor: monitor::MazeMonitor) {
     let all_start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         let all_start = solve::pick_random_point(&lk.maze);

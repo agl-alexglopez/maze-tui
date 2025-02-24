@@ -5,7 +5,6 @@ use rand::{seq::SliceRandom, thread_rng, Rng};
 ///
 /// Data only maze generator
 ///
-
 pub fn generate_maze(monitor: monitor::MazeReceiver) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
@@ -55,7 +54,6 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
 ///
 /// History based generator for animation and playback.
 ///
-
 pub fn generate_history(monitor: monitor::MazeMonitor) {
     let mut lk = match monitor.lock() {
         Ok(l) => l,

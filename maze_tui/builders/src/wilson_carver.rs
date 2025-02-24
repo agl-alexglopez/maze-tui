@@ -23,7 +23,6 @@ struct RandomWalk {
 ///
 /// Data only maze generator
 ///
-
 pub fn generate_maze(monitor: monitor::MazeReceiver) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
@@ -155,7 +154,6 @@ fn build_with_marks(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point) 
 ///
 /// History based generator for animation and playback.
 ///
-
 pub fn generate_history(monitor: monitor::MazeMonitor) {
     let mut lk = match monitor.lock() {
         Ok(l) => l,
@@ -386,7 +384,6 @@ fn break_wall_history(maze: &mut maze::Maze, cur: maze::Point, next: maze::Point
 ///
 /// Data only helpers for all.
 ///
-
 fn is_valid_step(maze: &maze::Maze, next: maze::Point, prev: maze::Point) -> bool {
     next.row > 0
         && next.row < maze.rows() - 1
