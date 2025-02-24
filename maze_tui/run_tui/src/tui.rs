@@ -107,7 +107,7 @@ pub struct SolveFrame<'a> {
     pub maze: &'a maze::Blueprint,
 }
 
-impl<'a> Tui<'a> {
+impl Tui<'_> {
     pub fn new(terminal: CrosstermTerminal, events: EventHandler) -> Self {
         let mut cmd_prompt = TextArea::default();
         cmd_prompt.set_cursor_line_style(Style::default());
@@ -533,8 +533,7 @@ impl EventHandler {
 ///
 /// Supporting implementations
 ///
-
-impl<'a> Widget for BuildFrame<'a> {
+impl Widget for BuildFrame<'_> {
     fn render(self, _area: Rect, buf: &mut Buffer) {
         if self.maze.is_mini() {
             let buf_area = buf.area;
@@ -569,7 +568,7 @@ impl<'a> Widget for BuildFrame<'a> {
     }
 }
 
-impl<'a> Widget for SolveFrame<'a> {
+impl Widget for SolveFrame<'_> {
     fn render(self, _area: Rect, buf: &mut Buffer) {
         if self.maze.is_mini() {
             let buf_area = buf.area;

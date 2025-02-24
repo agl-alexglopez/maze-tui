@@ -103,7 +103,6 @@ pub const WALL_STYLES: [(&str, maze::MazeStyle); 8] = [
 ///
 /// History and playback specific tables
 ///
-
 pub const HISTORY_BUILDERS: [(&str, BuildHistoryFunction); 10] = [
     ("arena", arena::generate_history),
     ("rdfs", recursive_backtracker::generate_history),

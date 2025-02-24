@@ -4,7 +4,6 @@ use maze;
 ///
 /// Data only maze generator
 ///
-
 pub fn add_cross(monitor: monitor::MazeReceiver) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
@@ -136,7 +135,6 @@ fn add_negative_slope(maze: &mut maze::Maze, p: maze::Point) {
 ///
 /// History based generator for animation and playback.
 ///
-
 pub fn add_cross_history(monitor: monitor::MazeMonitor) {
     let mut lk = match monitor.lock() {
         Ok(l) => l,

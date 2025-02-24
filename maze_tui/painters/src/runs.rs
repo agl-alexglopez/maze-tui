@@ -15,7 +15,6 @@ struct RunPoint {
 ///
 /// Data only measurements.
 ///
-
 pub fn paint_run_lengths(monitor: monitor::MazeReceiver) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
@@ -89,7 +88,6 @@ fn painter(maze: &mut maze::Maze, map: &monitor::MaxMap) {
 ///
 /// History based solver.
 ///
-
 pub fn paint_run_lengths_history(monitor: monitor::MazeMonitor) {
     let start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         let row_mid = lk.maze.rows() / 2;

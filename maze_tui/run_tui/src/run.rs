@@ -51,7 +51,6 @@ struct Playback {
 ///
 /// Main TUI program running and logic.
 ///
-
 /// The main render loop from the home page. This loop is relatively simple. When the more
 /// complex functionality of a maze animation is requested we will hand that off to another fn.
 pub fn run() -> tui::Result<()> {
@@ -253,7 +252,6 @@ fn handle_reader(
 /// until the maze generation and solving histories have been recorded. Then we decide how
 /// we want to play all of that back with the help of builder and solver decoding functions.
 ///
-
 // A new tape runs to completion then resets the maze buffer to its starting state.
 fn new_tape(run: &tables::HistoryRunner) -> Playback {
     let monitor = monitor::Monitor::new(maze::Maze::new(run.args));
@@ -310,7 +308,6 @@ fn new_home_tape(rect: Rect) -> Playback {
 ///
 /// Argument parsing from the tui-textarea or random generation if empty
 ///
-
 pub fn set_command_args(cmd: String, tui: &mut tui::Tui) -> Result<tables::HistoryRunner, String> {
     if cmd.is_empty() {
         return Ok(set_random_args(&tui.inner_maze_rect()[0]));
@@ -433,7 +430,6 @@ fn get_arg_section(flag: &str) -> &'static str {
 ///
 /// History function wrappers to help simplify what the runner is responsible for with playback.
 ///
-
 // A step just progresses the Tape based on whatever the current direction state is.
 impl Playback {
     fn build_step(&mut self) -> bool {

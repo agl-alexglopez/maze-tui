@@ -13,7 +13,6 @@ struct RunStart {
 ///
 /// Data only maze generator
 ///
-
 pub fn generate_maze(monitor: monitor::MazeReceiver) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
@@ -66,7 +65,6 @@ fn complete_run(maze: &mut maze::Maze, dfs: &mut Vec<maze::Point>, mut run: RunS
 ///
 /// History based generator for animation and playback.
 ///
-
 pub fn generate_history(monitor: monitor::MazeMonitor) {
     let mut lk = match monitor.lock() {
         Ok(l) => l,

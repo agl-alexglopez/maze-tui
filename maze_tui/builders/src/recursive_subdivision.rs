@@ -18,7 +18,6 @@ const MIN_CHAMBER: i32 = 3;
 ///
 /// Data only maze generator
 ///
-
 pub fn generate_maze(monitor: monitor::MazeReceiver) {
     let mut lk = match monitor.solver.lock() {
         Ok(l) => l,
@@ -95,7 +94,6 @@ pub fn generate_maze(monitor: monitor::MazeReceiver) {
 ///
 /// History based generator for animation and playback.
 ///
-
 pub fn generate_history(monitor: monitor::MazeMonitor) {
     let mut lk = match monitor.lock() {
         Ok(l) => l,
@@ -172,7 +170,6 @@ pub fn generate_history(monitor: monitor::MazeMonitor) {
 ///
 /// Data only helpers.
 ///
-
 fn rand_even_div(rng: &mut ThreadRng, axis_limit: i32) -> i32 {
     2 * rng.gen_range(1..=((axis_limit - 2) / 2))
 }

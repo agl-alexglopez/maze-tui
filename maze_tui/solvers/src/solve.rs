@@ -46,7 +46,6 @@ pub const SOLVER_SPEEDS: [SolveSpeedUnit; 8] = [0, 20000, 10000, 5000, 2000, 100
 ///
 /// Logical helpers for bitwise operations.
 ///
-
 #[inline]
 pub fn is_start(square: maze::Square) -> bool {
     (square & START_BIT) != 0
@@ -95,7 +94,6 @@ fn is_valid_start_or_finish(maze: &maze::Maze, choice: maze::Point) -> bool {
 ///
 /// Setup functions for starting and finishing a solver section.
 ///
-
 pub fn reset_solve(maze: &mut maze::Maze) {
     for square in maze.as_slice_mut().iter_mut() {
         if (*square & maze::PATH_BIT) != 0 {
@@ -169,7 +167,6 @@ pub fn find_nearest_square(maze: &maze::Maze, choice: maze::Point) -> maze::Poin
 ///
 /// Playback and animation based logic for interacting with TUI buffer.
 ///
-
 pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
     // We have some special printing for the finish square. Not here.
     if is_finish(square) {

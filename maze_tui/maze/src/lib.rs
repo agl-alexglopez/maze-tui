@@ -302,7 +302,6 @@ impl Default for MazeArgs {
 /// history of deltas as a maze build and solve operation completes. We only need an index and
 /// we track deltas as simple before and after u32's and what square changed.
 ///
-
 impl Index<usize> for Tape {
     type Output = Delta;
     fn index(&self, index: usize) -> &Self::Output {
@@ -445,7 +444,6 @@ impl Tape {
 ///
 /// Free functions for when the maze object is not present but we still want static info.
 ///
-
 #[inline]
 pub fn wall_row(row_index: usize) -> &'static [char] {
     &WALL_STYLES[row_index * WALL_ROW..row_index * WALL_ROW + WALL_ROW]

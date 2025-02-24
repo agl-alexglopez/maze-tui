@@ -88,7 +88,7 @@ pub const GENERATE_DIRECTIONS: [maze::Point; 4] = [
 // Control the speed steps of animation in microseconds here.
 pub const BUILDER_SPEEDS: [SpeedUnit; 8] = [0, 5000, 2500, 1000, 500, 250, 100, 1];
 
-/// MAZE BOUNDS CHECKING AND HELPERS-------------------------------------------------------
+// MAZE BOUNDS CHECKING AND HELPERS-------------------------------------------------------
 
 pub fn reset_build(maze: &mut maze::Maze) {
     maze.as_slice_mut().fill(0b0)
@@ -159,9 +159,9 @@ fn get_mark(square: maze::Square) -> BacktrackSymbol {
     BACKTRACKING_SYMBOLS[(square & MARKERS_MASK) as usize]
 }
 
-/// WALL ADDER HELPERS-------------------------------------------------------------------
+// WALL ADDER HELPERS-------------------------------------------------------------------
 
-/// Data Driven functions no IO or animation concerns.
+// Data Driven functions no IO or animation concerns.
 
 pub fn build_wall_outline(maze: &mut maze::Maze) {
     for r in 0..maze.rows() {
@@ -215,12 +215,11 @@ pub fn carve_path_walls(maze: &mut maze::Maze, p: maze::Point) {
     }
 }
 
-/// PATH CARVING HELPERS-------------------------------------------------------------------
+// PATH CARVING HELPERS-------------------------------------------------------------------
 
 ///
 /// Data Driven with no IO or animation.
 ///
-
 pub fn fill_maze_with_walls(maze: &mut maze::Maze) {
     for r in 0..maze.rows() {
         for c in 0..maze.cols() {
@@ -349,7 +348,6 @@ pub fn build_wall_carefully(maze: &mut maze::Maze, p: maze::Point) {
 ///
 /// History tracking for playback and animation.
 ///
-
 pub fn fill_maze_history_with_walls(maze: &mut maze::Maze) {
     for r in 0..maze.rows() {
         for c in 0..maze.cols() {
@@ -789,11 +787,9 @@ pub fn build_path_history(maze: &mut maze::Maze, p: maze::Point) -> usize {
 /// and cursor movement capabilities. For the TUI that means choosing how to decode every possible
 /// maze square and display it as a ratatui.rs buffer Cell.
 ///
-
 ///
 /// TUI rendering helpers for decoding maze squares into Cells.
 ///
-
 pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
     if is_marked(square) {
         let mark = get_mark(square);
