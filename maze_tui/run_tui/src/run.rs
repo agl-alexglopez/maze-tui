@@ -255,7 +255,7 @@ fn handle_reader(
 // A new tape runs to completion then resets the maze buffer to its starting state.
 fn new_tape(run: &tables::HistoryRunner) -> Playback {
     let monitor = monitor::Monitor::new(maze::Maze::new(run.args));
-    (run.build)(monitor.clone());
+    (run.build.function())(monitor.clone());
     if let Some(m) = run.modify {
         (m)(monitor.clone());
     }
@@ -282,7 +282,7 @@ fn new_tape(run: &tables::HistoryRunner) -> Playback {
 fn new_home_tape(rect: Rect) -> Playback {
     let run_bg = set_random_args(&rect);
     let bg_maze = monitor::Monitor::new(maze::Maze::new(run_bg.args));
-    (run_bg.build)(bg_maze.clone());
+    (run_bg.build.function())(bg_maze.clone());
     if let Some(m) = run_bg.modify {
         (m)(bg_maze.clone());
     }
