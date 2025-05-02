@@ -116,7 +116,7 @@ impl Tui<'_> {
             .borders(Borders::ALL)
             .border_type(BorderType::Double)
             .border_style(Style::new().fg(Color::Yellow))
-            .style(Style::default().bg(Color::Black));
+            .style(Style::default());
         cmd_prompt.set_block(text_block);
         cmd_prompt.set_alignment(Alignment::Center);
         Self {
@@ -213,7 +213,7 @@ impl Tui<'_> {
                         .borders(Borders::ALL)
                         .border_type(BorderType::Double)
                         .border_style(Style::new().fg(Color::Yellow))
-                        .style(Style::default().bg(Color::Black)),
+                        .style(Style::default()),
                 )
                 .alignment(Alignment::Left)
                 .scroll((self.scroll.pos as u16, 0));
@@ -286,7 +286,7 @@ impl Tui<'_> {
                         .borders(Borders::ALL)
                         .border_type(BorderType::Double)
                         .border_style(Style::new().fg(Color::Yellow))
-                        .style(Style::default().bg(Color::DarkGray)),
+                        .style(Style::default()),
                 )
                 .alignment(Alignment::Left)
                 .scroll((self.scroll.pos as u16, 0));
@@ -343,12 +343,7 @@ impl Tui<'_> {
                     Block::default()
                         .borders(Borders::ALL)
                         .border_style(Style::new().fg(Color::Red).bg(Color::Red))
-                        .style(
-                            Style::default()
-                                .bg(Color::Black)
-                                .fg(Color::Red)
-                                .add_modifier(Modifier::BOLD),
-                        ),
+                        .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
                 )
                 .alignment(Alignment::Center);
             f.render_widget(Clear, err_layout_h);
@@ -396,7 +391,7 @@ impl Tui<'_> {
                         .borders(Borders::ALL)
                         .border_type(BorderType::Double)
                         .border_style(Style::new().fg(Color::Yellow))
-                        .style(Style::default().bg(Color::Black)),
+                        .style(Style::default()),
                 )
                 .wrap(Wrap { trim: true })
                 .scroll((scroll.pos as u16, 0));
@@ -449,22 +444,22 @@ impl Tui<'_> {
                     .borders(Borders::ALL)
                     .border_set(FORWARD_INDICICATOR)
                     .border_style(Style::new().fg(RED_PAUSE))
-                    .style(Style::default().bg(Color::Black)),
+                    .style(Style::default()),
                 (true, false) => Block::default()
                     .borders(Borders::ALL)
                     .border_set(REVERSE_INDICICATOR)
                     .border_style(Style::new().fg(RED_PAUSE))
-                    .style(Style::default().bg(Color::Black)),
+                    .style(Style::default()),
                 (false, true) => Block::default()
                     .borders(Borders::ALL)
                     .border_set(FORWARD_INDICICATOR)
                     .border_style(Style::new().fg(GREEN_FORWARD))
-                    .style(Style::default().bg(Color::Black)),
+                    .style(Style::default()),
                 (false, false) => Block::default()
                     .borders(Borders::ALL)
                     .border_set(REVERSE_INDICICATOR)
                     .border_style(Style::new().fg(BLUE_REVERSE))
-                    .style(Style::default().bg(Color::Black)),
+                    .style(Style::default()),
             })
             .alignment(Alignment::Center);
         self.terminal.draw(|f| {

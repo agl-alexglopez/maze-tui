@@ -173,7 +173,10 @@ pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
         Cell {
             symbol: 'F'.to_string(),
             fg: RatColor::Indexed(ANSI_CYN),
-            bg: thread_rgb(square),
+            bg: match thread_rgb(square) {
+                RatColor::Rgb(0, 0, 0) => RatColor::Reset,
+                any => any,
+            },
             underline_color: RatColor::Reset,
             modifier: Modifier::BOLD | Modifier::SLOW_BLINK,
             skip: false,
@@ -182,7 +185,10 @@ pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
         Cell {
             symbol: 'S'.to_string(),
             fg: RatColor::Indexed(ANSI_CYN),
-            bg: RatColor::Reset,
+            bg: match thread_rgb(square) {
+                RatColor::Rgb(0, 0, 0) => RatColor::Reset,
+                any => any,
+            },
             underline_color: RatColor::Reset,
             modifier: Modifier::BOLD,
             skip: false,

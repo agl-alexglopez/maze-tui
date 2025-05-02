@@ -18,7 +18,7 @@ pub enum ParityPoint {
 #[derive(Copy, Clone)]
 pub struct BacktrackSymbol {
     pub arrow: char,
-    pub ansi: u8,
+    pub rgb: [u8; 3],
 }
 
 // Any builders that choose to cache seen squares in place can use this bit.
@@ -30,32 +30,32 @@ pub const FROM_NORTH: BacktrackMarker = 0b0001;
 pub const FROM_EAST: BacktrackMarker = 0b0010;
 pub const FROM_SOUTH: BacktrackMarker = 0b0011;
 pub const FROM_WEST: BacktrackMarker = 0b0100;
-pub const ANSI_WHITE: u8 = 15;
+pub const RGB_WHITE: [u8; 3] = [255, 255, 255];
 pub static BACKTRACKING_SYMBOLS: [BacktrackSymbol; 5] = [
     BacktrackSymbol {
         // Origin
         arrow: ' ',
-        ansi: 0,
+        rgb: [0, 0, 0],
     },
     BacktrackSymbol {
         // From North
         arrow: '↑',
-        ansi: 1,
+        rgb: [255, 0, 0],
     },
     BacktrackSymbol {
         // From East
         arrow: '→',
-        ansi: 2,
+        rgb: [0, 255, 0],
     },
     BacktrackSymbol {
         // From South
         arrow: '↓',
-        ansi: 3,
+        rgb: [255, 255, 0],
     },
     BacktrackSymbol {
         // From West
         arrow: '←',
-        ansi: 4,
+        rgb: [0, 0, 255],
     },
 ];
 
@@ -157,6 +157,12 @@ pub fn is_marked(square: maze::Square) -> bool {
 #[inline]
 fn get_mark(square: maze::Square) -> BacktrackSymbol {
     BACKTRACKING_SYMBOLS[(square & MARKERS_MASK) as usize]
+}
+
+#[inline]
+fn get_mark_color(square: maze::Square) -> RatColor {
+    let &[r, g, b] = &BACKTRACKING_SYMBOLS[(square & MARKERS_MASK) as usize].rgb;
+    RatColor::Rgb(r, g, b)
 }
 
 // WALL ADDER HELPERS-------------------------------------------------------------------
@@ -795,8 +801,8 @@ pub fn decode_square(wall_row: &[char], square: maze::Square) -> Cell {
         let mark = get_mark(square);
         Cell {
             symbol: mark.arrow.to_string(),
-            fg: RatColor::Indexed(ANSI_WHITE),
-            bg: RatColor::Indexed(mark.ansi),
+            fg: RatColor::Rgb(RGB_WHITE[0], RGB_WHITE[1], RGB_WHITE[2]),
+            bg: RatColor::Rgb(mark.rgb[0], mark.rgb[1], mark.rgb[2]),
             underline_color: RatColor::Reset,
             modifier: Modifier::BOLD,
             skip: false,
@@ -830,48 +836,45 @@ pub fn decode_mini_square(maze: &maze::Blueprint, p: maze::Point) -> Cell {
         // Need this for wilson backtracking while random walking.
         if is_marked(square) {
             if p.row % 2 == 0 {
-                let fg = match get_mark(maze.get(p.row + 1, p.col)) {
-                    BacktrackSymbol {
-                        arrow: ' ',
-                        ansi: 0,
-                    } => RatColor::Reset,
-                    any => RatColor::Indexed(any.ansi),
+                let fg = match get_mark_color(maze.get(p.row + 1, p.col)) {
+                    RatColor::Rgb(0, 0, 0) => RatColor::Reset,
+                    any => any,
                 };
                 return Cell {
                     symbol: '▀'.to_string(),
                     fg,
-                    bg: RatColor::Indexed(get_mark(square).ansi),
+                    bg: get_mark_color(square),
                     underline_color: RatColor::Reset,
                     modifier: Modifier::empty(),
                     skip: false,
                 };
             }
-            let fg = match get_mark(maze.get(p.row - 1, p.col)) {
-                BacktrackSymbol {
-                    arrow: ' ',
-                    ansi: 0,
-                } => RatColor::Reset,
-                any => RatColor::Indexed(any.ansi),
+            let fg = match get_mark_color(maze.get(p.row - 1, p.col)) {
+                RatColor::Rgb(0, 0, 0) => RatColor::Reset,
+                any => any,
             };
             return Cell {
                 symbol: '▀'.to_string(),
                 fg,
-                bg: RatColor::Indexed(get_mark(square).ansi),
+                bg: get_mark_color(square),
                 underline_color: RatColor::Reset,
                 modifier: Modifier::empty(),
                 skip: false,
             };
         }
-        let mut color = 0;
-        if p.row % 2 != 0 && p.row > 0 {
-            color = get_mark(maze.get(p.row - 1, p.col)).ansi;
-        } else if p.row + 1 < maze.rows {
-            color = get_mark(maze.get(p.row + 1, p.col)).ansi;
-        }
+        let color = {
+            if p.row % 2 != 0 && p.row > 0 {
+                get_mark_color(maze.get(p.row - 1, p.col))
+            } else if p.row + 1 < maze.rows {
+                get_mark_color(maze.get(p.row + 1, p.col))
+            } else {
+                RatColor::Rgb(0, 0, 0)
+            }
+        };
         return Cell {
             symbol: maze.wall_char(square).to_string(),
             fg: RatColor::Reset,
-            bg: RatColor::Indexed(color),
+            bg: color,
             underline_color: RatColor::Reset,
             modifier: Modifier::empty(),
             skip: false,
@@ -879,12 +882,9 @@ pub fn decode_mini_square(maze: &maze::Blueprint, p: maze::Point) -> Cell {
     }
     // We know this is a path but because we are half blocks we need to render correctly.
     if p.row % 2 == 0 {
-        let fg = match get_mark(maze.get(p.row + 1, p.col)) {
-            BacktrackSymbol {
-                arrow: ' ',
-                ansi: 0,
-            } => RatColor::Reset,
-            any => RatColor::Indexed(any.ansi),
+        let fg = match get_mark_color(maze.get(p.row + 1, p.col)) {
+            RatColor::Rgb(0, 0, 0) => RatColor::Reset,
+            any => any,
         };
         return Cell {
             symbol: match maze.wall_at(p.row + 1, p.col) {
@@ -893,18 +893,15 @@ pub fn decode_mini_square(maze: &maze::Blueprint, p: maze::Point) -> Cell {
             }
             .to_string(),
             fg,
-            bg: RatColor::Indexed(get_mark(square).ansi),
+            bg: get_mark_color(square),
             underline_color: RatColor::Reset,
             modifier: Modifier::empty(),
             skip: false,
         };
     }
-    let fg = match get_mark(maze.get(p.row - 1, p.col)) {
-        BacktrackSymbol {
-            arrow: ' ',
-            ansi: 0,
-        } => RatColor::Reset,
-        any => RatColor::Indexed(any.ansi),
+    let fg = match get_mark_color(maze.get(p.row - 1, p.col)) {
+        RatColor::Rgb(0, 0, 0) => RatColor::Reset,
+        any => any,
     };
     Cell {
         symbol: match maze.wall_at(p.row - 1, p.col) {
@@ -913,7 +910,7 @@ pub fn decode_mini_square(maze: &maze::Blueprint, p: maze::Point) -> Cell {
         }
         .to_string(),
         fg,
-        bg: RatColor::Indexed(get_mark(square).ansi),
+        bg: get_mark_color(square),
         underline_color: RatColor::Reset,
         modifier: Modifier::empty(),
         skip: false,
