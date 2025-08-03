@@ -7,4 +7,3 @@ edition = "2021"
 
 [dependencies]
 maze = { path = "../maze" }
-crossbeam-channel = "0.5"

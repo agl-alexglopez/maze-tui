@@ -15,8 +15,8 @@ struct RunPoint {
 ///
 /// Data only measurements.
 ///
-pub fn paint_run_lengths(monitor: monitor::MazeReceiver) {
-    let mut lk = match monitor.solver.lock() {
+pub fn paint_run_lengths(monitor: monitor::MazeMonitor) {
+    let mut lk = match monitor.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("Lock panic."),
     };
