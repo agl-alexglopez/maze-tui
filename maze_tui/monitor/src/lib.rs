@@ -1,4 +1,3 @@
-use crossbeam_channel::Receiver;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -40,22 +39,3 @@ impl Monitor {
 }
 
 pub type MazeMonitor = Arc<Mutex<Monitor>>;
-
-#[derive(Clone)]
-pub struct MazeReceiver {
-    pub solver: MazeMonitor,
-    pub quit_receiver: Receiver<bool>,
-}
-
-impl MazeReceiver {
-    pub fn new(m: maze::Maze, quit_rx: Receiver<bool>) -> Self {
-        Self {
-            solver: Monitor::new(m),
-            quit_receiver: quit_rx,
-        }
-    }
-
-    pub fn exit(&self) -> bool {
-        self.quit_receiver.is_full()
-    }
-}

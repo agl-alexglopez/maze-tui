@@ -11,8 +11,8 @@ const BURST: usize = 4;
 ///
 /// Data only solvers------------------------------------------------------------------------------
 ///
-pub fn hunt(monitor: monitor::MazeReceiver) {
-    let all_start: maze::Point = if let Ok(mut lk) = monitor.solver.lock() {
+pub fn hunt(monitor: monitor::MazeMonitor) {
+    let all_start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         let start = solve::pick_random_point(&lk.maze);
         *lk.maze.get_mut(start.row, start.col) |= solve::START_BIT;
         let finish: maze::Point = solve::pick_random_point(&lk.maze);
@@ -53,7 +53,7 @@ pub fn hunt(monitor: monitor::MazeReceiver) {
         handle.join().unwrap();
     }
 
-    if let Ok(mut lk) = monitor.solver.lock() {
+    if let Ok(mut lk) = monitor.lock() {
         for i in 0..lk.win_path.len() {
             let p = lk.win_path[i];
             *lk.maze.get_mut(p.0.row, p.0.col) &= !solve::THREAD_MASK;
@@ -64,8 +64,8 @@ pub fn hunt(monitor: monitor::MazeReceiver) {
     print::maze_panic!("Thread panicked with the lock!");
 }
 
-pub fn corner(monitor: monitor::MazeReceiver) {
-    let mut all_starts: [maze::Point; 4] = if let Ok(mut lk) = monitor.solver.lock() {
+pub fn corner(monitor: monitor::MazeMonitor) {
+    let mut all_starts: [maze::Point; 4] = if let Ok(mut lk) = monitor.lock() {
         let all_starts = solve::set_corner_starts(&lk.maze);
         for s in all_starts {
             *lk.maze.get_mut(s.row, s.col) |= solve::START_BIT;
@@ -124,7 +124,7 @@ pub fn corner(monitor: monitor::MazeReceiver) {
         handle.join().unwrap();
     }
 
-    if let Ok(mut lk) = monitor.solver.lock() {
+    if let Ok(mut lk) = monitor.lock() {
         for i in 0..lk.win_path.len() {
             let p = lk.win_path[i];
             *lk.maze.get_mut(p.0.row, p.0.col) &= !solve::THREAD_MASK;
@@ -135,11 +135,11 @@ pub fn corner(monitor: monitor::MazeReceiver) {
     print::maze_panic!("Thread panicked with the lock");
 }
 
-fn hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
+fn hunter(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
     let mut parents = HashMap::from([(guide.start, maze::Point { row: -1, col: -1 })]);
     let mut bfs: VecDeque<maze::Point> = VecDeque::from([guide.start]);
     while let Some(cur) = bfs.pop_front() {
-        if let Ok(mut lk) = monitor.solver.lock() {
+        if let Ok(mut lk) = monitor.lock() {
             if lk.win.is_some() {
                 return;
             }
@@ -171,7 +171,7 @@ fn hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
                 row: cur.row + p.row,
                 col: cur.col + p.col,
             };
-            if match monitor.solver.lock() {
+            if match monitor.lock() {
                 Err(p) => print::maze_panic!("Thread panicked: {}", p),
                 Ok(lk) => lk.maze.path_at(next.row, next.col),
             } && !parents.contains_key(&next)
@@ -184,8 +184,8 @@ fn hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     }
 }
 
-pub fn gather(monitor: monitor::MazeReceiver) {
-    let all_start: maze::Point = if let Ok(mut lk) = monitor.solver.lock() {
+pub fn gather(monitor: monitor::MazeMonitor) {
+    let all_start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         let start = solve::pick_random_point(&lk.maze);
         *lk.maze.get_mut(start.row, start.col) |= solve::START_BIT;
         for _ in 0..solve::NUM_GATHER_FINISHES {
@@ -230,11 +230,11 @@ pub fn gather(monitor: monitor::MazeReceiver) {
     }
 }
 
-fn gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
+fn gatherer(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
     let mut parents = HashMap::from([(guide.start, maze::Point { row: -1, col: -1 })]);
     let mut bfs: VecDeque<maze::Point> = VecDeque::from([guide.start]);
     while let Some(cur) = bfs.pop_front() {
-        if let Ok(mut lk) = monitor.solver.lock() {
+        if let Ok(mut lk) = monitor.lock() {
             let square = lk.maze.get(cur.row, cur.col);
             // We can only stop looking if we are the first to this finish. Keep looking otherwise.
             match (solve::is_finish(square), solve::is_first(square)) {
@@ -260,7 +260,7 @@ fn gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
                 row: cur.row + p.row,
                 col: cur.col + p.col,
             };
-            if match monitor.solver.lock() {
+            if match monitor.lock() {
                 Err(p) => print::maze_panic!("Thread panicked: {}", p),
                 Ok(lk) => lk.maze.path_at(next.row, next.col),
             } && !parents.contains_key(&next)

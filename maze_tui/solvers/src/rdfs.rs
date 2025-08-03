@@ -8,8 +8,8 @@ use std::thread;
 ///
 /// Data only solvers------------------------------------------------------------------------------
 ///
-pub fn hunt(monitor: monitor::MazeReceiver) {
-    let all_start: maze::Point = if let Ok(mut lk) = monitor.solver.lock() {
+pub fn hunt(monitor: monitor::MazeMonitor) {
+    let all_start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         let all_start = solve::pick_random_point(&lk.maze);
         *lk.maze.get_mut(all_start.row, all_start.col) |= solve::START_BIT;
         let finish: maze::Point = solve::pick_random_point(&lk.maze);
@@ -50,8 +50,8 @@ pub fn hunt(monitor: monitor::MazeReceiver) {
     }
 }
 
-pub fn corner(monitor: monitor::MazeReceiver) {
-    let mut corner_starts: [maze::Point; 4] = if let Ok(mut lk) = monitor.solver.lock() {
+pub fn corner(monitor: monitor::MazeMonitor) {
+    let mut corner_starts: [maze::Point; 4] = if let Ok(mut lk) = monitor.lock() {
         let corner_starts = solve::set_corner_starts(&lk.maze);
         for p in corner_starts {
             *lk.maze.get_mut(p.row, p.col) |= solve::START_BIT;
@@ -110,14 +110,14 @@ pub fn corner(monitor: monitor::MazeReceiver) {
     }
 }
 
-fn hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
+fn hunter(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
 
     let mut rng = thread_rng();
     let mut rng_arr: [usize; solve::NUM_DIRECTIONS] = [0, 1, 2, 3];
     'branching: while let Some(&cur) = dfs.last() {
-        if let Ok(mut lk) = monitor.solver.lock() {
+        if let Ok(mut lk) = monitor.lock() {
             if lk.win.is_some() {
                 for p in dfs {
                     *lk.maze.get_mut(p.row, p.col) |= guide.paint;
@@ -147,7 +147,7 @@ fn hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
                 col: cur.col + p.col,
             };
 
-            if match monitor.solver.lock() {
+            if match monitor.lock() {
                 Ok(lk) => {
                     let square = lk.maze.get(next.row, next.col);
                     (square & guide.cache) == 0 && maze::is_path(square)
@@ -162,8 +162,8 @@ fn hunter(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
     }
 }
 
-pub fn gather(monitor: monitor::MazeReceiver) {
-    let all_start: maze::Point = if let Ok(mut lk) = monitor.solver.lock() {
+pub fn gather(monitor: monitor::MazeMonitor) {
+    let all_start: maze::Point = if let Ok(mut lk) = monitor.lock() {
         let all_start = solve::pick_random_point(&lk.maze);
         *lk.maze.get_mut(all_start.row, all_start.col) |= solve::START_BIT;
         for _ in 0..solve::NUM_GATHER_FINISHES {
@@ -206,13 +206,13 @@ pub fn gather(monitor: monitor::MazeReceiver) {
     }
 }
 
-fn gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
+fn gatherer(monitor: monitor::MazeMonitor, guide: solve::ThreadGuide) {
     let mut dfs: Vec<maze::Point> = Vec::with_capacity(solve::INITIAL_PATH_LEN);
     dfs.push(guide.start);
     let mut rng = thread_rng();
     let mut rng_arr: [usize; solve::NUM_DIRECTIONS] = [0, 1, 2, 3];
     'branching: while let Some(&cur) = dfs.last() {
-        if let Ok(mut lk) = monitor.solver.lock() {
+        if let Ok(mut lk) = monitor.lock() {
             if (lk.maze.get(cur.row, cur.col) & solve::FINISH_BIT) != 0
                 && (lk.maze.get(cur.row, cur.col) & solve::CACHE_MASK) == 0
             {
@@ -238,7 +238,7 @@ fn gatherer(monitor: monitor::MazeReceiver, guide: solve::ThreadGuide) {
                 col: cur.col + p.col,
             };
 
-            if match monitor.solver.lock() {
+            if match monitor.lock() {
                 Ok(lk) => {
                     let square = lk.maze.get(next.row, next.col);
                     (square & guide.cache) == 0 && maze::is_path(square)

@@ -4,8 +4,8 @@ use maze;
 ///
 /// Data only maze generator
 ///
-pub fn add_cross(monitor: monitor::MazeReceiver) {
-    let mut lk = match monitor.solver.lock() {
+pub fn add_cross(monitor: monitor::MazeMonitor) {
+    let mut lk = match monitor.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
     };
@@ -23,8 +23,8 @@ pub fn add_cross(monitor: monitor::MazeReceiver) {
     }
 }
 
-pub fn add_x(monitor: monitor::MazeReceiver) {
-    let mut lk = match monitor.solver.lock() {
+pub fn add_x(monitor: monitor::MazeMonitor) {
+    let mut lk = match monitor.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
     };

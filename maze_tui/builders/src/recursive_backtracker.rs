@@ -5,8 +5,8 @@ use rand::{seq::SliceRandom, thread_rng, Rng};
 ///
 /// Data only maze generator
 ///
-pub fn generate_maze(monitor: monitor::MazeReceiver) {
-    let mut lk = match monitor.solver.lock() {
+pub fn generate_maze(monitor: monitor::MazeMonitor) {
+    let mut lk = match monitor.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("uncontested lock failure"),
     };

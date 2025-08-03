@@ -9,8 +9,8 @@ use rand::{thread_rng, Rng};
 ///
 /// Data only modifiers
 ///
-pub fn paint_distance_from_center(monitor: monitor::MazeReceiver) {
-    let mut lk = match monitor.solver.lock() {
+pub fn paint_distance_from_center(monitor: monitor::MazeMonitor) {
+    let mut lk = match monitor.lock() {
         Ok(l) => l,
         Err(_) => print::maze_panic!("Lock panic."),
     };
