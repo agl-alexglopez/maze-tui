@@ -504,7 +504,7 @@ impl EventHandler {
                                             std::cmp::min(deltas.saturating_mul(2), MAX_DURATION);
                                     }
                                     _ => {
-                                        sender.send(Pack::Press(e)).expect("couldn't send press.");
+                                        sender.send(Pack::Press(e)).expect("send press error");
                                     }
                                 }
                             }
@@ -512,12 +512,12 @@ impl EventHandler {
                         CtEvent::Resize(_, _) => {
                             sender
                                 .send(Pack::Resize((), ()))
-                                .expect("could not send resize.");
+                                .expect("send resize error");
                         }
                         _ => {}
                     }
                 } else {
-                    sender.send(Pack::Render).expect("could not send delta.");
+                    sender.send(Pack::Render).expect("maze delta send error");
                     last_delta = Instant::now();
                 }
             }
