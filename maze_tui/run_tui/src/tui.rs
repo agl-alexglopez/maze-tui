@@ -58,7 +58,6 @@ static REVERSE_INDICICATOR: Set = Set {
 };
 const MAX_DURATION: Duration = Duration::from_secs(5);
 const MIN_DURATION: Duration = Duration::from_millis(1);
-const MIN_POLL: Duration = Duration::from_millis(1);
 
 #[derive(Copy, Clone)]
 pub enum Process {
@@ -482,8 +481,14 @@ impl EventHandler {
                 // If we poll at the min acceptable duration always then when the user speeds
                 // up or slows down the deltas for the maze rendering speed we still have a
                 // responsive UI not tied to rendering speed and we have a CPU utilization cap.
-                if event::poll(MIN_POLL).expect("no events available") {
-                    match event::read().expect("unable to read event") {
+                let elapsed = last_delta.elapsed();
+                let timeout = if deltas > elapsed {
+                    deltas.saturating_sub(elapsed)
+                } else {
+                    Duration::ZERO
+                };
+                if event::poll(timeout).expect("polling error") {
+                    match event::read().expect("event error") {
                         CtEvent::Key(e) => {
                             if e.kind == event::KeyEventKind::Press {
                                 match e.code {
@@ -511,7 +516,7 @@ impl EventHandler {
                         }
                         _ => {}
                     }
-                } else if last_delta.elapsed() >= deltas {
+                } else {
                     sender.send(Pack::Render).expect("could not send delta.");
                     last_delta = Instant::now();
                 }
