@@ -478,10 +478,9 @@ impl EventHandler {
         thread::spawn(move || {
             let mut last_delta = Instant::now();
             loop {
-                // If we poll at the min acceptable duration always then when the user speeds
-                // up or slows down the deltas for the maze rendering speed we still have a
-                // responsive UI not tied to rendering speed and we have a CPU utilization cap.
                 let elapsed = last_delta.elapsed();
+                // Using a timeout gives the CPU some time to park this thread with any remaining
+                // time we have until the next render while ensuring we don't miss keys.
                 let timeout = if deltas > elapsed {
                     deltas.saturating_sub(elapsed)
                 } else {
