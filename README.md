@@ -119,9 +119,11 @@ I included as many **interesting** maze building algorithms as I could. The solv
 
 While I have not yet put together a testing suite for performance testing of building and solving the mazes, I will be interested to see the performance implications of the solvers. The [wiki](https://github.com/agl-alexglopez/maze-tui/wiki) is likely where you will find documentation of new features or other testing.
 
-## Wiki
+## Wiki and Why
 
-Please read the [wiki](https://github.com/agl-alexglopez/maze-tui/wiki) for more detailed explanation of settings, write-ups for each maze generation algorithm, and much more. Thank you!
+Please read the [wiki](https://github.com/agl-alexglopez/maze-tui/wiki) for more detailed explanation of settings, write-ups for each maze generation algorithm, and much more.
+
+Recently, I have come to believe that a maze generation and solving program is a great "Rosetta Stone" program. If you want to know what a Rosetta Stone program is, and get a deeper insight into how you can make something like this yourself, please visit my [blog](https://agl-alexglopez.github.io/) and read my [Rosetta Stones and Mazes](https://agl-alexglopez.github.io/2025/08/01/rosetta-stones-and-mazes-the-premise.html) article series. Thank you!
 
 ## Tips
 
