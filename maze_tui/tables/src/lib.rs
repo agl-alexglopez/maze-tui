@@ -31,7 +31,7 @@ pub struct FlagArg<'a, 'b> {
 
 #[derive(Clone, Copy)]
 pub enum ViewingMode {
-    StaticImage,
+    StaticImage = 0,
     AnimatedPlayback,
 }
 
@@ -134,27 +134,12 @@ pub fn match_walls(arg: &str) -> Option<maze::MazeStyle> {
 }
 
 impl BuildHistoryType {
-    fn index(&self) -> usize {
-        match self {
-            BuildHistoryType::Arena => 0,
-            BuildHistoryType::RecursiveBacktracker => 1,
-            BuildHistoryType::HuntKill => 2,
-            BuildHistoryType::RecursiveSubdivision => 3,
-            BuildHistoryType::Prim => 4,
-            BuildHistoryType::Kruskal => 5,
-            BuildHistoryType::Eller => 6,
-            BuildHistoryType::WilsonCarver => 7,
-            BuildHistoryType::WilsonAdder => 8,
-            BuildHistoryType::Grid => 9,
-        }
-    }
-
     pub fn get_fn(&self) -> BuildHistoryFunction {
-        BUILD_FN_TABLE[self.index()]
+        BUILD_FN_TABLE[*self as usize]
     }
 
     pub fn get_description(&self) -> &str {
-        BUILD_DESCRIPTIONS_TABLE[self.index()]
+        BUILD_DESCRIPTIONS_TABLE[*self as usize]
     }
 
     pub fn get_random(rng: &mut rand::rngs::ThreadRng) -> BuildHistoryType {
@@ -165,27 +150,8 @@ impl BuildHistoryType {
 }
 
 impl SolveHistoryType {
-    fn index(&self) -> usize {
-        match self {
-            SolveHistoryType::DfsHunt => 0,
-            SolveHistoryType::DfsGather => 1,
-            SolveHistoryType::DfsCorner => 2,
-            SolveHistoryType::RdfsHunt => 3,
-            SolveHistoryType::RdfsGather => 4,
-            SolveHistoryType::RdfsCorner => 5,
-            SolveHistoryType::BfsHunt => 6,
-            SolveHistoryType::BfsGather => 7,
-            SolveHistoryType::BfsCorner => 8,
-            SolveHistoryType::FdfsHunt => 9,
-            SolveHistoryType::FdfsGather => 10,
-            SolveHistoryType::FdfsCorner => 11,
-            SolveHistoryType::Distance => 12,
-            SolveHistoryType::Runs => 13,
-        }
-    }
-
     pub fn get_fn(&self) -> SolveHistoryFunction {
-        SOLVE_FN_TABLE[self.index()]
+        SOLVE_FN_TABLE[*self as usize]
     }
 
     pub fn get_random(rng: &mut rand::rngs::ThreadRng) -> SolveHistoryType {
@@ -196,15 +162,8 @@ impl SolveHistoryType {
 }
 
 impl ModificationHistoryType {
-    fn index(&self) -> usize {
-        match self {
-            ModificationHistoryType::Cross => 0,
-            ModificationHistoryType::X => 1,
-        }
-    }
-
     pub fn get_fn(&self) -> BuildHistoryFunction {
-        MODIFICATION_FN_TABLE[self.index()]
+        MODIFICATION_FN_TABLE[*self as usize]
     }
 
     pub fn get_random(rng: &mut rand::rngs::ThreadRng) -> ModificationHistoryType {
