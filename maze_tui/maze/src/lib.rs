@@ -26,6 +26,7 @@
 // maze start bit--------||| |||| |||| |||| |||| |||| |||| ||||
 // maze goals bit-------|||| |||| |||| |||| |||| |||| |||| ||||
 //                    0b0000 0000 0000 0000 0000 0000 0000 0000
+use rand::seq::SliceRandom;
 use std::ops::{Index, IndexMut};
 
 // Public Types
@@ -463,3 +464,22 @@ pub fn is_wall(square: Square) -> bool {
 pub fn is_path(square: Square) -> bool {
     (square & PATH_BIT) != 0
 }
+
+impl MazeStyle {
+    pub fn get_random(rng: &mut rand::rngs::ThreadRng) -> MazeStyle {
+        *ALL_WALL_STYLES
+            .choose(rng)
+            .expect("could not choose random wall style")
+    }
+}
+
+const ALL_WALL_STYLES: [MazeStyle; 8] = [
+    MazeStyle::Mini,
+    MazeStyle::Sharp,
+    MazeStyle::Round,
+    MazeStyle::Doubles,
+    MazeStyle::Bold,
+    MazeStyle::Contrast,
+    MazeStyle::Half,
+    MazeStyle::Spikes,
+];

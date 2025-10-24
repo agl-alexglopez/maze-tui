@@ -1,3 +1,5 @@
+use rand::seq::SliceRandom;
+
 pub use builders::arena;
 pub use builders::eller;
 pub use builders::grid;
@@ -37,8 +39,46 @@ pub enum ViewingMode {
 pub struct HistoryRunner {
     pub args: maze::MazeArgs,
     pub build: BuildHistoryType,
-    pub modify: Option<BuildHistoryFunction>,
-    pub solve: SolveHistoryFunction,
+    pub modify: Option<ModificationHistoryType>,
+    pub solve: SolveHistoryType,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum BuildHistoryType {
+    Arena = 0,
+    RecursiveBacktracker,
+    HuntKill,
+    RecursiveSubdivision,
+    Prim,
+    Kruskal,
+    Eller,
+    WilsonCarver,
+    WilsonAdder,
+    Grid,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum SolveHistoryType {
+    DfsHunt = 0,
+    DfsGather,
+    DfsCorner,
+    RdfsHunt,
+    RdfsGather,
+    RdfsCorner,
+    BfsHunt,
+    BfsGather,
+    BfsCorner,
+    FdfsHunt,
+    FdfsGather,
+    FdfsCorner,
+    Distance,
+    Runs,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ModificationHistoryType {
+    Cross = 0,
+    X,
 }
 
 impl HistoryRunner {
@@ -50,9 +90,9 @@ impl HistoryRunner {
                 offset: maze::Offset::default(),
                 style: maze::MazeStyle::Sharp,
             },
-            build: BuildHistoryType::RecursiveBacktracker(recursive_backtracker::generate_history),
+            build: BuildHistoryType::RecursiveBacktracker,
             modify: None,
-            solve: dfs::hunt_history,
+            solve: SolveHistoryType::DfsHunt,
         }
     }
 }
@@ -63,7 +103,7 @@ impl Default for HistoryRunner {
     }
 }
 
-pub fn search_table<T>(arg: &str, table: &[(&str, T)]) -> Option<T>
+fn search_table<T>(arg: &str, table: &[(&str, T)]) -> Option<T>
 where
     T: Clone,
 {
@@ -73,14 +113,108 @@ where
         .map(|(_, t)| t.clone())
 }
 
-pub fn load_info(cur_builder: &BuildHistoryType) -> &'static str {
-    match DESCRIPTIONS.iter().find(|(func, _)| func == cur_builder) {
-        Some(&(_, desc)) => desc,
-        None => "Coming Soon!",
+pub fn match_flag(arg: &str) -> Option<&str> {
+    search_table(arg, &FLAGS)
+}
+
+pub fn match_builder(arg: &str) -> Option<BuildHistoryType> {
+    search_table(arg, &HISTORY_BUILDERS)
+}
+
+pub fn match_modifier(arg: &str) -> Option<ModificationHistoryType> {
+    search_table(arg, &HISTORY_MODIFICATIONS)
+}
+
+pub fn match_solver(arg: &str) -> Option<SolveHistoryType> {
+    search_table(arg, &HISTORY_SOLVERS)
+}
+
+pub fn match_walls(arg: &str) -> Option<maze::MazeStyle> {
+    search_table(arg, &WALL_STYLES)
+}
+
+impl BuildHistoryType {
+    fn index(&self) -> usize {
+        match self {
+            BuildHistoryType::Arena => 0,
+            BuildHistoryType::RecursiveBacktracker => 1,
+            BuildHistoryType::HuntKill => 2,
+            BuildHistoryType::RecursiveSubdivision => 3,
+            BuildHistoryType::Prim => 4,
+            BuildHistoryType::Kruskal => 5,
+            BuildHistoryType::Eller => 6,
+            BuildHistoryType::WilsonCarver => 7,
+            BuildHistoryType::WilsonAdder => 8,
+            BuildHistoryType::Grid => 9,
+        }
+    }
+
+    pub fn get_fn(&self) -> BuildHistoryFunction {
+        BUILD_FN_TABLE[self.index()]
+    }
+
+    pub fn get_description(&self) -> &str {
+        BUILD_DESCRIPTIONS_TABLE[self.index()]
+    }
+
+    pub fn get_random(rng: &mut rand::rngs::ThreadRng) -> BuildHistoryType {
+        *ALL_BUILDER_TYPES
+            .choose(rng)
+            .expect("cannot choose random builder")
     }
 }
 
-pub const FLAGS: [(&str, &str); 6] = [
+impl SolveHistoryType {
+    fn index(&self) -> usize {
+        match self {
+            SolveHistoryType::DfsHunt => 0,
+            SolveHistoryType::DfsGather => 1,
+            SolveHistoryType::DfsCorner => 2,
+            SolveHistoryType::RdfsHunt => 3,
+            SolveHistoryType::RdfsGather => 4,
+            SolveHistoryType::RdfsCorner => 5,
+            SolveHistoryType::BfsHunt => 6,
+            SolveHistoryType::BfsGather => 7,
+            SolveHistoryType::BfsCorner => 8,
+            SolveHistoryType::FdfsHunt => 9,
+            SolveHistoryType::FdfsGather => 10,
+            SolveHistoryType::FdfsCorner => 11,
+            SolveHistoryType::Distance => 12,
+            SolveHistoryType::Runs => 13,
+        }
+    }
+
+    pub fn get_fn(&self) -> SolveHistoryFunction {
+        SOLVE_FN_TABLE[self.index()]
+    }
+
+    pub fn get_random(rng: &mut rand::rngs::ThreadRng) -> SolveHistoryType {
+        *ALL_SOLVER_TYPES
+            .choose(rng)
+            .expect("cannot choose random solver")
+    }
+}
+
+impl ModificationHistoryType {
+    fn index(&self) -> usize {
+        match self {
+            ModificationHistoryType::Cross => 0,
+            ModificationHistoryType::X => 1,
+        }
+    }
+
+    pub fn get_fn(&self) -> BuildHistoryFunction {
+        MODIFICATION_FN_TABLE[self.index()]
+    }
+
+    pub fn get_random(rng: &mut rand::rngs::ThreadRng) -> ModificationHistoryType {
+        *ALL_MODIFICATION_TYPES
+            .choose(rng)
+            .expect("cannot modify the maze")
+    }
+}
+
+static FLAGS: [(&str, &str); 6] = [
     ("-b", "-b"),
     ("-m", "-m"),
     ("-s", "-s"),
@@ -89,7 +223,7 @@ pub const FLAGS: [(&str, &str); 6] = [
     ("-ba", "-ba"),
 ];
 
-pub const WALL_STYLES: [(&str, maze::MazeStyle); 8] = [
+static WALL_STYLES: [(&str, maze::MazeStyle); 8] = [
     ("mini", maze::MazeStyle::Mini),
     ("sharp", maze::MazeStyle::Sharp),
     ("round", maze::MazeStyle::Round),
@@ -100,132 +234,116 @@ pub const WALL_STYLES: [(&str, maze::MazeStyle); 8] = [
     ("spikes", maze::MazeStyle::Spikes),
 ];
 
-#[derive(Clone)]
-pub struct BuildHistoryEntry(pub BuildHistoryFunction);
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum BuildHistoryType {
-    Arena(BuildHistoryFunction),
-    RecursiveBacktracker(BuildHistoryFunction),
-    HuntKill(BuildHistoryFunction),
-    RecursiveSubdivision(BuildHistoryFunction),
-    Prim(BuildHistoryFunction),
-    Kruskal(BuildHistoryFunction),
-    Eller(BuildHistoryFunction),
-    WilsonCarver(BuildHistoryFunction),
-    WilsonAdder(BuildHistoryFunction),
-    Grid(BuildHistoryFunction),
-}
-impl BuildHistoryType {
-    pub fn function(&self) -> fn(std::sync::Arc<std::sync::Mutex<monitor::Monitor>>) {
-        match self {
-            BuildHistoryType::Arena(f) => *f,
-            BuildHistoryType::RecursiveBacktracker(f) => *f,
-            BuildHistoryType::HuntKill(f) => *f,
-            BuildHistoryType::RecursiveSubdivision(f) => *f,
-            BuildHistoryType::Prim(f) => *f,
-            BuildHistoryType::Kruskal(f) => *f,
-            BuildHistoryType::Eller(f) => *f,
-            BuildHistoryType::WilsonCarver(f) => *f,
-            BuildHistoryType::WilsonAdder(f) => *f,
-            BuildHistoryType::Grid(f) => *f,
-        }
-    }
-}
-///
-/// History and playback specific tables
-///
-pub const HISTORY_BUILDERS: [(&str, BuildHistoryType); 10] = [
-    ("arena", BuildHistoryType::Arena(arena::generate_history)),
-    (
-        "rdfs",
-        BuildHistoryType::RecursiveBacktracker(recursive_backtracker::generate_history),
-    ),
-    (
-        "hunt-kill",
-        BuildHistoryType::HuntKill(hunt_kill::generate_history),
-    ),
-    (
-        "fractal",
-        BuildHistoryType::RecursiveSubdivision(recursive_subdivision::generate_history),
-    ),
-    ("prim", BuildHistoryType::Prim(prim::generate_history)),
-    (
-        "kruskal",
-        BuildHistoryType::Kruskal(kruskal::generate_history),
-    ),
-    ("eller", BuildHistoryType::Eller(eller::generate_history)),
-    (
-        "wilson",
-        BuildHistoryType::WilsonCarver(wilson_carver::generate_history),
-    ),
-    (
-        "wilson-walls",
-        BuildHistoryType::WilsonAdder(wilson_adder::generate_history),
-    ),
-    ("grid", BuildHistoryType::Grid(grid::generate_history)),
+static HISTORY_BUILDERS: [(&str, BuildHistoryType); 10] = [
+    ("arena", BuildHistoryType::Arena),
+    ("rdfs", BuildHistoryType::RecursiveBacktracker),
+    ("hunt-kill", BuildHistoryType::HuntKill),
+    ("fractal", BuildHistoryType::RecursiveSubdivision),
+    ("prim", BuildHistoryType::Prim),
+    ("kruskal", BuildHistoryType::Kruskal),
+    ("eller", BuildHistoryType::Eller),
+    ("wilson", BuildHistoryType::WilsonCarver),
+    ("wilson-walls", BuildHistoryType::WilsonAdder),
+    ("grid", BuildHistoryType::Grid),
 ];
 
-pub const HISTORY_MODIFICATIONS: [(&str, BuildHistoryFunction); 2] = [
-    ("cross", modify::add_cross_history),
-    ("x", modify::add_x_history),
+static HISTORY_MODIFICATIONS: [(&str, ModificationHistoryType); 2] = [
+    ("cross", ModificationHistoryType::Cross),
+    ("x", ModificationHistoryType::X),
 ];
 
-pub const HISTORY_SOLVERS: [(&str, SolveHistoryFunction); 14] = [
-    ("dfs-hunt", dfs::hunt_history),
-    ("dfs-gather", dfs::gather_history),
-    ("dfs-corner", dfs::corner_history),
-    ("rdfs-hunt", rdfs::hunt_history),
-    ("rdfs-gather", rdfs::gather_history),
-    ("rdfs-corner", rdfs::corner_history),
-    ("bfs-hunt", bfs::hunt_history),
-    ("bfs-gather", bfs::gather_history),
-    ("bfs-corner", bfs::corner_history),
-    ("floodfs-hunt", floodfs::hunt_history),
-    ("floodfs-gather", floodfs::gather_history),
-    ("floodfs-corner", floodfs::corner_history),
-    ("distance", distance::paint_distance_from_center_history),
-    ("runs", runs::paint_run_lengths_history),
+static HISTORY_SOLVERS: [(&str, SolveHistoryType); 14] = [
+    ("dfs-hunt", SolveHistoryType::DfsHunt),
+    ("dfs-gather", SolveHistoryType::DfsGather),
+    ("dfs-corner", SolveHistoryType::DfsCorner),
+    ("rdfs-hunt", SolveHistoryType::RdfsHunt),
+    ("rdfs-gather", SolveHistoryType::RdfsGather),
+    ("rdfs-corner", SolveHistoryType::RdfsCorner),
+    ("bfs-hunt", SolveHistoryType::BfsHunt),
+    ("bfs-gather", SolveHistoryType::BfsGather),
+    ("bfs-corner", SolveHistoryType::BfsCorner),
+    ("floodfs-hunt", SolveHistoryType::FdfsHunt),
+    ("floodfs-gather", SolveHistoryType::FdfsGather),
+    ("floodfs-corner", SolveHistoryType::FdfsCorner),
+    ("distance", SolveHistoryType::Distance),
+    ("runs", SolveHistoryType::Runs),
 ];
 
-pub static DESCRIPTIONS: [(BuildHistoryType, &str); 10] = [
-    (
-        BuildHistoryType::Arena(builders::arena::generate_history),
-        include_str!("../../res/arena.txt"),
-    ),
-    (
-        BuildHistoryType::Eller(builders::eller::generate_history),
-        include_str!("../../res/eller.txt"),
-    ),
-    (
-        BuildHistoryType::Grid(builders::grid::generate_history),
-        include_str!("../../res/grid.txt"),
-    ),
-    (
-        BuildHistoryType::HuntKill(builders::hunt_kill::generate_history),
-        include_str!("../../res/hunt_kill.txt"),
-    ),
-    (
-        BuildHistoryType::Kruskal(builders::kruskal::generate_history),
-        include_str!("../../res/kruskal.txt"),
-    ),
-    (
-        BuildHistoryType::Prim(builders::prim::generate_history),
-        include_str!("../../res/prim.txt"),
-    ),
-    (
-        BuildHistoryType::RecursiveBacktracker(builders::recursive_backtracker::generate_history),
-        include_str!("../../res/recursive_backtracker.txt"),
-    ),
-    (
-        BuildHistoryType::RecursiveSubdivision(builders::recursive_subdivision::generate_history),
-        include_str!("../../res/recursive_subdivision.txt"),
-    ),
-    (
-        BuildHistoryType::WilsonAdder(builders::wilson_adder::generate_history),
-        include_str!("../../res/wilson_adder.txt"),
-    ),
-    (
-        BuildHistoryType::WilsonCarver(builders::wilson_carver::generate_history),
-        include_str!("../../res/wilson_carver.txt"),
-    ),
+static BUILD_FN_TABLE: [BuildHistoryFunction; 10] = [
+    arena::generate_history,
+    recursive_backtracker::generate_history,
+    hunt_kill::generate_history,
+    recursive_subdivision::generate_history,
+    prim::generate_history,
+    kruskal::generate_history,
+    eller::generate_history,
+    wilson_carver::generate_history,
+    wilson_adder::generate_history,
+    grid::generate_history,
+];
+
+static MODIFICATION_FN_TABLE: [BuildHistoryFunction; 2] =
+    [modify::add_cross_history, modify::add_x_history];
+
+static SOLVE_FN_TABLE: [SolveHistoryFunction; 14] = [
+    dfs::hunt_history,
+    dfs::gather_history,
+    dfs::corner_history,
+    rdfs::hunt_history,
+    rdfs::gather_history,
+    rdfs::corner_history,
+    bfs::hunt_history,
+    bfs::gather_history,
+    bfs::corner_history,
+    floodfs::hunt_history,
+    floodfs::gather_history,
+    floodfs::corner_history,
+    distance::paint_distance_from_center_history,
+    runs::paint_run_lengths_history,
+];
+
+static ALL_BUILDER_TYPES: [BuildHistoryType; 10] = [
+    BuildHistoryType::Arena,
+    BuildHistoryType::RecursiveBacktracker,
+    BuildHistoryType::HuntKill,
+    BuildHistoryType::RecursiveSubdivision,
+    BuildHistoryType::Prim,
+    BuildHistoryType::Kruskal,
+    BuildHistoryType::Eller,
+    BuildHistoryType::WilsonCarver,
+    BuildHistoryType::WilsonAdder,
+    BuildHistoryType::Grid,
+];
+
+static ALL_MODIFICATION_TYPES: [ModificationHistoryType; 2] =
+    [ModificationHistoryType::Cross, ModificationHistoryType::X];
+
+static ALL_SOLVER_TYPES: [SolveHistoryType; 14] = [
+    SolveHistoryType::DfsHunt,
+    SolveHistoryType::DfsGather,
+    SolveHistoryType::DfsCorner,
+    SolveHistoryType::RdfsHunt,
+    SolveHistoryType::RdfsGather,
+    SolveHistoryType::RdfsCorner,
+    SolveHistoryType::BfsHunt,
+    SolveHistoryType::BfsGather,
+    SolveHistoryType::BfsCorner,
+    SolveHistoryType::FdfsHunt,
+    SolveHistoryType::FdfsGather,
+    SolveHistoryType::FdfsCorner,
+    SolveHistoryType::Distance,
+    SolveHistoryType::Runs,
+];
+
+static BUILD_DESCRIPTIONS_TABLE: [&str; 10] = [
+    include_str!("../../res/arena.txt"),
+    include_str!("../../res/eller.txt"),
+    include_str!("../../res/grid.txt"),
+    include_str!("../../res/hunt_kill.txt"),
+    include_str!("../../res/kruskal.txt"),
+    include_str!("../../res/prim.txt"),
+    include_str!("../../res/recursive_backtracker.txt"),
+    include_str!("../../res/recursive_subdivision.txt"),
+    include_str!("../../res/wilson_adder.txt"),
+    include_str!("../../res/wilson_carver.txt"),
 ];

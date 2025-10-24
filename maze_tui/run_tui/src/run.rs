@@ -1,7 +1,7 @@
 use crate::tui;
 use builders::build;
 use crossterm::event::KeyCode;
-use rand::{distributions::Bernoulli, distributions::Distribution, seq::SliceRandom, thread_rng};
+use rand::{distributions::Bernoulli, distributions::Distribution, thread_rng};
 use ratatui::{
     prelude::{CrosstermBackend, Rect, Terminal},
     widgets::ScrollDirection,
@@ -187,7 +187,7 @@ fn handle_press(
             if handle_reader(
                 tui,
                 process,
-                tables::load_info(&args.build),
+                args.build.get_description(),
                 &play.maze,
                 render_space,
             )
@@ -255,11 +255,11 @@ fn handle_reader(
 // A new tape runs to completion then resets the maze buffer to its starting state.
 fn new_tape(run: &tables::HistoryRunner) -> Playback {
     let monitor = monitor::Monitor::new(maze::Maze::new(run.args));
-    (run.build.function())(monitor.clone());
+    (run.build.get_fn())(monitor.clone());
     if let Some(m) = run.modify {
-        (m)(monitor.clone());
+        m.get_fn()(monitor.clone());
     }
-    (run.solve)(monitor.clone());
+    (run.solve.get_fn())(monitor.clone());
     match Arc::into_inner(monitor) {
         Some(a) => match Mutex::into_inner(a) {
             Ok(mut solver) => {
@@ -282,11 +282,11 @@ fn new_tape(run: &tables::HistoryRunner) -> Playback {
 fn new_home_tape(rect: Rect) -> Playback {
     let run_bg = set_random_args(&rect);
     let bg_maze = monitor::Monitor::new(maze::Maze::new(run_bg.args));
-    (run_bg.build.function())(bg_maze.clone());
+    (run_bg.build.get_fn())(bg_maze.clone());
     if let Some(m) = run_bg.modify {
-        (m)(bg_maze.clone());
+        (m.get_fn())(bg_maze.clone());
     }
-    (run_bg.solve)(bg_maze.clone());
+    (run_bg.solve.get_fn())(bg_maze.clone());
     match Arc::into_inner(bg_maze) {
         Some(a) => match Mutex::into_inner(a) {
             Ok(mut solver) => {
@@ -333,7 +333,7 @@ pub fn set_command_args(cmd: String, tui: &mut tui::Tui) -> Result<tables::Histo
             process_current = false;
             continue;
         }
-        match tables::search_table(a, &tables::FLAGS) {
+        match tables::match_flag(a) {
             Some(flag) => {
                 process_current = true;
                 prev_flag = flag;
@@ -361,16 +361,16 @@ pub fn set_command_args(cmd: String, tui: &mut tui::Tui) -> Result<tables::Histo
 
 fn set_arg(run: &mut tables::HistoryRunner, args: &tables::FlagArg) -> Result<(), String> {
     match args.flag {
-        "-b" => tables::search_table(args.arg, &tables::HISTORY_BUILDERS)
+        "-b" => tables::match_builder(args.arg)
             .map(|func_pair| run.build = func_pair)
             .ok_or(err_string(args)),
-        "-m" => tables::search_table(args.arg, &tables::HISTORY_MODIFICATIONS)
+        "-m" => tables::match_modifier(args.arg)
             .map(|mod_tuple| run.modify = Some(mod_tuple))
             .ok_or(err_string(args)),
-        "-s" => tables::search_table(args.arg, &tables::HISTORY_SOLVERS)
+        "-s" => tables::match_solver(args.arg)
             .map(|solve_tuple| run.solve = solve_tuple)
             .ok_or(err_string(args)),
-        "-w" => tables::search_table(args.arg, &tables::WALL_STYLES)
+        "-w" => tables::match_walls(args.arg)
             .map(|wall_style| run.args.style = wall_style)
             .ok_or(err_string(args)),
         _ => Err(err_string(args)),
@@ -387,27 +387,15 @@ fn set_random_args(rect: &Rect) -> tables::HistoryRunner {
         add_cols: rect.x as i32,
     };
     let modification_probability = Bernoulli::new(0.2);
-    this_run.args.style = match tables::WALL_STYLES.choose(&mut rng) {
-        Some(&style) => style.1,
-        None => print::maze_panic!("Styles not set for loop, broken"),
-    };
-    this_run.build = match tables::HISTORY_BUILDERS.choose(&mut rng) {
-        Some(&algo) => algo.1,
-        None => print::maze_panic!("Build algorithm array empty."),
-    };
-    this_run.solve = match tables::HISTORY_SOLVERS.choose(&mut rng) {
-        Some(&algo) => algo.1,
-        None => print::maze_panic!("Solve algorithm array empty."),
-    };
+    this_run.args.style = maze::MazeStyle::get_random(&mut rng);
+    this_run.build = tables::BuildHistoryType::get_random(&mut rng);
+    this_run.solve = tables::SolveHistoryType::get_random(&mut rng);
     this_run.modify = None;
     if modification_probability
         .expect("Bernoulli innefective")
         .sample(&mut rng)
     {
-        this_run.modify = match tables::HISTORY_MODIFICATIONS.choose(&mut rng) {
-            Some(&m) => Some(m.1),
-            None => print::maze_panic!("Modification table empty."),
-        }
+        this_run.modify = Some(tables::ModificationHistoryType::get_random(&mut rng));
     }
     if this_run.args.style == maze::MazeStyle::Mini {
         this_run.args.odd_rows *= 2;
