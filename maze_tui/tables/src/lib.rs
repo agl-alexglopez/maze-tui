@@ -234,39 +234,6 @@ static WALL_STYLES: [(&str, maze::MazeStyle); 8] = [
     ("spikes", maze::MazeStyle::Spikes),
 ];
 
-static BUILD_FN_TABLE: [BuildHistoryFunction; 10] = [
-    arena::generate_history,
-    recursive_backtracker::generate_history,
-    hunt_kill::generate_history,
-    recursive_subdivision::generate_history,
-    prim::generate_history,
-    kruskal::generate_history,
-    eller::generate_history,
-    wilson_carver::generate_history,
-    wilson_adder::generate_history,
-    grid::generate_history,
-];
-
-static MODIFICATION_FN_TABLE: [BuildHistoryFunction; 2] =
-    [modify::add_cross_history, modify::add_x_history];
-
-static SOLVE_FN_TABLE: [SolveHistoryFunction; 14] = [
-    dfs::hunt_history,
-    dfs::gather_history,
-    dfs::corner_history,
-    rdfs::hunt_history,
-    rdfs::gather_history,
-    rdfs::corner_history,
-    bfs::hunt_history,
-    bfs::gather_history,
-    bfs::corner_history,
-    floodfs::hunt_history,
-    floodfs::gather_history,
-    floodfs::corner_history,
-    distance::paint_distance_from_center_history,
-    runs::paint_run_lengths_history,
-];
-
 static HISTORY_BUILDERS: [(&str, BuildHistoryType); 10] = [
     ("arena", BuildHistoryType::Arena),
     ("rdfs", BuildHistoryType::RecursiveBacktracker),
@@ -302,17 +269,37 @@ static HISTORY_SOLVERS: [(&str, SolveHistoryType); 14] = [
     ("runs", SolveHistoryType::Runs),
 ];
 
-static BUILD_DESCRIPTIONS_TABLE: [&str; 10] = [
-    include_str!("../../res/arena.txt"),
-    include_str!("../../res/eller.txt"),
-    include_str!("../../res/grid.txt"),
-    include_str!("../../res/hunt_kill.txt"),
-    include_str!("../../res/kruskal.txt"),
-    include_str!("../../res/prim.txt"),
-    include_str!("../../res/recursive_backtracker.txt"),
-    include_str!("../../res/recursive_subdivision.txt"),
-    include_str!("../../res/wilson_adder.txt"),
-    include_str!("../../res/wilson_carver.txt"),
+static BUILD_FN_TABLE: [BuildHistoryFunction; 10] = [
+    arena::generate_history,
+    recursive_backtracker::generate_history,
+    hunt_kill::generate_history,
+    recursive_subdivision::generate_history,
+    prim::generate_history,
+    kruskal::generate_history,
+    eller::generate_history,
+    wilson_carver::generate_history,
+    wilson_adder::generate_history,
+    grid::generate_history,
+];
+
+static MODIFICATION_FN_TABLE: [BuildHistoryFunction; 2] =
+    [modify::add_cross_history, modify::add_x_history];
+
+static SOLVE_FN_TABLE: [SolveHistoryFunction; 14] = [
+    dfs::hunt_history,
+    dfs::gather_history,
+    dfs::corner_history,
+    rdfs::hunt_history,
+    rdfs::gather_history,
+    rdfs::corner_history,
+    bfs::hunt_history,
+    bfs::gather_history,
+    bfs::corner_history,
+    floodfs::hunt_history,
+    floodfs::gather_history,
+    floodfs::corner_history,
+    distance::paint_distance_from_center_history,
+    runs::paint_run_lengths_history,
 ];
 
 static ALL_BUILDER_TYPES: [BuildHistoryType; 10] = [
@@ -346,4 +333,17 @@ static ALL_SOLVER_TYPES: [SolveHistoryType; 14] = [
     SolveHistoryType::FdfsCorner,
     SolveHistoryType::Distance,
     SolveHistoryType::Runs,
+];
+
+static BUILD_DESCRIPTIONS_TABLE: [&str; 10] = [
+    include_str!("../../res/arena.txt"),
+    include_str!("../../res/eller.txt"),
+    include_str!("../../res/grid.txt"),
+    include_str!("../../res/hunt_kill.txt"),
+    include_str!("../../res/kruskal.txt"),
+    include_str!("../../res/prim.txt"),
+    include_str!("../../res/recursive_backtracker.txt"),
+    include_str!("../../res/recursive_subdivision.txt"),
+    include_str!("../../res/wilson_adder.txt"),
+    include_str!("../../res/wilson_carver.txt"),
 ];
