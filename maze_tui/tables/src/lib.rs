@@ -315,6 +315,19 @@ static ALL_BUILDER_TYPES: [BuildHistoryType; 10] = [
     BuildHistoryType::Grid,
 ];
 
+static BUILD_DESCRIPTIONS_TABLE: [&str; 10] = [
+    include_str!("../../res/arena.txt"),
+    include_str!("../../res/recursive_backtracker.txt"),
+    include_str!("../../res/hunt_kill.txt"),
+    include_str!("../../res/recursive_subdivision.txt"),
+    include_str!("../../res/prim.txt"),
+    include_str!("../../res/kruskal.txt"),
+    include_str!("../../res/eller.txt"),
+    include_str!("../../res/wilson_carver.txt"),
+    include_str!("../../res/wilson_adder.txt"),
+    include_str!("../../res/grid.txt"),
+];
+
 static ALL_MODIFICATION_TYPES: [ModificationHistoryType; 2] =
     [ModificationHistoryType::Cross, ModificationHistoryType::X];
 
@@ -333,17 +346,4 @@ static ALL_SOLVER_TYPES: [SolveHistoryType; 14] = [
     SolveHistoryType::FdfsCorner,
     SolveHistoryType::Distance,
     SolveHistoryType::Runs,
-];
-
-static BUILD_DESCRIPTIONS_TABLE: [&str; 10] = [
-    include_str!("../../res/arena.txt"),
-    include_str!("../../res/eller.txt"),
-    include_str!("../../res/grid.txt"),
-    include_str!("../../res/hunt_kill.txt"),
-    include_str!("../../res/kruskal.txt"),
-    include_str!("../../res/prim.txt"),
-    include_str!("../../res/recursive_backtracker.txt"),
-    include_str!("../../res/recursive_subdivision.txt"),
-    include_str!("../../res/wilson_adder.txt"),
-    include_str!("../../res/wilson_carver.txt"),
 ];
