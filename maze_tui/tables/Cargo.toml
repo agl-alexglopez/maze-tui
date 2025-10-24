@@ -11,3 +11,4 @@ monitor = { path = "../monitor" }
 solvers = { path = "../solvers" }
 builders = { path = "../builders" }
 painters = { path = "../painters" }
+rand = "0.8.5"
