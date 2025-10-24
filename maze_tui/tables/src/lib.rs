@@ -247,28 +247,6 @@ static HISTORY_BUILDERS: [(&str, BuildHistoryType); 10] = [
     ("grid", BuildHistoryType::Grid),
 ];
 
-static HISTORY_MODIFICATIONS: [(&str, ModificationHistoryType); 2] = [
-    ("cross", ModificationHistoryType::Cross),
-    ("x", ModificationHistoryType::X),
-];
-
-static HISTORY_SOLVERS: [(&str, SolveHistoryType); 14] = [
-    ("dfs-hunt", SolveHistoryType::DfsHunt),
-    ("dfs-gather", SolveHistoryType::DfsGather),
-    ("dfs-corner", SolveHistoryType::DfsCorner),
-    ("rdfs-hunt", SolveHistoryType::RdfsHunt),
-    ("rdfs-gather", SolveHistoryType::RdfsGather),
-    ("rdfs-corner", SolveHistoryType::RdfsCorner),
-    ("bfs-hunt", SolveHistoryType::BfsHunt),
-    ("bfs-gather", SolveHistoryType::BfsGather),
-    ("bfs-corner", SolveHistoryType::BfsCorner),
-    ("floodfs-hunt", SolveHistoryType::FdfsHunt),
-    ("floodfs-gather", SolveHistoryType::FdfsGather),
-    ("floodfs-corner", SolveHistoryType::FdfsCorner),
-    ("distance", SolveHistoryType::Distance),
-    ("runs", SolveHistoryType::Runs),
-];
-
 static BUILD_FN_TABLE: [BuildHistoryFunction; 10] = [
     arena::generate_history,
     recursive_backtracker::generate_history,
@@ -280,26 +258,6 @@ static BUILD_FN_TABLE: [BuildHistoryFunction; 10] = [
     wilson_carver::generate_history,
     wilson_adder::generate_history,
     grid::generate_history,
-];
-
-static MODIFICATION_FN_TABLE: [BuildHistoryFunction; 2] =
-    [modify::add_cross_history, modify::add_x_history];
-
-static SOLVE_FN_TABLE: [SolveHistoryFunction; 14] = [
-    dfs::hunt_history,
-    dfs::gather_history,
-    dfs::corner_history,
-    rdfs::hunt_history,
-    rdfs::gather_history,
-    rdfs::corner_history,
-    bfs::hunt_history,
-    bfs::gather_history,
-    bfs::corner_history,
-    floodfs::hunt_history,
-    floodfs::gather_history,
-    floodfs::corner_history,
-    distance::paint_distance_from_center_history,
-    runs::paint_run_lengths_history,
 ];
 
 static ALL_BUILDER_TYPES: [BuildHistoryType; 10] = [
@@ -328,8 +286,50 @@ static BUILD_DESCRIPTIONS_TABLE: [&str; 10] = [
     include_str!("../../res/grid.txt"),
 ];
 
+static HISTORY_MODIFICATIONS: [(&str, ModificationHistoryType); 2] = [
+    ("cross", ModificationHistoryType::Cross),
+    ("x", ModificationHistoryType::X),
+];
+
+static MODIFICATION_FN_TABLE: [BuildHistoryFunction; 2] =
+    [modify::add_cross_history, modify::add_x_history];
+
 static ALL_MODIFICATION_TYPES: [ModificationHistoryType; 2] =
     [ModificationHistoryType::Cross, ModificationHistoryType::X];
+
+static HISTORY_SOLVERS: [(&str, SolveHistoryType); 14] = [
+    ("dfs-hunt", SolveHistoryType::DfsHunt),
+    ("dfs-gather", SolveHistoryType::DfsGather),
+    ("dfs-corner", SolveHistoryType::DfsCorner),
+    ("rdfs-hunt", SolveHistoryType::RdfsHunt),
+    ("rdfs-gather", SolveHistoryType::RdfsGather),
+    ("rdfs-corner", SolveHistoryType::RdfsCorner),
+    ("bfs-hunt", SolveHistoryType::BfsHunt),
+    ("bfs-gather", SolveHistoryType::BfsGather),
+    ("bfs-corner", SolveHistoryType::BfsCorner),
+    ("floodfs-hunt", SolveHistoryType::FdfsHunt),
+    ("floodfs-gather", SolveHistoryType::FdfsGather),
+    ("floodfs-corner", SolveHistoryType::FdfsCorner),
+    ("distance", SolveHistoryType::Distance),
+    ("runs", SolveHistoryType::Runs),
+];
+
+static SOLVE_FN_TABLE: [SolveHistoryFunction; 14] = [
+    dfs::hunt_history,
+    dfs::gather_history,
+    dfs::corner_history,
+    rdfs::hunt_history,
+    rdfs::gather_history,
+    rdfs::corner_history,
+    bfs::hunt_history,
+    bfs::gather_history,
+    bfs::corner_history,
+    floodfs::hunt_history,
+    floodfs::gather_history,
+    floodfs::corner_history,
+    distance::paint_distance_from_center_history,
+    runs::paint_run_lengths_history,
+];
 
 static ALL_SOLVER_TYPES: [SolveHistoryType; 14] = [
     SolveHistoryType::DfsHunt,
